@@ -1,0 +1,155 @@
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function getPriorityColor(priority: string) {
+  switch (priority.toLowerCase()) {
+    case "high":
+      return "bg-gradient-to-r from-red-50 to-rose-50 text-red-800 border-red-200 dark:from-red-950/20 dark:to-rose-950/20 dark:text-red-200 dark:border-red-800"
+    case "medium":
+      return "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-800 border-amber-200 dark:from-amber-950/20 dark:to-orange-950/20 dark:text-amber-200 dark:border-amber-800"
+    case "low":
+      return "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 border-emerald-200 dark:from-emerald-950/20 dark:to-green-950/20 dark:text-emerald-200 dark:border-emerald-800"
+    default:
+      return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
+  }
+}
+
+export function getStatusColor(status: string) {
+  switch (status.toLowerCase()) {
+    case "pending":
+      return "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-800 border-yellow-200 dark:from-yellow-950/20 dark:to-amber-950/20 dark:text-yellow-200 dark:border-yellow-800"
+    case "under investigation":
+      return "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border-blue-200 dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-200 dark:border-blue-800"
+    case "requires more info":
+      return "bg-gradient-to-r from-orange-50 to-red-50 text-orange-800 border-orange-200 dark:from-orange-950/20 dark:to-red-950/20 dark:text-orange-200 dark:border-orange-800"
+    case "resolved":
+      return "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 border-emerald-200 dark:from-emerald-950/20 dark:to-green-950/20 dark:text-emerald-200 dark:border-emerald-800"
+    case "dismissed":
+      return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
+    default:
+      return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
+  }
+}
+
+export function getRiskScoreColor(score: number) {
+  if (score >= 80) return "text-red-500"
+  if (score >= 50) return "text-amber-500"
+  return "text-emerald-500"
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes"
+  const k = 1024
+  const sizes = ["Bytes", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+}
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+export function getFileTypeIcon(type: string) {
+  switch (type.toLowerCase()) {
+    case "document":
+    case "pdf":
+    case "doc":
+    case "docx":
+      return "file-document"
+    case "image":
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
+      return "file-image"
+    case "audio":
+    case "mp3":
+    case "wav":
+    case "ogg":
+      return "file-audio"
+    case "video":
+    case "mp4":
+    case "avi":
+    case "mov":
+      return "file-video"
+    case "archive":
+    case "zip":
+    case "rar":
+    case "7z":
+      return "file-archive"
+    default:
+      return "file-document"
+  }
+}
+
+export function generateCaseId(): string {
+  const year = new Date().getFullYear()
+  const randomNum = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0")
+  return `CYB-${year}-${randomNum}`
+}
+
+export function calculatePriority(riskScore: number): "high" | "medium" | "low" {
+  if (riskScore >= 80) return "high"
+  if (riskScore >= 50) return "medium"
+  return "low"
+}
+
+export function getUnitByCategory(category: string): string {
+  const unitMapping: Record<string, string> = {
+    financial: "Economic Offenses Wing",
+    harassment: "Cyber Crime Against Women and Children",
+    phishing: "Cyber Crime Investigation Cell",
+    identity: "Cyber Security Division",
+    malware: "Cyber Crime Technical Unit",
+    content: "Special Investigation Team",
+  }
+
+  return unitMapping[category.toLowerCase()] || "Cyber Crime Investigation Cell"
+}
+
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+export function validatePhone(phone: string): boolean {
+  const phoneRegex = /^[+]?[1-9][\d]{0,15}$/
+  return phoneRegex.test(phone.replace(/\s/g, ""))
+}
+
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength) + "..."
+}
+
+export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
+export function generateHash(input: string): string {
+  // Simple hash function for demo purposes
+  let hash = 0
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return `sha256:${Math.abs(hash).toString(16).padStart(16, "0")}...`
+}
