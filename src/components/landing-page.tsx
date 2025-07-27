@@ -88,7 +88,7 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
               </Button>
               <Button
                 onClick={() => handleLoginClick("admin")}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg text-white"
               >
                 <Shield className="mr-2 h-4 w-4" />
                 Admin Login
@@ -96,7 +96,7 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
               <Button
                 onClick={() => handleLoginClick("pnp")}
                 variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                className="border-green-600 text-green-600 hover:bg-green-50 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900/20"
               >
                 <Users className="mr-2 h-4 w-4" />
                 PNP Officer Login
@@ -127,7 +127,7 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
             <Button
               size="lg"
               onClick={() => handleLoginClick("admin")}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg transform hover:scale-105 transition-all"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg text-white transform hover:scale-105 transition-all"
             >
               <Shield className="mr-2 h-5 w-5" />
               Access Admin Dashboard
@@ -137,7 +137,7 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
               size="lg"
               onClick={() => handleLoginClick("pnp")}
               variant="outline"
-              className="border-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transform hover:scale-105 transition-all"
+              className="border-2 border-green-600 text-green-600 hover:bg-green-50 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900/20 transform hover:scale-105 transition-all"
             >
               <Users className="mr-2 h-5 w-5" />
               PNP Officer Portal

@@ -33,42 +33,53 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
 
   const statusOptions = [
     {
-      value: "pending",
+      value: "Pending",
       label: "Pending",
       icon: Clock,
       color: "bg-yellow-500",
-      description: "Case awaiting initial review",
+      description: "Case has been received and is being reviewed",
     },
     {
-      value: "investigating",
-      label: "Investigating",
+      value: "Under Investigation",
+      label: "Under Investigation",
       icon: AlertTriangle,
       color: "bg-blue-500",
-      description: "Active investigation in progress",
+      description: "PNP officers are actively investigating the case",
     },
     {
-      value: "evidence-review",
-      label: "Evidence Review",
+      value: "Requires More Info",
+      label: "Requires More Info",
       icon: FileText,
       color: "bg-purple-500",
-      description: "Reviewing collected evidence",
+      description: "Additional information is needed to proceed with investigation",
     },
     {
-      value: "resolved",
+      value: "Resolved",
       label: "Resolved",
       icon: CheckCircle,
       color: "bg-green-500",
-      description: "Case successfully resolved",
+      description: "Case has been successfully resolved",
     },
-    { value: "closed", label: "Closed", icon: X, color: "bg-gray-500", description: "Case closed without resolution" },
+    { 
+      value: "Dismissed", 
+      label: "Dismissed", 
+      icon: X, 
+      color: "bg-gray-500", 
+      description: "Case has been dismissed due to insufficient evidence or other factors" 
+    },
   ]
 
   const officers = [
-    "Maria Santos - ACG Unit",
-    "John Rodriguez - CIDG",
-    "Ana Reyes - Special Investigations",
-    "Carlos Mendoza - Cybercrime Division",
-    "Lisa Garcia - Forensics Team",
+    "Maria Santos - Cyber Crime Investigation Cell",
+    "John Rodriguez - Economic Offenses Wing",
+    "Ana Reyes - Special Investigation Team",
+    "Carlos Mendoza - Cyber Security Division",
+    "Lisa Garcia - Advanced Cyber Forensics Unit",
+    "Roberto Cruz - Cyber Crime Technical Unit",
+    "Diana Lopez - Cyber Crime Against Women and Children",
+    "Miguel Torres - Critical Infrastructure Protection Unit",
+    "Sofia Reyes - National Security Cyber Division",
+    "Eduardo Santos - Special Cyber Operations Unit",
   ]
 
   const updateTemplates = [
@@ -292,7 +303,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
             </div>
 
             {/* Resolution Checklist (for resolved status) */}
-            {selectedStatus === "resolved" && (
+            {selectedStatus === "Resolved" && (
               <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <Label className="text-base font-medium text-green-800 dark:text-green-200">Resolution Checklist</Label>
                 <div className="space-y-2">

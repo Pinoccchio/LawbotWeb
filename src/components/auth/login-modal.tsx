@@ -55,13 +55,16 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
   }
 
   const pnpUnits = [
-    "Anti-Cybercrime Group (ACG)",
-    "Criminal Investigation and Detection Group (CIDG)",
-    "Special Action Force (SAF)",
-    "Highway Patrol Group (HPG)",
-    "Aviation Security Group (AVSEGROUP)",
-    "Maritime Group (MG)",
-    "Civil Security Group (CSG)",
+    "Cyber Crime Investigation Cell",
+    "Economic Offenses Wing",
+    "Cyber Security Division",
+    "Cyber Crime Technical Unit",
+    "Cyber Crime Against Women and Children",
+    "Special Investigation Team",
+    "Critical Infrastructure Protection Unit",
+    "National Security Cyber Division",
+    "Advanced Cyber Forensics Unit",
+    "Special Cyber Operations Unit",
   ]
 
   const pnpRanks = [
@@ -102,7 +105,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white dark:bg-slate-800 shadow-2xl">
+      <Card className="w-full max-w-lg max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden">
         <CardHeader className="relative">
           <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-2 top-2 h-8 w-8 p-0">
             <X className="h-4 w-4" />
@@ -125,7 +128,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
           </Badge>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="overflow-y-auto max-h-[calc(90vh-180px)]">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -183,7 +186,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
                 <Button
                   type="submit"
-                  className={`w-full ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
+                  className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
                 >
                   <Shield className="mr-2 h-4 w-4" />
                   Login to {userType === "admin" ? "Admin" : "PNP"} Portal
@@ -191,10 +194,10 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
               </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="space-y-4 mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+            <TabsContent value="signup" className="space-y-3 mt-4">
+              <form onSubmit={handleSignup} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
@@ -203,7 +206,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                       onChange={(e) => setSignupForm({ ...signupForm, firstName: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
@@ -214,7 +217,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="signupEmail">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -229,7 +232,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -245,8 +248,8 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
                 {userType === "pnp" && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         <Label htmlFor="badgeNumber">Badge Number</Label>
                         <Input
                           id="badgeNumber"
@@ -255,7 +258,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                           onChange={(e) => setSignupForm({ ...signupForm, badgeNumber: e.target.value })}
                             />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="rank">Rank</Label>
                         <Select onValueChange={(value) => setSignupForm({ ...signupForm, rank: value })}>
                           <SelectTrigger>
@@ -272,7 +275,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="unit">PNP Unit</Label>
                       <Select onValueChange={(value) => setSignupForm({ ...signupForm, unit: value })}>
                         <SelectTrigger>
@@ -288,7 +291,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="region">Region</Label>
                       <Select onValueChange={(value) => setSignupForm({ ...signupForm, region: value })}>
                         <SelectTrigger>
@@ -306,8 +309,8 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                   </>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <Label htmlFor="signupPassword">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -321,7 +324,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                         />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -346,7 +349,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
                 <Button
                   type="submit"
-                  className={`w-full ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
+                  className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
                 >
                   <User className="mr-2 h-4 w-4" />
                   Create {userType === "admin" ? "Admin" : "PNP"} Account
