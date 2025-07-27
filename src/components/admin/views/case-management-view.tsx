@@ -43,7 +43,7 @@ export function CaseManagementView() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Case Management</h2>
           <p className="text-gray-600 dark:text-slate-400">Manage and monitor all cybercrime cases</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Assign Case
         </Button>

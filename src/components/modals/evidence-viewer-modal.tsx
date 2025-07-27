@@ -312,7 +312,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                                 <Eye className="h-4 w-4 mr-2" />
                                 Preview
                               </Button>
-                              <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                              <Button size="sm" variant="outline" className="flex-1">
                                 <Download className="h-4 w-4 mr-2" />
                                 Download
                               </Button>

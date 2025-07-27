@@ -318,7 +318,7 @@ export function NotificationsView() {
                         </div>
                         <p className="text-sm text-red-700 dark:text-red-300">{alert.message}</p>
                         <div className="mt-2 flex space-x-2">
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-600 bg-transparent">
+                          <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                             Investigate
                           </Button>
                           <Button size="sm" variant="outline">

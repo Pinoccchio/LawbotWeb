@@ -18,7 +18,7 @@ export function SystemSettingsView() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">System Settings</h2>
           <p className="text-gray-600 dark:text-slate-400">Configure system parameters and AI settings</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
           <Save className="h-4 w-4 mr-2" />
           Save Changes
         </Button>

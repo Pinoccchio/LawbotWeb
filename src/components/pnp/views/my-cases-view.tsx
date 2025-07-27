@@ -23,7 +23,7 @@ export function MyCasesView() {
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
 
-  const officerCases = mockCases.filter((c) => c.officer === "Officer Smith" || c.officer === "Officer Martinez")
+  const officerCases = mockCases
 
   const filteredCases = officerCases.filter((case_) => {
     const matchesSearch =
@@ -210,7 +210,7 @@ export function MyCasesView() {
                       <div className="flex flex-col space-y-2 ml-6">
                         <Button
                           size="sm"
-                          className="bg-amber-600 hover:bg-amber-700"
+                          className="bg-amber-600 hover:bg-amber-700 text-white"
                           onClick={() => handleUpdateStatus(case_)}
                         >
                           Take Action

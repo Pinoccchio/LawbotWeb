@@ -46,7 +46,7 @@ export function UserManagementView() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h2>
           <p className="text-gray-600 dark:text-slate-400">Manage PNP officers and client accounts</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Add User
         </Button>
@@ -72,7 +72,7 @@ export function UserManagementView() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input placeholder="Search officers..." className="pl-10 w-64" />
                   </div>
-                  <Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Officer
                   </Button>

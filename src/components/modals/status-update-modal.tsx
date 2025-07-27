@@ -340,7 +340,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Send className="mr-2 h-4 w-4" />
                 Update Status
               </Button>

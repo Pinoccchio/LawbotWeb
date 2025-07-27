@@ -1,14 +1,42 @@
 "use client"
 
-import { FileText, Clock, CheckCircle, BarChart3, Calendar, AlertTriangle, Eye } from "lucide-react"
+import { useState } from "react"
+import { FileText, Clock, CheckCircle, BarChart3, Calendar, AlertTriangle, Eye, UserPlus, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { CaseDetailModal } from "@/components/modals/case-detail-modal"
+import { StatusUpdateModal } from "@/components/modals/status-update-modal"
+import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { mockCases } from "@/lib/mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function PNPDashboardView() {
+  const [selectedCase, setSelectedCase] = useState<any>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
+
   const officerCases = mockCases.filter((c) => c.officer === "Officer Smith" || c.officer === "Officer Martinez")
+
+  const handleViewDetails = (caseData: any) => {
+    setSelectedCase(caseData)
+    setDetailModalOpen(true)
+  }
+
+  const handleUpdateStatus = (caseData: any) => {
+    setSelectedCase(caseData)
+    setStatusModalOpen(true)
+  }
+
+  const handleViewEvidence = (caseData: any) => {
+    setSelectedCase(caseData)
+    setEvidenceModalOpen(true)
+  }
+
+  const handleQuickAction = (action: string) => {
+    alert(`${action} functionality will be implemented here`)
+  }
 
   return (
     <div className="space-y-8">
@@ -90,11 +118,13 @@ export function PNPDashboardView() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(case_)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
-                    <Button size="sm">Update Status</Button>
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleUpdateStatus(case_)}>
+                      Update Status
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -144,7 +174,7 @@ export function PNPDashboardView() {
                     <p className="font-medium text-sm">Evidence_{i}.pdf</p>
                     <p className="text-xs text-gray-500">CYB-2025-00{i}</p>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" onClick={() => handleViewEvidence(officerCases[0])}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
@@ -180,6 +210,15 @@ export function PNPDashboardView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
+      <StatusUpdateModal isOpen={statusModalOpen} onClose={() => setStatusModalOpen(false)} caseData={selectedCase} />
+      <EvidenceViewerModal
+        isOpen={evidenceModalOpen}
+        onClose={() => setEvidenceModalOpen(false)}
+        caseData={selectedCase}
+      />
     </div>
   )
 }

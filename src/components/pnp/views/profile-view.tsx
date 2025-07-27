@@ -345,13 +345,13 @@ export function ProfileView() {
               <div className="space-y-4">
                 <h4 className="font-medium">Security Settings</h4>
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                  <Button variant="outline" className="w-full justify-start">
                     Change Password
                   </Button>
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                  <Button variant="outline" className="w-full justify-start">
                     Enable Two-Factor Authentication
                   </Button>
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                  <Button variant="outline" className="w-full justify-start">
                     View Login History
                   </Button>
                 </div>

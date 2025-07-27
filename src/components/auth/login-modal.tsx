@@ -294,13 +294,6 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg text-sm">
-                  <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Demo Credentials:</p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Email: {userType === "admin" ? "admin@lawbot.gov.ph" : "officer@pnp.gov.ph"}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">Password: demo123</p>
-                </div>
 
                 <Button
                   type="submit"
@@ -535,12 +528,6 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg text-sm">
-                  <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">⚠️ Debug Mode</p>
-                  <p className="text-yellow-700 dark:text-yellow-300">
-                    This signup is for testing purposes. In production, account creation would require admin approval.
-                  </p>
-                </div>
 
                 <Button
                   type="submit"

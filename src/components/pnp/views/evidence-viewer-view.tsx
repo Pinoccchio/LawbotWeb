@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { FileText, ImageIcon, Video, Download, Eye, Search, Filter } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function EvidenceViewerView() {
+  const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
+
+  const handleViewEvidence = (file: any) => {
+    setSelectedEvidence(file)
+    alert(`Viewing evidence: ${file.name}\nType: ${file.type}\nSize: ${file.size}\nCase: ${file.caseId}`)
+  }
+
+  const handleDownloadEvidence = (file: any) => {
+    alert(`Downloading evidence: ${file.name}\nThis would normally trigger a secure download process.`)
+  }
   const evidenceFiles = [
     {
       id: 1,
@@ -161,11 +172,11 @@ export function EvidenceViewerView() {
                     <p className="text-sm text-gray-600 dark:text-slate-400">{file.description}</p>
                     <div className="text-xs text-gray-500">Uploaded: {file.uploadDate}</div>
                     <div className="flex items-center space-x-2">
-                      <Button size="sm" className="flex-1">
+                      <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleViewEvidence(file)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>
@@ -203,11 +214,11 @@ export function EvidenceViewerView() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleViewEvidence(file)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>
@@ -244,11 +255,11 @@ export function EvidenceViewerView() {
                         </div>
                         <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">{file.description}</p>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleViewEvidence(file)}>
                             <Eye className="h-4 w-4 mr-2" />
                             View
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
                             <Download className="h-4 w-4" />
                           </Button>
                           <span className="text-xs text-gray-500">{file.size}</span>

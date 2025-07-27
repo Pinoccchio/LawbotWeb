@@ -8,12 +8,20 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { mockCases } from "@/lib/mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function CaseSearchView() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [selectedCase, setSelectedCase] = useState<any>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+
+  const handleViewCase = (caseData: any) => {
+    setSelectedCase(caseData)
+    setDetailModalOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -42,7 +50,7 @@ export function CaseSearchView() {
                 />
               </div>
             </div>
-            <Button>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               <Search className="h-4 w-4 mr-2" />
               Search
             </Button>
@@ -231,7 +239,7 @@ export function CaseSearchView() {
                         </div>
                         <div className="text-xs text-gray-500">Risk Score</div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleViewCase(case_)}>
                         View Case
                       </Button>
                     </div>
@@ -264,6 +272,9 @@ export function CaseSearchView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal */}
+      <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
     </div>
   )
 }

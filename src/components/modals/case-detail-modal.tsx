@@ -85,7 +85,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
 
   const timeline = [
     { date: "2025-01-25 09:15", event: "Case reported by victim", type: "report" },
-    { date: "2025-01-25 09:30", event: "AI analysis completed - High priority assigned", type: "ai" },
+    { date: "2025-01-25 09:30", event: "Predictive analysis completed - High priority assigned", type: "ai" },
     { date: "2025-01-25 10:00", event: "Assigned to Officer Maria Santos", type: "assignment" },
     { date: "2025-01-25 14:30", event: "Initial contact with victim established", type: "contact" },
     { date: "2025-01-25 16:45", event: "Evidence collection initiated", type: "evidence" },
@@ -122,7 +122,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-gray-100 dark:bg-slate-700 m-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
+              <TabsTrigger value="ai-analysis">Predictive Analysis</TabsTrigger>
               <TabsTrigger value="evidence">Evidence</TabsTrigger>
               <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="actions">Actions</TabsTrigger>
@@ -212,6 +212,87 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* AI Summarizer Section */}
+                <Card className="border-purple-200 dark:border-purple-800">
+                  <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
+                    <CardTitle className="flex items-center space-x-2">
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      <span>AI Case Summary</span>
+                      <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                        Auto-Generated
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Key Details</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                            <span className="text-sm">Financial loss estimated at ${caseData.estimatedLoss || '25,000'}</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                            <span className="text-sm">Crime type: {caseData.crimeType || caseData.title}</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                            <span className="text-sm">Multiple victims potentially affected</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                            <span className="text-sm">Evidence includes digital communications and transaction records</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Executive Summary</h4>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                          <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed">
+                            This case involves a sophisticated {caseData.crimeType?.toLowerCase() || 'cybercrime'} operation targeting victims through 
+                            digital channels. The perpetrator(s) used social engineering tactics to gain trust before executing the fraudulent scheme. 
+                            Initial evidence suggests this may be part of a larger organized campaign with multiple victims across the region.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Immediate Action Items</h4>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                          <h5 className="font-medium text-red-800 dark:text-red-200 text-sm mb-2">High Priority</h5>
+                          <ul className="text-xs text-red-700 dark:text-red-300 space-y-1">
+                            <li>• Contact victim within 24 hours</li>
+                            <li>• Preserve digital evidence</li>
+                            <li>• Check for similar cases</li>
+                          </ul>
+                        </div>
+                        <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <h5 className="font-medium text-amber-800 dark:text-amber-200 text-sm mb-2">Medium Priority</h5>
+                          <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                            <li>• Analyze transaction patterns</li>
+                            <li>• Coordinate with bank security</li>
+                            <li>• Interview witnesses</li>
+                          </ul>
+                        </div>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <h5 className="font-medium text-blue-800 dark:text-blue-200 text-sm mb-2">Investigation</h5>
+                          <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                            <li>• Technical analysis of devices</li>
+                            <li>• Cross-reference databases</li>
+                            <li>• Prepare legal documentation</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="ai-analysis" className="space-y-6">
@@ -219,7 +300,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                   <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
                     <CardTitle className="flex items-center space-x-2">
                       <Brain className="h-5 w-5 text-blue-600" />
-                      <span>AI Analysis Report</span>
+                      <span>Predictive Analysis Report</span>
                       <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         Confidence: {aiAnalysis.confidence}%
                       </Badge>
@@ -286,7 +367,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       <div>
                         <h4 className="font-semibold mb-3 flex items-center space-x-2">
                           <Zap className="h-4 w-4" />
-                          <span>AI Recommendations</span>
+                          <span>System Recommendations</span>
                         </h4>
                         <ul className="space-y-2">
                           {aiAnalysis.recommendations.map((rec, index) => (
@@ -393,19 +474,19 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <Phone className="mr-2 h-4 w-4" />
                         Contact Complainant
                       </Button>
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <FileText className="mr-2 h-4 w-4" />
                         Update Case Status
                       </Button>
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <User className="mr-2 h-4 w-4" />
                         Assign to Specialist
                       </Button>
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <AlertTriangle className="mr-2 h-4 w-4" />
                         Escalate Case
                       </Button>
@@ -417,15 +498,15 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       <CardTitle>Case Management</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <Download className="mr-2 h-4 w-4" />
                         Generate Report
                       </Button>
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <Calendar className="mr-2 h-4 w-4" />
                         Schedule Follow-up
                       </Button>
-                      <Button className="w-full justify-start bg-transparent" variant="outline">
+                      <Button className="w-full justify-start" variant="outline">
                         <TrendingUp className="mr-2 h-4 w-4" />
                         View Analytics
                       </Button>
