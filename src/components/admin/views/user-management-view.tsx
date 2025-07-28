@@ -11,12 +11,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { mockOfficers } from "@/lib/mock-data"
 import { AddOfficerModal } from "@/components/admin/modals/add-officer-modal"
+import { EditOfficerModal } from "@/components/admin/modals/edit-officer-modal"
+import { DeleteOfficerModal } from "@/components/admin/modals/delete-officer-modal"
 import { supabase } from "@/lib/supabase"
 
 export function UserManagementView() {
   const [isAddOfficerModalOpen, setIsAddOfficerModalOpen] = useState(false)
+  const [isEditOfficerModalOpen, setIsEditOfficerModalOpen] = useState(false)
+  const [isDeleteOfficerModalOpen, setIsDeleteOfficerModalOpen] = useState(false)
+  const [selectedOfficer, setSelectedOfficer] = useState<any>(null)
   const [pnpOfficers, setPnpOfficers] = useState<any[]>([])
   const [isLoadingOfficers, setIsLoadingOfficers] = useState(false)
+  const [officerSearchTerm, setOfficerSearchTerm] = useState("")
+  const [clientSearchTerm, setClientSearchTerm] = useState("")
   
   const mockClients = [
     { id: 1, name: "John Doe", email: "john.doe@email.com", phone: "+63 912 345 6789", cases: 2, status: "active" },
@@ -95,8 +102,46 @@ export function UserManagementView() {
     fetchPnpOfficers()
   }
 
-  // Use real data if available, otherwise fall back to mock data
-  const displayOfficers = pnpOfficers.length > 0 ? pnpOfficers : mockOfficers
+  // Filter officers based on search term
+  const filteredOfficers = (pnpOfficers.length > 0 ? pnpOfficers : mockOfficers).filter(officer =>
+    officer.name.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    officer.badge.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    officer.unit.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    officer.rank.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    officer.region.toLowerCase().includes(officerSearchTerm.toLowerCase())
+  )
+
+  // Filter clients based on search term
+  const filteredClients = mockClients.filter(client =>
+    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  )
+
+  // Handle edit officer
+  const handleEditOfficer = (officer: any) => {
+    console.log('Edit officer:', officer)
+    setSelectedOfficer(officer)
+    setIsEditOfficerModalOpen(true)
+  }
+
+  // Handle delete officer
+  const handleDeleteOfficer = (officer: any) => {
+    console.log('Delete officer:', officer)
+    setSelectedOfficer(officer)
+    setIsDeleteOfficerModalOpen(true)
+  }
+
+  // Handle modal success callbacks
+  const handleEditSuccess = () => {
+    fetchPnpOfficers() // Refresh the list
+  }
+
+  const handleDeleteSuccess = () => {
+    fetchPnpOfficers() // Refresh the list
+  }
+
+  // Use filtered data for display
+  const displayOfficers = filteredOfficers
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -216,6 +261,8 @@ export function UserManagementView() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                     <Input 
                       placeholder="Search officers..." 
+                      value={officerSearchTerm}
+                      onChange={(e) => setOfficerSearchTerm(e.target.value)}
                       className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" 
                     />
                   </div>
@@ -327,18 +374,25 @@ export function UserManagementView() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
-                              <span className={`text-lg font-bold ${
-                                Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'text-lawbot-emerald-600' :
-                                Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'text-lawbot-amber-600' :
-                                'text-lawbot-red-600'
-                              }`}>
-                                {Math.round((officer.resolved / officer.cases) * 100)}%
-                              </span>
-                              <div className={`w-2 h-2 rounded-full ${
-                                Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'bg-lawbot-emerald-500' :
-                                Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'bg-lawbot-amber-500' :
-                                'bg-lawbot-red-500'
-                              }`} />
+                              {(() => {
+                                const successRate = officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0
+                                return (
+                                  <>
+                                    <span className={`text-lg font-bold ${
+                                      successRate >= 80 ? 'text-lawbot-emerald-600' :
+                                      successRate >= 60 ? 'text-lawbot-amber-600' :
+                                      'text-lawbot-red-600'
+                                    }`}>
+                                      {successRate}%
+                                    </span>
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      successRate >= 80 ? 'bg-lawbot-emerald-500' :
+                                      successRate >= 60 ? 'bg-lawbot-amber-500' :
+                                      'bg-lawbot-red-500'
+                                    }`} />
+                                  </>
+                                )
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -348,10 +402,20 @@ export function UserManagementView() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20"
+                                onClick={() => handleEditOfficer(officer)}
+                              >
                                 <Edit className="h-4 w-4 text-lawbot-blue-500" />
                               </Button>
-                              <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20"
+                                onClick={() => handleDeleteOfficer(officer)}
+                              >
                                 <Trash2 className="h-4 w-4 text-lawbot-red-500" />
                               </Button>
                             </div>
@@ -383,6 +447,8 @@ export function UserManagementView() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                   <Input 
                     placeholder="Search clients..." 
+                    value={clientSearchTerm}
+                    onChange={(e) => setClientSearchTerm(e.target.value)}
                     className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
                   />
                 </div>
@@ -402,7 +468,7 @@ export function UserManagementView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockClients.map((client, index) => (
+                    {filteredClients.map((client, index) => (
                       <TableRow 
                         key={client.id} 
                         className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
@@ -614,6 +680,28 @@ export function UserManagementView() {
         isOpen={isAddOfficerModalOpen}
         onClose={() => setIsAddOfficerModalOpen(false)}
         onSuccess={handleOfficerCreated}
+      />
+
+      {/* Edit Officer Modal */}
+      <EditOfficerModal
+        isOpen={isEditOfficerModalOpen}
+        onClose={() => {
+          setIsEditOfficerModalOpen(false)
+          setSelectedOfficer(null)
+        }}
+        onSuccess={handleEditSuccess}
+        officer={selectedOfficer}
+      />
+
+      {/* Delete Officer Modal */}
+      <DeleteOfficerModal
+        isOpen={isDeleteOfficerModalOpen}
+        onClose={() => {
+          setIsDeleteOfficerModalOpen(false)
+          setSelectedOfficer(null)
+        }}
+        onSuccess={handleDeleteSuccess}
+        officer={selectedOfficer}
       />
     </div>
   )
