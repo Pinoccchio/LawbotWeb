@@ -1,12 +1,17 @@
 "use client"
 
+import { useState } from "react"
 import { Shield, Users, BarChart3, Plus, Edit, Activity, Target, TrendingUp, Award } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { UnitAnalyticsModal } from "../modals/unit-analytics-modal"
+import { CreateUnitModal } from "../modals/create-unit-modal"
 
 export function PNPUnitsView() {
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false)
+  const [isCreateUnitModalOpen, setIsCreateUnitModalOpen] = useState(false)
   const pnpUnits = [
     {
       id: 1,
@@ -82,11 +87,18 @@ export function PNPUnitsView() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" className="btn-modern">
+          <Button 
+            variant="outline" 
+            className="btn-modern" 
+            onClick={() => setIsAnalyticsModalOpen(true)}
+          >
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </Button>
-          <Button className="btn-gradient">
+          <Button 
+            className="btn-gradient"
+            onClick={() => setIsCreateUnitModalOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Create Unit
           </Button>
@@ -344,6 +356,19 @@ export function PNPUnitsView() {
           </CardContent>
         </Card>
       </div>
+      {/* Modals */}
+      <UnitAnalyticsModal 
+        isOpen={isAnalyticsModalOpen} 
+        onClose={() => setIsAnalyticsModalOpen(false)} 
+      />
+      <CreateUnitModal 
+        isOpen={isCreateUnitModalOpen} 
+        onClose={() => setIsCreateUnitModalOpen(false)} 
+        onSuccess={() => {
+          // Handle success - could refresh data here
+          setIsCreateUnitModalOpen(false)
+        }} 
+      />
     </div>
   )
 }
