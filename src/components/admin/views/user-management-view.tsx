@@ -104,6 +104,7 @@ export function UserManagementView() {
   // Filter officers based on search term
   const filteredOfficers = pnpOfficers.filter(officer =>
     officer.name.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    officer.email.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.badge.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.unit.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.rank.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
@@ -291,6 +292,7 @@ export function UserManagementView() {
                   <TableHeader>
                     <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Email & Contact</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Badge Number</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Specialized Unit</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Active Cases</TableHead>
@@ -303,7 +305,7 @@ export function UserManagementView() {
                   <TableBody>
                     {isLoadingOfficers ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           <div className="flex items-center justify-center space-x-2">
                             <RefreshCw className="h-4 w-4 animate-spin" />
                             <span>Loading PNP officers...</span>
@@ -312,7 +314,7 @@ export function UserManagementView() {
                       </TableRow>
                     ) : displayOfficers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           <div className="text-gray-500">
                             <Shield className="h-12 w-12 mx-auto mb-2 opacity-50" />
                             <p>No PNP officers found</p>
@@ -342,6 +344,22 @@ export function UserManagementView() {
                                 <p className="font-semibold text-lawbot-slate-900 dark:text-white">{officer.name}</p>
                                 <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.rank}</p>
                               </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                <Mail className="h-4 w-4 mr-2 text-lawbot-blue-500" />
+                                <span className="truncate max-w-[200px]" title={officer.email}>
+                                  {officer.email}
+                                </span>
+                              </div>
+                              {officer.phone && officer.phone !== 'N/A' && (
+                                <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                  <Phone className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
+                                  {officer.phone}
+                                </div>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>

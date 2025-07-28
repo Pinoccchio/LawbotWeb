@@ -26,8 +26,9 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
   const [successMessage, setSuccessMessage] = useState('')
   const [regions, setRegions] = useState<SimplifiedRegion[]>([])
   const [isLoadingRegions, setIsLoadingRegions] = useState(false)
-  const [selectedAPISource, setSelectedAPISource] = useState<APISource>('auto')
-  const [availableAPIs, setAvailableAPIs] = useState<APIEndpoint[]>([])
+  // Removed API source selector - now using PSGC Cloud API as default
+  // const [selectedAPISource, setSelectedAPISource] = useState<APISource>('auto')
+  // const [availableAPIs, setAvailableAPIs] = useState<APIEndpoint[]>([])
   
   const [officerForm, setOfficerForm] = useState({
     firstName: "",
@@ -42,29 +43,38 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     region: "",
   })
 
-  // Initialize available APIs when modal opens
-  useEffect(() => {
-    if (isOpen && availableAPIs.length === 0) {
-      setAvailableAPIs(PSGCApiService.getAPIEndpoints())
-    }
-  }, [isOpen])
-
-  // Fetch regions when modal opens or API source changes
+  // Fetch regions when modal opens using PSGC Cloud API as default
   useEffect(() => {
     if (isOpen) {
       fetchRegions()
     }
-  }, [isOpen, selectedAPISource])
+  }, [isOpen])
 
   const fetchRegions = async () => {
     setIsLoadingRegions(true)
     try {
-      const fetchedRegions = await PSGCApiService.getRegions(selectedAPISource)
+      // Use PSGC Cloud API as default with fallback to other sources
+      const fetchedRegions = await PSGCApiService.getRegions('cloud')
       setRegions(fetchedRegions)
-      console.log(`✅ Loaded ${fetchedRegions.length} regions using ${selectedAPISource} API source`)
+      console.log(`✅ Loaded ${fetchedRegions.length} regions using PSGC Cloud API`)
+      
+      // Future reference - commented alternative API sources:
+      // const fetchedRegions = await PSGCApiService.getRegions('gitlab') // GitLab API
+      // const fetchedRegions = await PSGCApiService.getRegions('auto')   // Auto-select best API
+      // const fetchedRegions = await PSGCApiService.getRegions('fallback') // Hardcoded fallback
     } catch (error) {
-      console.error('Error fetching regions:', error)
-      // Regions state will remain empty, and we'll show an error message
+      console.error('Error fetching regions from PSGC Cloud API:', error)
+      console.log('🔄 Attempting fallback to other API sources...')
+      
+      try {
+        // Fallback to auto mode (tries all APIs)
+        const fallbackRegions = await PSGCApiService.getRegions('auto')
+        setRegions(fallbackRegions)
+        console.log(`✅ Loaded ${fallbackRegions.length} regions using fallback API sources`)
+      } catch (fallbackError) {
+        console.error('All API sources failed:', fallbackError)
+        // Regions state will remain empty, and we'll show an error message
+      }
     } finally {
       setIsLoadingRegions(false)
     }
@@ -431,46 +441,6 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                   )}
                 </div>
 
-                {/* API Source Selector for Testing */}
-                <div className="space-y-2">
-                  <Label htmlFor="apiSource">API Data Source (Compare APIs)</Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Select value={selectedAPISource} onValueChange={(value: APISource) => {
-                      setSelectedAPISource(value)
-                      setRegions([]) // Clear regions to trigger refetch
-                    }}>
-                      <SelectTrigger className="pl-10">
-                        <SelectValue placeholder="Select API source" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem key="auto" value="auto">
-                          <div className="flex flex-col">
-                            <span>🔄 Auto (Try All APIs)</span>
-                            <span className="text-xs text-gray-500">Automatically tries all endpoints in order</span>
-                          </div>
-                        </SelectItem>
-                        {availableAPIs.map((api) => (
-                          <SelectItem key={api.source} value={api.source}>
-                            <div className="flex flex-col">
-                              <span>{api.name}</span>
-                              <span className="text-xs text-gray-500">{api.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                        <SelectItem key="fallback" value="fallback">
-                          <div className="flex flex-col">
-                            <span>📋 Fallback (Hardcoded)</span>
-                            <span className="text-xs text-gray-500">Use built-in Philippine regions data</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-                    🧪 Compare different API endpoints for Philippine regions data. Select specific APIs to test their response formats and data quality.
-                  </p>
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="region">Region *</Label>
@@ -515,7 +485,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                   )}
                   {!isLoadingRegions && regions.length > 0 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      ✅ Data from Philippine Statistics Authority (PSGC)
+                      ✅ Data from Philippine Statistics Authority (PSGC Cloud API)
                     </p>
                   )}
                 </div>

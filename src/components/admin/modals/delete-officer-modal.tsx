@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge as UIBadge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface DeleteOfficerModalProps {
   isOpen: boolean
@@ -16,6 +16,7 @@ interface DeleteOfficerModalProps {
 }
 
 export function DeleteOfficerModal({ isOpen, onClose, onSuccess, officer }: DeleteOfficerModalProps) {
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -35,23 +36,43 @@ export function DeleteOfficerModal({ isOpen, onClose, onSuccess, officer }: Dele
     try {
       console.log('🗑️ Deleting officer:', officer)
       
+      // Check if admin is logged in
+      if (!user) {
+        setError('Admin authentication required. Please log in again.')
+        return
+      }
+      
       // Check if this is real Supabase data or mock data
       if (officer.created_at) {
-        // Real Supabase data - delete from database
-        const { error: deleteError } = await supabase
-          .from('pnp_officer_profiles')
-          .delete()
-          .eq('id', officer.id)
+        console.log('🔐 Getting admin ID token...')
         
-        if (deleteError) {
-          console.error('💥 Error deleting officer:', deleteError)
-          throw new Error(`Failed to delete officer: ${deleteError.message}`)
+        // Get admin's ID token for API authentication
+        const idToken = await user.getIdToken()
+        
+        console.log('📡 Calling API to delete PNP officer...')
+        
+        // Call API to delete PNP officer (both Firebase Auth and Supabase)
+        const response = await fetch('/api/admin/delete-officer', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            officerId: officer.id
+          })
+        })
+
+        const result = await response.json()
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || result.message || 'Failed to delete officer account')
         }
-        
-        console.log('✅ Officer deleted successfully from database')
+
+        console.log('✅ Officer deleted successfully via API:', result.deletedOfficer)
         
         // Show success message
-        setSuccessMessage(`✅ Officer ${officer.name} (${officer.badge}) has been deleted successfully.`)
+        setSuccessMessage(`✅ Officer ${officer.name} (${officer.badge}) has been deleted from both Firebase Auth and database.`)
         
         // Notify parent component of success
         onSuccess()
@@ -76,7 +97,7 @@ export function DeleteOfficerModal({ isOpen, onClose, onSuccess, officer }: Dele
       
     } catch (error: any) {
       console.error('💥 Error deleting officer:', error)
-      setError(error.message || 'Failed to delete officer. Please try again.')
+      setError(error.toString().replace('Error: ', '') || 'Failed to delete officer. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -101,7 +122,7 @@ export function DeleteOfficerModal({ isOpen, onClose, onSuccess, officer }: Dele
             </div>
           </div>
           <UIBadge variant="destructive" className="w-fit">
-            ⚠️ Permanent Action
+            🔥 Firebase Auth + Database Deletion
           </UIBadge>
         </CardHeader>
 
@@ -179,8 +200,8 @@ export function DeleteOfficerModal({ isOpen, onClose, onSuccess, officer }: Dele
                       Are you absolutely sure?
                     </p>
                     <p className="text-amber-700 dark:text-amber-300">
-                      This will permanently delete the officer profile and remove all associated data. 
-                      This action cannot be undone.
+                      This will permanently delete the officer profile from both Firebase Authentication and the database, 
+                      removing all associated data. This action cannot be undone.
                     </p>
                   </div>
                 </div>
