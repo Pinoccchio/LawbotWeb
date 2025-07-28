@@ -1,24 +1,31 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, ImageIcon, Video, Download, Eye, Search, Filter } from "lucide-react"
+import { FileText, ImageIcon, Video, Download, Eye, Search, Filter, Archive, Music, Shield, Clock, Database } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 
 export function EvidenceViewerView() {
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleViewEvidence = (file: any) => {
     setSelectedEvidence(file)
-    alert(`Viewing evidence: ${file.name}\nType: ${file.type}\nSize: ${file.size}\nCase: ${file.caseId}`)
+    setIsModalOpen(true)
   }
 
   const handleDownloadEvidence = (file: any) => {
     alert(`Downloading evidence: ${file.name}\nThis would normally trigger a secure download process.`)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedEvidence(null)
   }
   const evidenceFiles = [
     {
@@ -90,51 +97,62 @@ export function EvidenceViewerView() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Evidence Viewer</h2>
-        <p className="text-gray-600 dark:text-slate-400">View and manage evidence files for your cases</p>
+    <div className="space-y-8 animate-fade-in">
+      <div className="animate-fade-in-up">
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+          Evidence Viewer
+        </h2>
+        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          Secure viewing and management of evidence files across all cases
+        </p>
       </div>
 
-      {/* Search and Filter */}
-      <Card>
+      {/* Enhanced Search and Filter */}
+      <Card className="card-modern bg-gradient-to-r from-lawbot-emerald-50/50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         <CardHeader>
-          <CardTitle>Search Evidence</CardTitle>
-          <CardDescription>Find specific evidence files across your cases</CardDescription>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+              <Search className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-lawbot-slate-900 dark:text-white">Evidence Search & Filter</CardTitle>
+              <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Find specific evidence files across your cases with advanced filtering</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input placeholder="Search by filename, case ID, or description..." className="pl-10" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
+                <Input placeholder="Search by filename, case ID, or description..." className="pl-10 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-emerald-500" />
               </div>
             </div>
             <Select>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-emerald-500">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="image">Images</SelectItem>
-                <SelectItem value="document">Documents</SelectItem>
-                <SelectItem value="audio">Audio</SelectItem>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="archive">Archives</SelectItem>
+                <SelectItem value="image">🖼️ Images</SelectItem>
+                <SelectItem value="document">📄 Documents</SelectItem>
+                <SelectItem value="audio">🎧 Audio</SelectItem>
+                <SelectItem value="video">🎥 Video</SelectItem>
+                <SelectItem value="archive">🗄 Archives</SelectItem>
               </SelectContent>
             </Select>
             <Select>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-emerald-500">
                 <SelectValue placeholder="Filter by case" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cases</SelectItem>
-                <SelectItem value="CYB-2025-001">CYB-2025-001</SelectItem>
-                <SelectItem value="CYB-2025-002">CYB-2025-002</SelectItem>
-                <SelectItem value="CYB-2025-003">CYB-2025-003</SelectItem>
+                <SelectItem value="CYB-2025-001">📁 CYB-2025-001</SelectItem>
+                <SelectItem value="CYB-2025-002">📁 CYB-2025-002</SelectItem>
+                <SelectItem value="CYB-2025-003">📁 CYB-2025-003</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline">
+            <Button variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50">
               <Filter className="h-4 w-4 mr-2" />
               Advanced
             </Button>
@@ -142,41 +160,58 @@ export function EvidenceViewerView() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="grid" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="grid">Grid View</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+      <Tabs defaultValue="grid" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-3">
+          <TabsTrigger value="grid" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
+            📊 Grid View
+          </TabsTrigger>
+          <TabsTrigger value="list" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+            📄 List View
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
+            🕰️ Timeline
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="grid">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {evidenceFiles.map((file) => (
-              <Card key={file.id} className="hover:shadow-lg transition-shadow">
+            {evidenceFiles.map((file, index) => (
+              <Card key={file.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`${file.color} p-2 bg-gray-100 dark:bg-slate-800 rounded-lg`}>{file.icon}</div>
+                      <div className={`${file.color} p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm`}>
+                        {file.type === 'image' && <ImageIcon className="h-6 w-6" />}
+                        {file.type === 'document' && <FileText className="h-6 w-6" />}
+                        {file.type === 'audio' && <Music className="h-6 w-6" />}
+                        {file.type === 'archive' && <Archive className="h-6 w-6" />}
+                        {!['image', 'document', 'audio', 'archive'].includes(file.type) && file.icon}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{file.name}</h3>
-                        <p className="text-sm text-gray-500">{file.size}</p>
+                        <h3 className="font-bold text-lawbot-slate-900 dark:text-white truncate">{file.name}</h3>
+                        <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-medium">💾 {file.size}</p>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <Badge variant="outline">{file.caseId}</Badge>
+                      <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
+                        📁 {file.caseId}
+                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">{file.description}</p>
-                    <div className="text-xs text-gray-500">Uploaded: {file.uploadDate}</div>
+                    <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 leading-relaxed">{file.description}</p>
+                    <div className="flex items-center text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Uploaded: {file.uploadDate}
+                    </div>
                     <div className="flex items-center space-x-2">
-                      <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleViewEvidence(file)}>
+                      <Button size="sm" className="flex-1 btn-gradient" onClick={() => handleViewEvidence(file)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
+                      <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleDownloadEvidence(file)}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>
@@ -188,10 +223,17 @@ export function EvidenceViewerView() {
         </TabsContent>
 
         <TabsContent value="list">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>Evidence Files</CardTitle>
-              <CardDescription>Detailed list view of all evidence files</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                  <Database className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">Evidence Files</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Detailed list view of all evidence files</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -230,10 +272,17 @@ export function EvidenceViewerView() {
         </TabsContent>
 
         <TabsContent value="timeline">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>Evidence Timeline</CardTitle>
-              <CardDescription>Chronological view of evidence submissions</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">Evidence Timeline</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Chronological view of evidence submissions</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -273,53 +322,79 @@ export function EvidenceViewerView() {
         </TabsContent>
       </Tabs>
 
-      {/* Evidence Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Files</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{evidenceFiles.length}</div>
-            <p className="text-xs text-muted-foreground">Evidence files</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Images</CardTitle>
-            <ImageIcon className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {evidenceFiles.filter((f) => f.type === "image").length}
+      {/* Enhanced Evidence Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Files</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{evidenceFiles.length}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📎 Evidence files</p>
+              </div>
+              <div className="p-3 bg-lawbot-blue-500 rounded-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Image files</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
-            <FileText className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {evidenceFiles.filter((f) => f.type === "document").length}
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Images</p>
+                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                  {evidenceFiles.filter((f) => f.type === "image").length}
+                </p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">🖼️ Image files</p>
+              </div>
+              <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
+                <ImageIcon className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Document files</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Size</CardTitle>
-            <Download className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">18.5 MB</div>
-            <p className="text-xs text-muted-foreground">Storage used</p>
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Documents</p>
+                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">
+                  {evidenceFiles.filter((f) => f.type === "document").length}
+                </p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📄 Document files</p>
+              </div>
+              <div className="p-3 bg-lawbot-purple-500 rounded-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Size</p>
+                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">18.5 MB</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">💾 Storage used</p>
+              </div>
+              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
+                <Database className="h-6 w-6 text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Evidence Viewer Modal */}
+      <EvidenceViewerModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        caseData={{ id: selectedEvidence?.caseId || "Unknown", title: `Evidence: ${selectedEvidence?.name || "Unknown"}` }}
+      />
     </div>
   )
 }

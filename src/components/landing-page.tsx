@@ -106,42 +106,60 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 py-20 lg:py-32">
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
+      {/* Enhanced Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-lawbot-blue-50 via-white to-lawbot-purple-50 dark:from-lawbot-slate-900 dark:via-lawbot-slate-800 dark:to-lawbot-slate-900 py-20 lg:py-32">
+        <div className="absolute inset-0 bg-pattern-grid opacity-30"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-lawbot-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+          <div className="absolute top-40 right-20 w-40 h-40 bg-lawbot-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-20 left-1/3 w-36 h-36 bg-lawbot-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{ animationDelay: '2s' }}></div>
+        </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge className="mb-6 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 dark:from-blue-900 dark:to-indigo-900 dark:text-blue-200 border-0">
+          <Badge className="mb-8 bg-gradient-to-r from-lawbot-blue-100 to-lawbot-purple-100 text-lawbot-blue-800 dark:from-lawbot-blue-900 dark:to-lawbot-purple-900 dark:text-lawbot-blue-200 border-0 px-6 py-2 text-sm font-semibold animate-bounce-subtle">
             🚔 Cybercrime Case Management System
           </Badge>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 dark:text-white mb-12 leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-lawbot-slate-900 dark:text-white mb-8 leading-tight animate-fade-in-up">
             Advanced Cybercrime
-            <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-lawbot-blue-600 via-lawbot-purple-600 to-lawbot-blue-700 bg-clip-text text-transparent">
               Investigation Platform
             </span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl lg:text-2xl text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '200ms' }}>
             AI-powered case management system for PNP Officers and System Administrators. Automatic case routing,
             intelligent priority assignment, and comprehensive investigation tools.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up" style={{ animationDelay: '400ms' }}>
             <Button
               size="lg"
               onClick={() => handleLoginClick("admin")}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg text-white transform hover:scale-105 transition-all"
+              className="btn-gradient px-8 py-4 text-lg font-semibold"
             >
-              <Shield className="mr-2 h-5 w-5" />
+              <Shield className="mr-3 h-6 w-6" />
               Access Admin Dashboard
-              <ChevronRight className="ml-2 h-4 w-4" />
+              <ChevronRight className="ml-3 h-5 w-5" />
             </Button>
             <Button
               size="lg"
               onClick={() => handleLoginClick("pnp")}
               variant="outline"
-              className="border-2 border-green-600 text-green-600 hover:bg-green-50 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900/20 transform hover:scale-105 transition-all"
+              className="border-2 border-lawbot-emerald-600 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-400 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20 px-8 py-4 text-lg font-semibold btn-modern"
             >
-              <Users className="mr-2 h-5 w-5" />
+              <Users className="mr-3 h-6 w-6" />
               PNP Officer Portal
             </Button>
+          </div>
+          
+          {/* Hero Stats */}
+          <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center group">
+                <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-purple-600 bg-clip-text text-transparent mb-2 group-hover:scale-110 transition-transform">
+                  {stat.value}
+                </div>
+                <div className="text-sm lg:text-base text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-1">{stat.label}</div>
+                <div className="text-xs lg:text-sm text-lawbot-emerald-600 dark:text-lawbot-emerald-400 font-medium">{stat.change}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -163,14 +181,17 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      {/* Enhanced Features Section */}
+      <section className="py-20 bg-gradient-to-br from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-900 dark:to-lawbot-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <Badge className="mb-4 bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-blue-100 text-lawbot-emerald-800 dark:from-lawbot-emerald-900 dark:to-lawbot-blue-900 dark:text-lawbot-emerald-200 border-0">
+              🔧 Advanced Features
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-lawbot-slate-900 to-lawbot-blue-800 bg-clip-text text-transparent dark:from-white dark:to-lawbot-blue-400 mb-6">
               Powerful Investigation Tools
             </h2>
-            <p className="text-xl text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl lg:text-2xl text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-3xl mx-auto">
               Comprehensive features designed for modern cybercrime investigation and case management
             </p>
           </div>
@@ -179,18 +200,23 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
             {features.map((feature, index) => (
               <Card
                 key={index}
-                className="border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
+                className="card-interactive bg-white/90 dark:bg-lawbot-slate-800/90 backdrop-blur-sm border-lawbot-slate-200 dark:border-lawbot-slate-700 animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardHeader>
-                  <div className="text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-110 transition-transform">
-                    {feature.icon}
+                  <div className="p-3 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-purple-500 rounded-xl inline-flex mb-4 group-hover:scale-110 transition-transform">
+                    <div className="text-white">
+                      {feature.icon}
+                    </div>
                   </div>
-                  <CardTitle className="text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white group-hover:text-lawbot-blue-600 dark:group-hover:text-lawbot-blue-400 transition-colors">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-gray-600 dark:text-slate-400">{feature.description}</CardDescription>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base leading-relaxed">
+                    {feature.description}
+                  </CardDescription>
                 </CardContent>
               </Card>
             ))}
@@ -198,17 +224,17 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
         </div>
       </section>
 
-      {/* AI Predictive Section */}
-      <section className="py-20 bg-white dark:bg-slate-800">
+      {/* Enhanced AI Predictive Section */}
+      <section className="py-20 bg-white dark:bg-lawbot-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 dark:from-purple-900 dark:to-pink-900 dark:text-purple-200 border-0">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <Badge className="mb-6 bg-gradient-to-r from-lawbot-purple-100 to-lawbot-pink-100 text-lawbot-purple-800 dark:from-lawbot-purple-900 dark:to-lawbot-pink-900 dark:text-lawbot-purple-200 border-0 px-6 py-2 text-sm font-semibold">
               🤖 AI-Powered Intelligence
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-lawbot-purple-600 via-lawbot-pink-600 to-lawbot-purple-700 bg-clip-text text-transparent mb-6">
               Predictive Case Analysis
             </h2>
-            <p className="text-xl text-gray-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
+            <p className="text-xl lg:text-2xl text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-3xl mx-auto mb-8">
               Our AI system automatically analyzes reports, assigns priorities, and suggests action plans
             </p>
           </div>

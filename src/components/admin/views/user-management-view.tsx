@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,39 +40,122 @@ export function UserManagementView() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h2>
-          <p className="text-gray-600 dark:text-slate-400">Manage PNP officers and client accounts</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+            User Management
+          </h2>
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+            Manage PNP officers and client accounts across the platform
+          </p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" className="btn-modern">
+            <Settings className="h-4 w-4 mr-2" />
+            Bulk Actions
+          </Button>
+          <Button className="btn-gradient">
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="officers" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="officers">PNP Officers</TabsTrigger>
-          <TabsTrigger value="clients">Client Accounts</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
+      {/* User Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+        <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Officers</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{mockOfficers.length}</p>
+              </div>
+              <div className="p-3 bg-lawbot-blue-500 rounded-lg">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active Officers</p>
+                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{mockOfficers.length}</p>
+              </div>
+              <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Client Accounts</p>
+                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{mockClients.length}</p>
+              </div>
+              <div className="p-3 bg-lawbot-purple-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Pending Reviews</p>
+                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">3</p>
+              </div>
+              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="officers" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl">
+          <TabsTrigger value="officers" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+            👮 PNP Officers
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
+            👥 Client Accounts
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
+            🔐 Permissions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="officers">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>PNP Officers</CardTitle>
-                  <CardDescription>Manage officer accounts and unit assignments</CardDescription>
+                  <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center">
+                    <Shield className="h-6 w-6 text-lawbot-blue-500 mr-3" />
+                    PNP Officers
+                  </CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Manage officer accounts and unit assignments
+                  </CardDescription>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input placeholder="Search officers..." className="pl-10 w-64" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
+                    <Input 
+                      placeholder="Search officers..." 
+                      className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" 
+                    />
                   </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button className="btn-gradient">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Officer
                   </Button>
@@ -80,223 +163,346 @@ export function UserManagementView() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Officer</TableHead>
-                    <TableHead>Badge Number</TableHead>
-                    <TableHead>Specialized Unit</TableHead>
-                    <TableHead>Active Cases</TableHead>
-                    <TableHead>Resolved Cases</TableHead>
-                    <TableHead>Success Rate</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockOfficers.map((officer) => (
-                    <TableRow key={officer.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={`/placeholder.svg?height=32&width=32`} />
-                            <AvatarFallback>
-                              {officer.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{officer.name}</p>
-                            <p className="text-sm text-gray-500">officer@pnp.gov.ph</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{officer.badge}</TableCell>
-                      <TableCell className="max-w-xs truncate">{officer.unit}</TableCell>
-                      <TableCell>{officer.cases - officer.resolved}</TableCell>
-                      <TableCell>{officer.resolved}</TableCell>
-                      <TableCell>
-                        <span className="text-green-600 font-medium">
-                          {Math.round((officer.resolved / officer.cases) * 100)}%
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table className="table-modern">
+                  <TableHeader>
+                    <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Badge Number</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Specialized Unit</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Active Cases</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Resolved Cases</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Success Rate</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {mockOfficers.map((officer, index) => (
+                      <TableRow 
+                        key={officer.id} 
+                        className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-10 w-10 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
+                              <AvatarImage src={`/placeholder.svg?height=40&width=40`} />
+                              <AvatarFallback className="bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-semibold">
+                                {officer.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold text-lawbot-slate-900 dark:text-white">{officer.name}</p>
+                              <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.rank}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono">
+                            {officer.badge}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-xs">
+                            <p className="font-medium text-lawbot-slate-900 dark:text-white truncate">{officer.unit}</p>
+                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.region}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                              {officer.cases - officer.resolved}
+                            </span>
+                            <div className="w-2 h-2 bg-lawbot-amber-500 rounded-full animate-pulse" />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                              {officer.resolved}
+                            </span>
+                            <div className="w-2 h-2 bg-lawbot-emerald-500 rounded-full" />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-lg font-bold ${
+                              Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'text-lawbot-emerald-600' :
+                              Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'text-lawbot-amber-600' :
+                              'text-lawbot-red-600'
+                            }`}>
+                              {Math.round((officer.resolved / officer.cases) * 100)}%
+                            </span>
+                            <div className={`w-2 h-2 rounded-full ${
+                              Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'bg-lawbot-emerald-500' :
+                              Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'bg-lawbot-amber-500' :
+                              'bg-lawbot-red-500'
+                            }`} />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                            ✅ Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
+                              <Edit className="h-4 w-4 text-lawbot-blue-500" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
+                              <Trash2 className="h-4 w-4 text-lawbot-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="clients">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Client Accounts</CardTitle>
-                  <CardDescription>Monitor and manage client accounts from mobile app</CardDescription>
+                  <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center">
+                    <Users className="h-6 w-6 text-lawbot-purple-500 mr-3" />
+                    Client Accounts
+                  </CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Monitor and manage client accounts from mobile app
+                  </CardDescription>
                 </div>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input placeholder="Search clients..." className="pl-10 w-64" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
+                  <Input 
+                    placeholder="Search clients..." 
+                    className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
+                  />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Cases Submitted</TableHead>
-                    <TableHead>Account Status</TableHead>
-                    <TableHead>Last Activity</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {client.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-sm text-gray-500">
-                              Client ID: CLI-{client.id.toString().padStart(3, "0")}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm">
-                            <Mail className="h-3 w-3 mr-2 text-gray-400" />
-                            {client.email}
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <Phone className="h-3 w-3 mr-2 text-gray-400" />
-                            {client.phone}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{client.cases}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            client.status === "active"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                          }
-                        >
-                          {client.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>2 days ago</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <User className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table className="table-modern">
+                  <TableHeader>
+                    <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Client</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Contact</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Cases Submitted</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Account Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Last Activity</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {mockClients.map((client, index) => (
+                      <TableRow 
+                        key={client.id} 
+                        className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-10 w-10 ring-2 ring-lawbot-purple-200 dark:ring-lawbot-purple-800">
+                              <AvatarFallback className="bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 text-white font-semibold">
+                                {client.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold text-lawbot-slate-900 dark:text-white">{client.name}</p>
+                              <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                                👤 CLI-{client.id.toString().padStart(3, "0")}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-2">
+                            <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                              <Mail className="h-4 w-4 mr-2 text-lawbot-blue-500" />
+                              {client.email}
+                            </div>
+                            <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                              <Phone className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
+                              {client.phone}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                              {client.cases}
+                            </span>
+                            <span className="text-xs text-lawbot-slate-500">reports</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              client.status === "active"
+                                ? "bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800"
+                                : "bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-900/20 dark:to-lawbot-slate-800/20 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800"
+                            }
+                          >
+                            {client.status === "active" ? "✅" : "💤"} {client.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                            🕒 2 days ago
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
+                              <User className="h-4 w-4 text-lawbot-blue-500" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-emerald-50 dark:hover:bg-lawbot-emerald-900/20">
+                              <Edit className="h-4 w-4 text-lawbot-emerald-500" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
+                              <Trash2 className="h-4 w-4 text-lawbot-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="permissions">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
               <CardHeader>
-                <CardTitle>Admin Permissions</CardTitle>
-                <CardDescription>System administrator access levels</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Admin Permissions</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">System administrator access levels</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5 text-blue-600" />
+                      <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">Full System Access</p>
-                        <p className="text-sm text-gray-500">Complete administrative control</p>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Full System Access</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Complete administrative control</p>
                       </div>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">Enabled</Badge>
+                    <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
+                      ✅ Enabled
+                    </Badge>
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-3">
-                      <User className="h-5 w-5 text-green-600" />
+                      <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">User Management</p>
-                        <p className="text-sm text-gray-500">Create, edit, delete users</p>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">User Management</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Create, edit, delete users</p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">Enabled</Badge>
+                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                      ✅ Enabled
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                        <Settings className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">System Configuration</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Modify system settings and preferences</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100 text-lawbot-purple-700 border border-lawbot-purple-200 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800">
+                      ✅ Enabled
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
               <CardHeader>
-                <CardTitle>Officer Permissions</CardTitle>
-                <CardDescription>PNP officer access levels</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Officer Permissions</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">PNP officer access levels</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5 text-amber-600" />
+                      <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">Case Access</p>
-                        <p className="text-sm text-gray-500">View and manage assigned cases</p>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Case Access</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">View and manage assigned cases</p>
                       </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-800">Limited</Badge>
+                    <Badge className="bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 dark:text-lawbot-amber-300 dark:border-lawbot-amber-800">
+                      ⚠️ Limited
+                    </Badge>
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
                     <div className="flex items-center space-x-3">
-                      <User className="h-5 w-5 text-gray-600" />
+                      <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">Evidence Management</p>
-                        <p className="text-sm text-gray-500">View and analyze evidence files</p>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Evidence Management</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">View and analyze evidence files</p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">Enabled</Badge>
+                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                      ✅ Enabled
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                        <Activity className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Status Updates</p>
+                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Update case status and add notes</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                      ✅ Enabled
+                    </Badge>
                   </div>
                 </div>
               </CardContent>

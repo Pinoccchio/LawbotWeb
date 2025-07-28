@@ -1,6 +1,6 @@
 "use client"
 
-import { Shield, Bell, Database, Cpu, Globe, Save } from "lucide-react"
+import { Shield, Bell, Database, Cpu, Globe, Save, Settings, Zap, Lock, Activity } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,40 +12,62 @@ import { Textarea } from "@/components/ui/textarea"
 
 export function SystemSettingsView() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">System Settings</h2>
-          <p className="text-gray-600 dark:text-slate-400">Configure system parameters and AI settings</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-purple-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+            System Settings
+          </h2>
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+            Configure system parameters, AI settings, and security protocols
+          </p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" className="btn-modern">
+            <Settings className="h-4 w-4 mr-2" />
+            Reset to Defaults
+          </Button>
+          <Button className="btn-gradient">
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="ai" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="ai">AI Configuration</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
+      <Tabs defaultValue="ai" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-4">
+          <TabsTrigger value="ai" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+            🤖 AI Configuration
+          </TabsTrigger>
+          <TabsTrigger value="security" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
+            🔒 Security
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
+            🔔 Notifications
+          </TabsTrigger>
+          <TabsTrigger value="system" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
+            ⚙️ System
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="ai">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Cpu className="h-5 w-5" />
-                  <span>Gemini AI Configuration</span>
-                </CardTitle>
-                <CardDescription>Configure AI-powered case analysis and routing</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                    <Cpu className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Gemini AI Configuration</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Configure AI-powered case analysis and routing</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="api-key">Gemini API Key</Label>
-                  <Input id="api-key" type="password" placeholder="Enter your Gemini API key" />
+                  <Label htmlFor="api-key" className="text-lawbot-slate-700 dark:text-lawbot-slate-300 font-medium">🔑 Gemini API Key</Label>
+                  <Input id="api-key" type="password" placeholder="Enter your Gemini API key" className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="model">AI Model</Label>
@@ -75,10 +97,17 @@ export function SystemSettingsView() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
               <CardHeader>
-                <CardTitle>Risk Scoring Parameters</CardTitle>
-                <CardDescription>Configure AI risk assessment thresholds</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                    <Zap className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Risk Scoring Parameters</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Configure AI risk assessment thresholds</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -118,20 +147,27 @@ export function SystemSettingsView() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
               <CardHeader>
-                <CardTitle>AI Performance Monitoring</CardTitle>
-                <CardDescription>Monitor and optimize AI system performance</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">AI Performance Monitoring</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Monitor and optimize AI system performance</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">98.5%</div>
-                    <div className="text-sm text-gray-500">Classification Accuracy</div>
+                  <div className="text-center p-4 bg-lawbot-emerald-50 dark:bg-lawbot-emerald-900/20 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl">
+                    <div className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ 98.5%</div>
+                    <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">Classification Accuracy</div>
                   </div>
-                  <div className="text-center p-3 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">1.2s</div>
-                    <div className="text-sm text-gray-500">Avg Response Time</div>
+                  <div className="text-center p-4 bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border border-lawbot-blue-200 dark:border-lawbot-blue-800 rounded-xl">
+                    <div className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⚡ 1.2s</div>
+                    <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">Avg Response Time</div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
@@ -145,10 +181,17 @@ export function SystemSettingsView() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-modern bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
               <CardHeader>
-                <CardTitle>Predictive Analytics</CardTitle>
-                <CardDescription>Configure forecasting and prediction models</CardDescription>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Predictive Analytics</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Configure forecasting and prediction models</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">

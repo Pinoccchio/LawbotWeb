@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react"
+import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Progress } from "@/components/ui/progress"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
@@ -38,233 +39,398 @@ export function CaseManagementView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Case Management</h2>
-          <p className="text-gray-600 dark:text-slate-400">Manage and monitor all cybercrime cases</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-purple-600 bg-clip-text text-transparent">
+            Case Management
+          </h2>
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+            Manage and monitor all cybercrime cases across specialized units
+          </p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Assign Case
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" className="btn-modern">
+            <Filter className="h-4 w-4 mr-2" />
+            Advanced Filters
+          </Button>
+          <Button className="btn-gradient">
+            <Plus className="h-4 w-4 mr-2" />
+            Assign Case
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="border-slate-200 dark:border-slate-700">
+      {/* Enhanced Filters */}
+      <Card className="card-modern animate-fade-in-up border-lawbot-blue-200 dark:border-lawbot-blue-800 bg-gradient-to-r from-lawbot-blue-50/50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800">
         <CardHeader>
-          <CardTitle>Search & Filter Cases</CardTitle>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+              <Search className="h-5 w-5 text-white" />
+            </div>
+            <CardTitle className="text-lawbot-slate-900 dark:text-white">
+              Search & Filter Cases
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input placeholder="Search by case ID, title, or officer..." className="pl-10" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
+                <Input 
+                  placeholder="Search by case ID, title, or officer..." 
+                  className="pl-10 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500" 
+                />
               </div>
             </div>
             <Select>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cases</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="investigation">Under Investigation</SelectItem>
-                <SelectItem value="info">Requires More Info</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="dismissed">Dismissed</SelectItem>
+                <SelectItem value="pending">📋 Pending</SelectItem>
+                <SelectItem value="investigation">🔍 Under Investigation</SelectItem>
+                <SelectItem value="info">❓ Requires More Info</SelectItem>
+                <SelectItem value="resolved">✅ Resolved</SelectItem>
+                <SelectItem value="dismissed">❌ Dismissed</SelectItem>
               </SelectContent>
             </Select>
             <Select>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500">
                 <SelectValue placeholder="Filter by priority" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="high">High Priority</SelectItem>
-                <SelectItem value="medium">Medium Priority</SelectItem>
-                <SelectItem value="low">Low Priority</SelectItem>
+                <SelectItem value="high">🔴 High Priority</SelectItem>
+                <SelectItem value="medium">🟡 Medium Priority</SelectItem>
+                <SelectItem value="low">🟢 Low Priority</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              More Filters
-            </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" className="btn-modern flex-1">
+                <Filter className="h-4 w-4 mr-2" />
+                More Filters
+              </Button>
+            </div>
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+              <div className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                {mockCases.length}
+              </div>
+              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Cases</p>
+            </div>
+            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+              <div className="text-xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
+                {mockCases.filter(c => c.priority === 'high').length}
+              </div>
+              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">High Priority</p>
+            </div>
+            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+              <div className="text-xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                {mockCases.filter(c => c.status === 'Under Investigation').length}
+              </div>
+              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">In Progress</p>
+            </div>
+            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+              <div className="text-xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                {Math.round(mockCases.reduce((acc, c) => acc + c.riskScore, 0) / mockCases.length)}
+              </div>
+              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Avg Risk Score</p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cases Table */}
-      <Card className="border-slate-200 dark:border-slate-700">
+      {/* Enhanced Cases Table */}
+      <Card className="card-modern animate-slide-in-left">
         <CardHeader>
-          <CardTitle>All Cases</CardTitle>
-          <CardDescription>Complete list of cybercrime cases in the system</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">
+                All Cases
+              </CardTitle>
+              <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                Complete list of cybercrime cases in the system
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" className="btn-modern">
+                Export
+              </Button>
+              <Button variant="outline" size="sm" className="btn-modern">
+                Bulk Actions
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Case ID</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Officer</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Risk Score</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Evidence</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockCases.map((case_) => (
-                <TableRow key={case_.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <TableCell className="font-medium">{case_.id}</TableCell>
-                  <TableCell className="max-w-xs truncate">{case_.title}</TableCell>
-                  <TableCell>
-                    <Badge className={getPriorityColor(case_.priority)}>{case_.priority}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(case_.status)}>{case_.status}</Badge>
-                  </TableCell>
-                  <TableCell>{case_.officer}</TableCell>
-                  <TableCell className="max-w-xs truncate">{case_.unit}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`font-medium ${case_.riskScore >= 80 ? "text-red-500" : case_.riskScore >= 50 ? "text-amber-500" : "text-emerald-500"}`}
-                    >
-                      {case_.riskScore}
-                    </span>
-                  </TableCell>
-                  <TableCell>{case_.date}</TableCell>
-                  <TableCell>{case_.evidence} files</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleViewDetails(case_)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus(case_)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Update Status
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleViewEvidence(case_)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Evidence
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Reassign Officer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Filter className="mr-2 h-4 w-4" />
-                          Update Priority
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Archive Case
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table className="table-modern">
+              <TableHeader>
+                <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Case ID</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Title</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Priority</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Status</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Unit</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Risk Score</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Date</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Evidence</TableHead>
+                  <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {mockCases.map((case_, index) => (
+                  <TableRow 
+                    key={case_.id} 
+                    className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <TableCell className="font-semibold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                      {case_.id}
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      <div className="truncate font-medium text-lawbot-slate-900 dark:text-white">
+                        {case_.title}
+                      </div>
+                      <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                        {case_.crimeType}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getPriorityColor(case_.priority)} text-xs font-medium`}>
+                        {case_.priority === 'high' ? '🔴' : case_.priority === 'medium' ? '🟡' : '🟢'} {case_.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getStatusColor(case_.status)} text-xs font-medium`}>
+                        {case_.status === 'Pending' ? '📋' : 
+                         case_.status === 'Under Investigation' ? '🔍' :
+                         case_.status === 'Resolved' ? '✅' :
+                         case_.status === 'Dismissed' ? '❌' : '❓'} 
+                        {case_.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-lawbot-slate-900 dark:text-white">
+                        {case_.officer}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-xs truncate">
+                        {case_.unit}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`font-bold text-sm ${
+                            case_.riskScore >= 80 ? "text-lawbot-red-500" : 
+                            case_.riskScore >= 50 ? "text-lawbot-amber-500" : 
+                            "text-lawbot-emerald-500"
+                          }`}
+                        >
+                          {case_.riskScore}
+                        </span>
+                        <div className={`w-2 h-2 rounded-full ${
+                          case_.riskScore >= 80 ? "bg-lawbot-red-500" : 
+                          case_.riskScore >= 50 ? "bg-lawbot-amber-500" : 
+                          "bg-lawbot-emerald-500"
+                        }`} />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                      {case_.date}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <span className="font-medium text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                          {case_.evidence}
+                        </span>
+                        <span className="text-xs text-lawbot-slate-500">files</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="btn-icon h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-48">
+                          <DropdownMenuItem onClick={() => handleViewDetails(case_)} className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4 text-lawbot-blue-500" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateStatus(case_)} className="cursor-pointer">
+                            <Edit className="mr-2 h-4 w-4 text-lawbot-emerald-500" />
+                            Update Status
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewEvidence(case_)} className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4 text-lawbot-purple-500" />
+                            View Evidence
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Plus className="mr-2 h-4 w-4 text-lawbot-amber-500" />
+                            Reassign Officer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Filter className="mr-2 h-4 w-4 text-lawbot-blue-500" />
+                            Update Priority
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer text-lawbot-red-600 focus:text-lawbot-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Archive Case
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Case Statistics */}
+      {/* Enhanced Case Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-slate-200 dark:border-slate-700">
+        {/* Case Distribution */}
+        <Card className="card-modern animate-slide-in-left bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
           <CardHeader>
-            <CardTitle>Case Distribution</CardTitle>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lawbot-slate-900 dark:text-white">Case Distribution</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm">Pending</span>
-                <span className="text-sm font-medium">156</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Under Investigation</span>
-                <span className="text-sm font-medium">892</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Requires More Info</span>
-                <span className="text-sm font-medium">67</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Resolved</span>
-                <span className="text-sm font-medium">1,023</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Dismissed</span>
-                <span className="text-sm font-medium">109</span>
-              </div>
+            <div className="space-y-4">
+              {[
+                { label: "📋 Pending", value: mockCases.filter(c => c.status === 'Pending').length, color: "amber" },
+                { label: "🔍 Under Investigation", value: mockCases.filter(c => c.status === 'Under Investigation').length, color: "blue" },
+                { label: "❓ Requires More Info", value: mockCases.filter(c => c.status === 'Requires More Info').length, color: "orange" },
+                { label: "✅ Resolved", value: mockCases.filter(c => c.status === 'Resolved').length, color: "emerald" },
+                { label: "❌ Dismissed", value: mockCases.filter(c => c.status === 'Dismissed').length, color: "slate" }
+              ].map((item, index) => (
+                <div key={item.label} className="flex justify-between items-center animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                  <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                    {item.label}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-sm font-bold ${
+                      item.color === 'amber' ? 'text-lawbot-amber-600' :
+                      item.color === 'blue' ? 'text-lawbot-blue-600' :
+                      item.color === 'orange' ? 'text-orange-600' :
+                      item.color === 'emerald' ? 'text-lawbot-emerald-600' :
+                      'text-lawbot-slate-600'
+                    }`}>
+                      {item.value}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-slate-700">
+        {/* Priority Breakdown */}
+        <Card className="card-modern animate-scale-in bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800" style={{ animationDelay: '100ms' }}>
           <CardHeader>
-            <CardTitle>Priority Breakdown</CardTitle>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-lawbot-purple-500 to-lawbot-pink-500 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lawbot-slate-900 dark:text-white">Priority Breakdown</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">High Priority</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm font-medium">89</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Medium Priority</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                  <span className="text-sm font-medium">234</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Low Priority</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                  <span className="text-sm font-medium">456</span>
-                </div>
-              </div>
+            <div className="space-y-4">
+              {[
+                { label: "High Priority", value: mockCases.filter(c => c.priority === 'high').length, color: "red", icon: "🔴" },
+                { label: "Medium Priority", value: mockCases.filter(c => c.priority === 'medium').length, color: "amber", icon: "🟡" },
+                { label: "Low Priority", value: mockCases.filter(c => c.priority === 'low').length, color: "emerald", icon: "🟢" }
+              ].map((item, index) => {
+                const percentage = Math.round((item.value / mockCases.length) * 100)
+                return (
+                  <div key={item.label} className="space-y-2 animate-fade-in-up" style={{ animationDelay: `${(index + 3) * 100}ms` }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                        {item.icon} {item.label}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm font-bold ${
+                          item.color === 'red' ? 'text-lawbot-red-600' :
+                          item.color === 'amber' ? 'text-lawbot-amber-600' :
+                          'text-lawbot-emerald-600'
+                        }`}>
+                          {item.value}
+                        </span>
+                        <span className="text-xs text-lawbot-slate-500">({percentage}%)</span>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={percentage} 
+                      className={`h-2 ${
+                        item.color === 'red' ? 'bg-lawbot-red-100 dark:bg-lawbot-red-900' :
+                        item.color === 'amber' ? 'bg-lawbot-amber-100 dark:bg-lawbot-amber-900' :
+                        'bg-lawbot-emerald-100 dark:bg-lawbot-emerald-900'
+                      }`}
+                    />
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-slate-700">
+        {/* Recent Activity */}
+        <Card className="card-modern animate-slide-in-right bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800" style={{ animationDelay: '200ms' }}>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lawbot-slate-900 dark:text-white">Recent Activity</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="text-sm">
-                <span className="font-medium">CYB-2025-001</span> status updated to{" "}
-                <span className="text-blue-600">Under Investigation</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">CYB-2025-002</span> assigned to{" "}
-                <span className="text-blue-600">Officer Chen</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">CYB-2025-003</span> priority changed to{" "}
-                <span className="text-red-600">High</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">CYB-2025-004</span> evidence uploaded by{" "}
-                <span className="text-blue-600">Officer Rodriguez</span>
-              </div>
+              {[
+                { case: "CYB-2025-001", action: "status updated to", value: "Under Investigation", color: "blue", icon: "🔍" },
+                { case: "CYB-2025-002", action: "assigned to", value: "Officer Chen", color: "emerald", icon: "👮" },
+                { case: "CYB-2025-003", action: "priority changed to", value: "High", color: "red", icon: "⚠️" },
+                { case: "CYB-2025-004", action: "evidence uploaded by", value: "Officer Rodriguez", color: "purple", icon: "📎" },
+                { case: "CYB-2025-005", action: "investigation completed", value: "Resolved", color: "emerald", icon: "✅" }
+              ].map((activity, index) => (
+                <div key={activity.case} className="text-sm animate-fade-in-up" style={{ animationDelay: `${(index + 6) * 100}ms` }}>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-xs mt-0.5">{activity.icon}</span>
+                    <div className="flex-1">
+                      <span className="font-semibold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                        {activity.case}
+                      </span>
+                      <span className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mx-1">
+                        {activity.action}
+                      </span>
+                      <span className={`font-medium ${
+                        activity.color === 'blue' ? 'text-lawbot-blue-600' :
+                        activity.color === 'emerald' ? 'text-lawbot-emerald-600' :
+                        activity.color === 'red' ? 'text-lawbot-red-600' :
+                        'text-lawbot-purple-600'
+                      }`}>
+                        {activity.value}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

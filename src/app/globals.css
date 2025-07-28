@@ -66,15 +66,70 @@
   }
 }
 
-/* Modern color scheme improvements */
+/* Modern LawBot Design System */
 .gradient-bg {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.gradient-bg-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.gradient-bg-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.gradient-bg-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-effect-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Modern Card Styles */
+.card-modern {
+  @apply bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-card hover:shadow-card-hover transition-all duration-300;
+}
+
+.card-interactive {
+  @apply card-modern hover:-translate-y-1 hover:shadow-xl cursor-pointer;
+}
+
+.card-glow {
+  @apply shadow-glow hover:shadow-glow-lg transition-all duration-300;
+}
+
+/* Enhanced Background Patterns */
+.bg-pattern-dots {
+  background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-pattern-grid {
+  background-image: linear-gradient(rgba(203, 213, 225, 0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(203, 213, 225, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-pattern-hero {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.bg-pattern-hero-dark {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 /* Enhanced priority colors */
@@ -151,19 +206,82 @@
 
 /* Modern button gradients */
 .btn-gradient {
-  @apply bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200;
+  @apply bg-gradient-to-r from-lawbot-blue-600 to-lawbot-blue-700 hover:from-lawbot-blue-700 hover:to-lawbot-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
 }
 
 .btn-gradient-success {
-  @apply bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200;
+  @apply bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-emerald-700 hover:from-lawbot-emerald-700 hover:to-lawbot-emerald-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
 }
 
 .btn-gradient-warning {
-  @apply bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200;
+  @apply bg-gradient-to-r from-lawbot-amber-600 to-lawbot-amber-700 hover:from-lawbot-amber-700 hover:to-lawbot-amber-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
 }
 
 .btn-gradient-danger {
-  @apply bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white shadow-lg hover:shadow-xl transition-all duration-200;
+  @apply bg-gradient-to-r from-lawbot-red-600 to-lawbot-red-700 hover:from-lawbot-red-700 hover:to-lawbot-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105;
+}
+
+.btn-modern {
+  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-105;
+}
+
+.btn-icon {
+  @apply p-2 rounded-lg transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-700;
+}
+
+/* Enhanced Stats Components */
+.stats-card {
+  @apply bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
+}
+
+.stats-value {
+  @apply text-3xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-blue-700 bg-clip-text text-transparent;
+}
+
+.stats-change-positive {
+  @apply text-lawbot-emerald-600 font-medium text-sm;
+}
+
+.stats-change-negative {
+  @apply text-lawbot-red-600 font-medium text-sm;
+}
+
+/* Priority Indicators */
+.priority-indicator {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.priority-high-indicator {
+  @apply priority-indicator bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200;
+}
+
+.priority-medium-indicator {
+  @apply priority-indicator bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200;
+}
+
+.priority-low-indicator {
+  @apply priority-indicator bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200;
+}
+
+/* Status Badges */
+.status-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-pending {
+  @apply status-badge bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200;
+}
+
+.status-investigation {
+  @apply status-badge bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200;
+}
+
+.status-resolved {
+  @apply status-badge bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200;
+}
+
+.status-dismissed {
+  @apply status-badge bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200;
 }
 
 /* Enhanced table styles */
@@ -183,6 +301,66 @@
   @apply bg-slate-50 dark:bg-slate-800/50;
 }
 
+/* Advanced Micro-Animations */
+.hover-glow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.text-glow {
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.border-glow {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+}
+
+.card-float {
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.card-float:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Interactive Elements */
+.interactive-scale {
+  transition: transform 0.2s ease;
+}
+
+.interactive-scale:hover {
+  transform: scale(1.05);
+}
+
+.interactive-scale:active {
+  transform: scale(0.95);
+}
+
+/* Gradient Text Animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+  background-size: 400% 400%;
+  animation: gradient-shift 3s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .mobile-padding {
@@ -195,6 +373,19 @@
 
   .mobile-grid {
     @apply grid-cols-1;
+  }
+
+  /* Mobile-specific animations */
+  .card-float:hover {
+    transform: translateY(-4px) scale(1.01);
+  }
+
+  .stats-card {
+    @apply p-4;
+  }
+
+  .animate-fade-in-up {
+    animation-duration: 0.6s;
   }
 }
 

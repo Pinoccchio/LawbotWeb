@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, AlertTriangle, CheckCircle, Info, X, Eye, Trash2, Shield } from "lucide-react"
+import { Bell, AlertTriangle, CheckCircle, Info, X, Eye, Trash2, Shield, Activity, Settings, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -114,107 +114,165 @@ export function NotificationsView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-          <p className="text-gray-600 dark:text-slate-400">System alerts and case notifications</p>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+            Notifications
+          </h2>
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+            System alerts, case notifications, and security monitoring
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">Mark All Read</Button>
-          <Button variant="outline">
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" className="btn-modern">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+          <Button variant="outline" className="btn-modern">
+            ✓ Mark All Read
+          </Button>
+          <Button variant="outline" className="btn-modern text-lawbot-red-600 border-lawbot-red-300 hover:bg-lawbot-red-50">
             <Trash2 className="h-4 w-4 mr-2" />
             Clear All
           </Button>
         </div>
       </div>
 
-      {/* Notification Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unread</CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Notifications pending</p>
+      {/* Enhanced Notification Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+        <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Unread</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">12</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📨 Notifications pending</p>
+              </div>
+              <div className="p-3 bg-lawbot-blue-500 rounded-lg">
+                <Bell className="h-6 w-6 text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Priority</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">3</div>
-            <p className="text-xs text-muted-foreground">Urgent alerts</p>
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">High Priority</p>
+                <p className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">3</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">🚨 Urgent alerts</p>
+              </div>
+              <div className="p-3 bg-lawbot-red-500 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Alerts</CardTitle>
-            <Info className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">7</div>
-            <p className="text-xs text-muted-foreground">System notifications</p>
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">System Alerts</p>
+                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">7</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">🔧 System notifications</p>
+              </div>
+              <div className="p-3 bg-lawbot-purple-500 rounded-lg">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">45</div>
-            <p className="text-xs text-muted-foreground">This week</p>
+
+        <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Resolved</p>
+                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">45</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">✅ This week</p>
+              </div>
+              <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="all">All Notifications</TabsTrigger>
-          <TabsTrigger value="case">Case Alerts</TabsTrigger>
-          <TabsTrigger value="system">System Alerts</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+      <Tabs defaultValue="all" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-4">
+          <TabsTrigger value="all" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+            📬 All Notifications
+          </TabsTrigger>
+          <TabsTrigger value="case" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
+            📁 Case Alerts
+          </TabsTrigger>
+          <TabsTrigger value="system" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
+            🔧 System Alerts
+          </TabsTrigger>
+          <TabsTrigger value="security" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
+            🔒 Security
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>All Notifications</CardTitle>
-              <CardDescription>Complete list of system and case notifications</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                  <Bell className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">All Notifications</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Complete list of system and case notifications</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {notifications.map((notification) => (
+                {notifications.map((notification, index) => (
                   <div
                     key={notification.id}
-                    className={`flex items-start space-x-4 p-4 rounded-lg border ${
-                      !notification.read ? notification.bgColor : "bg-gray-50 dark:bg-slate-800"
+                    className={`flex items-start space-x-4 p-6 rounded-xl border transition-all duration-200 hover:shadow-md animate-fade-in-up ${
+                      !notification.read 
+                        ? `${notification.bgColor} border-current shadow-sm` 
+                        : "bg-lawbot-slate-50 dark:bg-lawbot-slate-800 border-lawbot-slate-200 dark:border-lawbot-slate-700"
                     }`}
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className={`${notification.color} mt-1`}>{notification.icon}</div>
+                    <div className={`${notification.color} mt-1 p-2 rounded-lg ${
+                      !notification.read ? 'bg-white/80 dark:bg-black/20' : 'bg-lawbot-slate-200 dark:bg-lawbot-slate-700'
+                    }`}>
+                      {notification.icon}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className={`font-medium ${!notification.read ? "font-semibold" : ""}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className={`font-semibold text-lawbot-slate-900 dark:text-white ${
+                          !notification.read ? "" : "text-lawbot-slate-600 dark:text-lawbot-slate-400"
+                        }`}>
                           {notification.title}
                         </h4>
                         <div className="flex items-center space-x-2">
-                          {!notification.read && <div className="w-2 h-2 bg-blue-600 rounded-full"></div>}
-                          <span className="text-xs text-gray-500">{notification.time}</span>
+                          {!notification.read && <div className="w-3 h-3 bg-lawbot-blue-500 rounded-full animate-pulse"></div>}
+                          <div className="flex items-center text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {notification.time}
+                          </div>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-slate-400">{notification.message}</p>
+                      <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 leading-relaxed">
+                        {notification.message}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
+                        <Eye className="h-4 w-4 text-lawbot-blue-500" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <X className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
+                        <X className="h-4 w-4 text-lawbot-red-500" />
                       </Button>
                     </div>
                   </div>
@@ -225,10 +283,17 @@ export function NotificationsView() {
         </TabsContent>
 
         <TabsContent value="case">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>Case Notifications</CardTitle>
-              <CardDescription>Notifications related to case management and investigations</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">Case Notifications</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Notifications related to case management and investigations</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -259,10 +324,17 @@ export function NotificationsView() {
         </TabsContent>
 
         <TabsContent value="system">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>System Alerts</CardTitle>
-              <CardDescription>System performance and operational notifications</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">System Alerts</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">System performance and operational notifications</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -289,10 +361,17 @@ export function NotificationsView() {
         </TabsContent>
 
         <TabsContent value="security">
-          <Card>
+          <Card className="card-modern">
             <CardHeader>
-              <CardTitle>Security Alerts</CardTitle>
-              <CardDescription>Security-related notifications and threats</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-lawbot-red-500 rounded-lg">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lawbot-slate-900 dark:text-white">Security Alerts</CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Security-related notifications and threats</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

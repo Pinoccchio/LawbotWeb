@@ -38,30 +38,30 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case "high":
-        return "bg-gradient-to-r from-red-500 to-red-600 text-white"
+        return "bg-gradient-to-r from-lawbot-red-500 to-lawbot-red-600 text-white border-0"
       case "medium":
-        return "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+        return "bg-gradient-to-r from-lawbot-amber-500 to-lawbot-amber-600 text-white border-0"
       case "low":
-        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+        return "bg-gradient-to-r from-lawbot-emerald-500 to-lawbot-emerald-600 text-white border-0"
       default:
-        return "bg-gray-500 text-white"
+        return "bg-gradient-to-r from-lawbot-slate-500 to-lawbot-slate-600 text-white border-0"
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "pending":
-        return "bg-gradient-to-r from-yellow-500 to-amber-500 text-white"
-      case "investigating":
-        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-      case "evidence review":
-        return "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
+        return "bg-gradient-to-r from-lawbot-amber-500 to-lawbot-amber-600 text-white border-0"
+      case "under investigation":
+        return "bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white border-0"
+      case "requires more info":
+        return "bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 text-white border-0"
       case "resolved":
-        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-      case "closed":
-        return "bg-gradient-to-r from-gray-500 to-gray-600 text-white"
+        return "bg-gradient-to-r from-lawbot-emerald-500 to-lawbot-emerald-600 text-white border-0"
+      case "dismissed":
+        return "bg-gradient-to-r from-lawbot-slate-500 to-lawbot-slate-600 text-white border-0"
       default:
-        return "bg-gray-500 text-white"
+        return "bg-gradient-to-r from-lawbot-slate-500 to-lawbot-slate-600 text-white border-0"
     }
   }
 
@@ -100,111 +100,148 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-800 shadow-2xl">
-        <CardHeader className="relative border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-4 top-4 h-8 w-8 p-0">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
+        <CardHeader className="relative border-b bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-4 top-4 h-8 w-8 p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600">
             <X className="h-4 w-4" />
           </Button>
           <div className="flex items-start justify-between pr-12">
-            <div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Case #{caseData.id}</CardTitle>
-              <CardDescription className="text-lg mt-1">{caseData.title}</CardDescription>
+            <div className="animate-fade-in-up">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
+                📁 Case #{caseData.id}
+              </CardTitle>
+              <CardDescription className="text-lg mt-2 text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">
+                {caseData.title}
+              </CardDescription>
             </div>
-            <div className="flex flex-col items-end space-y-2">
-              <Badge className={getPriorityColor(caseData.priority)}>{caseData.priority} Priority</Badge>
-              <Badge className={getStatusColor(caseData.status)}>{caseData.status}</Badge>
+            <div className="flex flex-col items-end space-y-3 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+              <Badge className={`${getPriorityColor(caseData.priority)} text-sm font-semibold px-3 py-1 shadow-sm`}>
+                {caseData.priority === 'high' ? '🔴' : caseData.priority === 'medium' ? '🟡' : '🟢'} {caseData.priority} Priority
+              </Badge>
+              <Badge className={`${getStatusColor(caseData.status)} text-sm font-semibold px-3 py-1 shadow-sm`}>
+                {caseData.status === 'Pending' ? '📋' : 
+                 caseData.status === 'Under Investigation' ? '🔍' :
+                 caseData.status === 'Resolved' ? '✅' :
+                 caseData.status === 'Dismissed' ? '❌' : '❓'} 
+                {caseData.status}
+              </Badge>
             </div>
           </div>
         </CardHeader>
 
         <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-100 dark:bg-slate-700 m-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="ai-analysis">Predictive Analysis</TabsTrigger>
-              <TabsTrigger value="evidence">Evidence</TabsTrigger>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+                📋 Overview
+              </TabsTrigger>
+              <TabsTrigger value="ai-analysis" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
+                🧠 Predictive Analysis
+              </TabsTrigger>
+              <TabsTrigger value="evidence" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
+                📎 Evidence
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
+                🕐 Timeline
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
+                ⚡ Actions
+              </TabsTrigger>
             </TabsList>
 
             <div className="p-6">
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Case Information */}
-                  <Card>
+                  {/* Enhanced Case Information */}
+                  <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50/30 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
                     <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <FileText className="h-5 w-5" />
-                        <span>Case Information</span>
-                      </CardTitle>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                          <FileText className="h-5 w-5 text-white" />
+                        </div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">📋 Case Information</CardTitle>
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-5">
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Case Type</label>
-                          <p className="font-medium">{caseData.type}</p>
+                        <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">🏷️ Case Type</label>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.type || 'Online Banking Fraud'}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Reported Date</label>
-                          <p className="font-medium">{caseData.date}</p>
+                        <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📅 Reported Date</label>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.date}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Location</label>
-                          <p className="font-medium">{caseData.location}</p>
+                        <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📍 Location</label>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.location || 'Manila, NCR'}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Assigned Officer
-                          </label>
-                          <p className="font-medium">{caseData.officer}</p>
+                        <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">👮 Assigned Officer</label>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.officer}</p>
                         </div>
                       </div>
-                      <Separator />
-                      <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Description</label>
-                        <p className="mt-1 text-gray-700 dark:text-gray-300">{caseData.description}</p>
+                      <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
+                      <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                        <label className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2">📝 Description</label>
+                        <p className="text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
+                          {caseData.description || 'Unauthorized access to online banking account resulting in fraudulent transactions totaling ₱50,000'}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* Complainant Information */}
-                  <Card>
+                  {/* Enhanced Complainant Information */}
+                  <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50/30 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                     <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <User className="h-5 w-5" />
-                        <span>Complainant Information</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
                       <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                          <AvatarFallback>JD</AvatarFallback>
+                        <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                          <User className="h-5 w-5 text-white" />
+                        </div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">👤 Complainant Information</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      <div className="flex items-center space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                        <Avatar className="h-14 w-14 ring-4 ring-lawbot-emerald-100 dark:ring-lawbot-emerald-800">
+                          <AvatarImage src="/placeholder.svg?height=56&width=56" />
+                          <AvatarFallback className="bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600 text-white font-bold text-lg">JD</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">Juan Dela Cruz</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Primary Complainant</p>
+                          <p className="font-bold text-lg text-lawbot-slate-900 dark:text-white">Juan Dela Cruz</p>
+                          <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800 mt-1">
+                            🏅 Primary Complainant
+                          </Badge>
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex items-center space-x-3">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span>+63 917 123 4567</span>
+                        <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                            <Phone className="h-4 w-4 text-white" />
+                          </div>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">+63 917 123 4567</span>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span>juan.delacruz@email.com</span>
+                        <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                            <Mail className="h-4 w-4 text-white" />
+                          </div>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">juan.delacruz@email.com</span>
                         </div>
-                        <div className="flex items-center space-x-3">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span>Quezon City, Metro Manila</span>
+                        <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                          <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                            <MapPin className="h-4 w-4 text-white" />
+                          </div>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">Quezon City, Metro Manila</span>
                         </div>
                       </div>
-                      <Separator />
-                      <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Additional Notes</label>
-                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                      <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
+                      <div className="p-4 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-green-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-green-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                        <label className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2 flex items-center">
+                          <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
+                          📝 Additional Notes
+                        </label>
+                        <p className="text-sm text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
                           Victim is cooperative and has provided all requested documentation. Available for follow-up
                           interviews.
                         </p>
@@ -213,45 +250,60 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                   </Card>
                 </div>
 
-                {/* AI Summarizer Section */}
-                <Card className="border-purple-200 dark:border-purple-800">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
-                    <CardTitle className="flex items-center space-x-2">
-                      <Brain className="h-5 w-5 text-purple-600" />
-                      <span>AI Case Summary</span>
-                      <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                        Auto-Generated
-                      </Badge>
-                    </CardTitle>
+                {/* Enhanced AI Summarizer Section */}
+                <Card className="card-modern bg-gradient-to-br from-lawbot-purple-50/30 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                  <CardHeader className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-violet-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-violet-900/20 border-b border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                        <Brain className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
+                          🧠 AI Case Summary
+                          <Badge className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100 text-lawbot-purple-700 border border-lawbot-purple-200 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800">
+                            ✨ Auto-Generated
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                          AI-powered analysis and insights for enhanced investigation
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent className="space-y-4 pt-6">
+                  <CardContent className="space-y-6 pt-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Key Details</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                            <span className="text-sm">Financial loss estimated at ${caseData.estimatedLoss || '25,000'}</span>
+                        <h4 className="font-semibold mb-4 text-lawbot-purple-700 dark:text-lawbot-purple-300 flex items-center">
+                          <Target className="h-4 w-4 mr-2" />
+                          🎯 Key Details
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">💰 Financial loss estimated at ₱{caseData.estimatedLoss || '50,000'}</span>
                           </div>
-                          <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                            <span className="text-sm">Crime type: {caseData.crimeType || caseData.title}</span>
+                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🏷️ Crime type: {caseData.crimeType || caseData.title}</span>
                           </div>
-                          <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                            <span className="text-sm">Multiple victims potentially affected</span>
+                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">👥 Multiple victims potentially affected</span>
                           </div>
-                          <div className="flex items-start space-x-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                            <span className="text-sm">Evidence includes digital communications and transaction records</span>
+                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📎 Evidence includes digital communications and transaction records</span>
                           </div>
                         </div>
                       </div>
                       
                       <div>
-                        <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Executive Summary</h4>
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                          <p className="text-sm text-purple-800 dark:text-purple-200 leading-relaxed">
+                        <h4 className="font-semibold mb-4 text-lawbot-purple-700 dark:text-lawbot-purple-300 flex items-center">
+                          <Brain className="h-4 w-4 mr-2" />
+                          📋 Executive Summary
+                        </h4>
+                        <div className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-violet-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-violet-900/20 p-5 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                          <p className="text-sm text-lawbot-purple-800 dark:text-lawbot-purple-200 leading-relaxed">
                             This case involves a sophisticated {caseData.crimeType?.toLowerCase() || 'cybercrime'} operation targeting victims through 
                             digital channels. The perpetrator(s) used social engineering tactics to gain trust before executing the fraudulent scheme. 
                             Initial evidence suggests this may be part of a larger organized campaign with multiple victims across the region.
@@ -260,33 +312,78 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       </div>
                     </div>
 
-                    <Separator />
+                    <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
 
                     <div>
-                      <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">Immediate Action Items</h4>
-                      <div className="grid md:grid-cols-3 gap-4">
-                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-                          <h5 className="font-medium text-red-800 dark:text-red-200 text-sm mb-2">High Priority</h5>
-                          <ul className="text-xs text-red-700 dark:text-red-300 space-y-1">
-                            <li>• Contact victim within 24 hours</li>
-                            <li>• Preserve digital evidence</li>
-                            <li>• Check for similar cases</li>
+                      <h4 className="font-semibold mb-5 text-lawbot-purple-700 dark:text-lawbot-purple-300 flex items-center">
+                        <Zap className="h-4 w-4 mr-2" />
+                        ⚡ Immediate Action Items
+                      </h4>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="bg-gradient-to-br from-lawbot-red-50 to-lawbot-red-100/50 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/10 p-5 rounded-xl border border-lawbot-red-200 dark:border-lawbot-red-800 hover:shadow-lg transition-all duration-300">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="p-1 bg-lawbot-red-500 rounded-full">
+                              <AlertTriangle className="h-3 w-3 text-white" />
+                            </div>
+                            <h5 className="font-bold text-lawbot-red-800 dark:text-lawbot-red-200 text-sm">🔴 High Priority</h5>
+                          </div>
+                          <ul className="text-xs text-lawbot-red-700 dark:text-lawbot-red-300 space-y-2 font-medium">
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
+                              <span>Contact victim within 24 hours</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
+                              <span>Preserve digital evidence</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
+                              <span>Check for similar cases</span>
+                            </li>
                           </ul>
                         </div>
-                        <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <h5 className="font-medium text-amber-800 dark:text-amber-200 text-sm mb-2">Medium Priority</h5>
-                          <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
-                            <li>• Analyze transaction patterns</li>
-                            <li>• Coordinate with bank security</li>
-                            <li>• Interview witnesses</li>
+                        <div className="bg-gradient-to-br from-lawbot-amber-50 to-lawbot-amber-100/50 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/10 p-5 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="p-1 bg-lawbot-amber-500 rounded-full">
+                              <Clock className="h-3 w-3 text-white" />
+                            </div>
+                            <h5 className="font-bold text-lawbot-amber-800 dark:text-lawbot-amber-200 text-sm">🟡 Medium Priority</h5>
+                          </div>
+                          <ul className="text-xs text-lawbot-amber-700 dark:text-lawbot-amber-300 space-y-2 font-medium">
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
+                              <span>Analyze transaction patterns</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
+                              <span>Coordinate with bank security</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
+                              <span>Interview witnesses</span>
+                            </li>
                           </ul>
                         </div>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <h5 className="font-medium text-blue-800 dark:text-blue-200 text-sm mb-2">Investigation</h5>
-                          <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                            <li>• Technical analysis of devices</li>
-                            <li>• Cross-reference databases</li>
-                            <li>• Prepare legal documentation</li>
+                        <div className="bg-gradient-to-br from-lawbot-blue-50 to-lawbot-blue-100/50 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/10 p-5 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800 hover:shadow-lg transition-all duration-300">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="p-1 bg-lawbot-blue-500 rounded-full">
+                              <TrendingUp className="h-3 w-3 text-white" />
+                            </div>
+                            <h5 className="font-bold text-lawbot-blue-800 dark:text-lawbot-blue-200 text-sm">🔍 Investigation</h5>
+                          </div>
+                          <ul className="text-xs text-lawbot-blue-700 dark:text-lawbot-blue-300 space-y-2 font-medium">
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
+                              <span>Technical analysis of devices</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
+                              <span>Cross-reference databases</span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
+                              <span>Prepare legal documentation</span>
+                            </li>
                           </ul>
                         </div>
                       </div>
@@ -296,84 +393,97 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
               </TabsContent>
 
               <TabsContent value="ai-analysis" className="space-y-6">
-                <Card className="border-blue-200 dark:border-blue-800">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                    <CardTitle className="flex items-center space-x-2">
-                      <Brain className="h-5 w-5 text-blue-600" />
-                      <span>Predictive Analysis Report</span>
-                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        Confidence: {aiAnalysis.confidence}%
-                      </Badge>
-                    </CardTitle>
+                <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50/30 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                  <CardHeader className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-indigo-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-indigo-900/20 border-b border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                        <Brain className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
+                          🧠 Predictive Analysis Report
+                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
+                            🎯 Confidence: {aiAnalysis.confidence}%
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                          Advanced AI analysis for optimal case resolution strategy
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6">
                     <div className="grid md:grid-cols-3 gap-6">
                       {aiAnalysis.keyIndicators.map((indicator, index) => (
-                        <div key={index} className="text-center">
-                          <div className="mb-2">
+                        <div key={index} className="text-center p-5 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700 hover:shadow-lg transition-all duration-300">
+                          <div className="mb-4">
                             <div
-                              className={`text-2xl font-bold ${
+                              className={`text-3xl font-bold mb-2 ${
                                 indicator.color === "red"
-                                  ? "text-red-600"
+                                  ? "text-lawbot-red-600 dark:text-lawbot-red-400"
                                   : indicator.color === "blue"
-                                    ? "text-blue-600"
-                                    : "text-green-600"
+                                    ? "text-lawbot-blue-600 dark:text-lawbot-blue-400"
+                                    : "text-lawbot-emerald-600 dark:text-lawbot-emerald-400"
                               }`}
                             >
-                              {indicator.value}%
+                              {indicator.color === "red" ? "🚨" : indicator.color === "blue" ? "📊" : "✅"} {indicator.value}%
                             </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">{indicator.label}</div>
+                            <div className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400">{indicator.label}</div>
                           </div>
                           <Progress
                             value={indicator.value}
-                            className={`h-2 ${
+                            className={`h-3 rounded-full ${
                               indicator.color === "red"
-                                ? "[&>div]:bg-red-500"
+                                ? "[&>div]:bg-gradient-to-r [&>div]:from-lawbot-red-500 [&>div]:to-lawbot-red-600"
                                 : indicator.color === "blue"
-                                  ? "[&>div]:bg-blue-500"
-                                  : "[&>div]:bg-green-500"
-                            }`}
+                                  ? "[&>div]:bg-gradient-to-r [&>div]:from-lawbot-blue-500 [&>div]:to-lawbot-blue-600"
+                                  : "[&>div]:bg-gradient-to-r [&>div]:from-lawbot-emerald-500 [&>div]:to-lawbot-emerald-600"
+                            } bg-lawbot-slate-200 dark:bg-lawbot-slate-700`}
                           />
                         </div>
                       ))}
                     </div>
 
-                    <Separator />
+                    <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
 
                     <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold mb-3 flex items-center space-x-2">
-                          <Target className="h-4 w-4" />
-                          <span>Risk Assessment</span>
+                      <div className="p-5 bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100/50 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/10 rounded-xl border border-lawbot-red-200 dark:border-lawbot-red-800">
+                        <h4 className="font-semibold mb-4 flex items-center space-x-2 text-lawbot-red-700 dark:text-lawbot-red-300">
+                          <div className="p-1 bg-lawbot-red-500 rounded-full">
+                            <Target className="h-3 w-3 text-white" />
+                          </div>
+                          <span>🎯 Risk Assessment</span>
                         </h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span>Risk Level:</span>
-                            <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                              {aiAnalysis.riskLevel}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Risk Level:</span>
+                            <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800">
+                              🚨 {aiAnalysis.riskLevel}
                             </Badge>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Predicted Outcome:</span>
-                            <span className="font-medium text-green-600">{aiAnalysis.predictedOutcome}</span>
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Predicted Outcome:</span>
+                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiAnalysis.predictedOutcome}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Estimated Resolution:</span>
-                            <span className="font-medium">{aiAnalysis.estimatedTime}</span>
+                          <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Estimated Resolution:</span>
+                            <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiAnalysis.estimatedTime}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div>
-                        <h4 className="font-semibold mb-3 flex items-center space-x-2">
-                          <Zap className="h-4 w-4" />
-                          <span>System Recommendations</span>
+                      <div className="p-5 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100/50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/10 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                        <h4 className="font-semibold mb-4 flex items-center space-x-2 text-lawbot-emerald-700 dark:text-lawbot-emerald-300">
+                          <div className="p-1 bg-lawbot-emerald-500 rounded-full">
+                            <Zap className="h-3 w-3 text-white" />
+                          </div>
+                          <span>⚡ System Recommendations</span>
                         </h4>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {aiAnalysis.recommendations.map((rec, index) => (
-                            <li key={index} className="flex items-start space-x-2">
-                              <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm">{rec}</span>
+                            <li key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                              <CheckCircle className="h-4 w-4 text-lawbot-emerald-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{rec}</span>
                             </li>
                           ))}
                         </ul>
@@ -384,39 +494,63 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
               </TabsContent>
 
               <TabsContent value="evidence" className="space-y-6">
-                <Card>
+                <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50/30 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <FileText className="h-5 w-5" />
-                      <span>Evidence Files</span>
-                      <Badge variant="outline">{evidenceFiles.length} files</Badge>
-                    </CardTitle>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
+                        <FileText className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
+                          📎 Evidence Files
+                          <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                            📁 {evidenceFiles.length} files
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                          Digital evidence collected for case investigation
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {evidenceFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700"
+                          className="flex items-center justify-between p-5 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                         >
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
-                              <FileText className="h-4 w-4 text-blue-600" />
+                          <div className="flex items-center space-x-4">
+                            <div className="p-3 bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 rounded-lg">
+                              {file.type === 'image' && <Eye className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                              {file.type === 'document' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                              {file.type === 'audio' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                              {file.type === 'text' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
                             </div>
                             <div>
-                              <p className="font-medium">{file.name}</p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {file.type} • {file.size} • Hash: {file.hash}
+                              <p className="font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-2">
+                                {file.type === 'image' && '🖼️'}
+                                {file.type === 'document' && '📄'}
+                                {file.type === 'audio' && '🎧'}
+                                {file.type === 'text' && '📝'}
+                                <span>{file.name}</span>
                               </p>
+                              <div className="flex items-center space-x-3 mt-1">
+                                <Badge className="bg-lawbot-slate-100 text-lawbot-slate-700 dark:bg-lawbot-slate-700 dark:text-lawbot-slate-300 text-xs">
+                                  {file.type.toUpperCase()}
+                                </Badge>
+                                <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">💾 {file.size}</span>
+                                <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">🔐 Hash: {file.hash}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4 mr-1" />
+                          <div className="flex space-x-3">
+                            <Button size="sm" className="btn-gradient">
+                              <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
-                            <Button size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-1" />
+                            <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50">
+                              <Download className="h-4 w-4 mr-2" />
                               Download
                             </Button>
                           </div>
@@ -428,38 +562,59 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
               </TabsContent>
 
               <TabsContent value="timeline" className="space-y-6">
-                <Card>
+                <Card className="card-modern bg-gradient-to-br from-lawbot-amber-50/30 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5" />
-                      <span>Case Timeline</span>
-                    </CardTitle>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                        <Clock className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">🕐 Case Timeline</CardTitle>
+                        <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                          Chronological sequence of case events and actions
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {timeline.map((event, index) => (
-                        <div key={index} className="flex items-start space-x-4">
+                        <div key={index} className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
                           <div
-                            className={`p-2 rounded-full ${
+                            className={`p-3 rounded-full shadow-sm ${
                               event.type === "report"
-                                ? "bg-blue-100 text-blue-600"
+                                ? "bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 text-lawbot-blue-600 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 dark:text-lawbot-blue-400"
                                 : event.type === "ai"
-                                  ? "bg-purple-100 text-purple-600"
+                                  ? "bg-gradient-to-r from-lawbot-purple-100 to-lawbot-purple-200 text-lawbot-purple-600 dark:from-lawbot-purple-900 dark:to-lawbot-purple-800 dark:text-lawbot-purple-400"
                                   : event.type === "assignment"
-                                    ? "bg-green-100 text-green-600"
+                                    ? "bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-emerald-200 text-lawbot-emerald-600 dark:from-lawbot-emerald-900 dark:to-lawbot-emerald-800 dark:text-lawbot-emerald-400"
                                     : event.type === "contact"
-                                      ? "bg-orange-100 text-orange-600"
+                                      ? "bg-gradient-to-r from-lawbot-amber-100 to-lawbot-amber-200 text-lawbot-amber-600 dark:from-lawbot-amber-900 dark:to-lawbot-amber-800 dark:text-lawbot-amber-400"
                                       : event.type === "evidence"
-                                        ? "bg-red-100 text-red-600"
-                                        : "bg-gray-100 text-gray-600"
+                                        ? "bg-gradient-to-r from-lawbot-red-100 to-lawbot-red-200 text-lawbot-red-600 dark:from-lawbot-red-900 dark:to-lawbot-red-800 dark:text-lawbot-red-400"
+                                        : "bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 text-lawbot-slate-600 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 dark:text-lawbot-slate-400"
                             }`}
                           >
-                            <div className="h-2 w-2 rounded-full bg-current"></div>
+                            <div className="h-3 w-3 rounded-full bg-current"></div>
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium">{event.event}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{event.date}</p>
+                            <div className="flex items-center space-x-2 mb-1">
+                              {event.type === "report" && <span>📝</span>}
+                              {event.type === "ai" && <span>🧠</span>}
+                              {event.type === "assignment" && <span>👮</span>}
+                              {event.type === "contact" && <span>📞</span>}
+                              {event.type === "evidence" && <span>📎</span>}
+                              {event.type === "analysis" && <span>🔍</span>}
+                              <p className="font-bold text-lawbot-slate-900 dark:text-white">{event.event}</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-3 w-3 text-lawbot-slate-500" />
+                              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{event.date}</p>
+                            </div>
                           </div>
+                          {index < timeline.length - 1 && (
+                            <div className="absolute left-8 mt-16 w-px h-6 bg-lawbot-slate-200 dark:bg-lawbot-slate-700"></div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -469,50 +624,76 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
 
               <TabsContent value="actions" className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Card>
+                  <Card className="card-modern bg-gradient-to-br from-lawbot-red-50/30 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
                     <CardHeader>
-                      <CardTitle>Quick Actions</CardTitle>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-lawbot-red-500 rounded-lg">
+                          <Zap className="h-5 w-5 text-white" />
+                        </div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">⚡ Quick Actions</CardTitle>
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Phone className="mr-2 h-4 w-4" />
-                        Contact Complainant
+                    <CardContent className="space-y-4">
+                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-blue-500 rounded-full mr-3">
+                          <Phone className="h-3 w-3 text-white" />
+                        </div>
+                        📞 Contact Complainant
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Update Case Status
+                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
+                          <FileText className="h-3 w-3 text-white" />
+                        </div>
+                        📝 Update Case Status
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <User className="mr-2 h-4 w-4" />
-                        Assign to Specialist
+                      <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-purple-500 rounded-full mr-3">
+                          <User className="h-3 w-3 text-white" />
+                        </div>
+                        👥 Assign to Specialist
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Escalate Case
+                      <Button className="w-full justify-start btn-modern border-lawbot-amber-300 text-lawbot-amber-600 hover:bg-lawbot-amber-50 dark:border-lawbot-amber-600 dark:text-lawbot-amber-400 dark:hover:bg-lawbot-amber-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-amber-500 rounded-full mr-3">
+                          <AlertTriangle className="h-3 w-3 text-white" />
+                        </div>
+                        🚨 Escalate Case
                       </Button>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50/30 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
                     <CardHeader>
-                      <CardTitle>Case Management</CardTitle>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-lawbot-blue-500 rounded-lg">
+                          <TrendingUp className="h-5 w-5 text-white" />
+                        </div>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">📊 Case Management</CardTitle>
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Generate Report
+                    <CardContent className="space-y-4">
+                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
+                          <Download className="h-3 w-3 text-white" />
+                        </div>
+                        📄 Generate Report
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Schedule Follow-up
+                      <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-purple-500 rounded-full mr-3">
+                          <Calendar className="h-3 w-3 text-white" />
+                        </div>
+                        📅 Schedule Follow-up
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        View Analytics
+                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline">
+                        <div className="p-1 bg-lawbot-blue-500 rounded-full mr-3">
+                          <TrendingUp className="h-3 w-3 text-white" />
+                        </div>
+                        📈 View Analytics
                       </Button>
-                      <Button className="w-full justify-start" variant="destructive">
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Close Case
+                      <Button className="w-full justify-start bg-gradient-to-r from-lawbot-red-500 to-lawbot-red-600 hover:from-lawbot-red-600 hover:to-lawbot-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="p-1 bg-white/20 rounded-full mr-3">
+                          <XCircle className="h-3 w-3 text-white" />
+                        </div>
+                        ❌ Close Case
                       </Button>
                     </CardContent>
                   </Card>
