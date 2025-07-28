@@ -18,9 +18,11 @@ interface LoginModalProps {
   onClose: () => void
   userType: "admin" | "pnp"
   onLogin: (userType: "admin" | "pnp") => void
+  authError?: string | null
+  isValidating?: boolean
 }
 
-export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isValidating = false }: LoginModalProps) {
   const { signIn, signUp, signOut } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showSignupPassword, setShowSignupPassword] = useState(false)
@@ -67,17 +69,22 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
       }
 
       // Use actual Firebase authentication
-      await signIn(loginForm.email, loginForm.password)
+      const user = await signIn(loginForm.email, loginForm.password)
       
-      // Check user type and permissions here if needed
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Call onLogin callback - the parent component will handle validation and navigation
       onLogin(userType)
-      onClose()
+      
+      // Don't close modal immediately - let parent handle it after validation
+      // onClose() will be called by parent component after successful validation
     } catch (error: any) {
       console.error('Login failed:', error)
       setErrors({ general: error.toString().replace('Error: ', '') })
-    } finally {
       setIsLoading(false)
     }
+    // Don't set loading to false here - let parent component handle it
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -248,10 +255,10 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
-                {errors.general && (
+                {(errors.general || authError) && (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
                     <p className="text-red-800 dark:text-red-200 text-sm font-medium">
-                      ⚠️ {errors.general}
+                      ⚠️ {authError || errors.general}
                     </p>
                   </div>
                 )}
@@ -297,11 +304,11 @@ export function LoginModal({ isOpen, onClose, userType, onLogin }: LoginModalPro
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || isValidating}
                   className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
                 >
                   <Shield className="mr-2 h-4 w-4" />
-                  {isLoading ? 'Signing in...' : `Login to ${userType === "admin" ? "Admin" : "PNP"} Portal`}
+                  {isLoading ? 'Signing in...' : isValidating ? 'Validating access...' : `Login to ${userType === "admin" ? "Admin" : "PNP"} Portal`}
                 </Button>
               </form>
             </TabsContent>

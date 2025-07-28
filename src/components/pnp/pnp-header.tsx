@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface PNPHeaderProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
@@ -20,6 +21,18 @@ interface PNPHeaderProps {
 }
 
 export function PNPHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen }: PNPHeaderProps) {
+  const { signOut, userProfile } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      onViewChange("landing")
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Still redirect to landing even if logout fails
+      onViewChange("landing")
+    }
+  }
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -47,9 +60,13 @@ export function PNPHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setS
               <Button variant="ghost" className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                  <AvatarFallback>OS</AvatarFallback>
+                  <AvatarFallback>
+                    {userProfile?.full_name ? userProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'PO'}
+                  </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">Officer Smith</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {userProfile?.full_name || 'PNP Officer'} {userProfile?.rank && `(${userProfile.rank})`}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -62,7 +79,7 @@ export function PNPHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setS
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onViewChange("landing")}>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>

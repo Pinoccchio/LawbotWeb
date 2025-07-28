@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Shield, Sun, Moon, BarChart3, Users, Lock, Zap, Eye, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { LoginModal } from "@/components/auth/login-modal"
+import { useAuth } from "@/contexts/AuthContext" 
+import { AuthService } from "@/lib/auth"
 
 interface LandingPageProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
@@ -14,18 +16,76 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPageProps) {
+  const { user, signOut } = useAuth()
   const [loginModal, setLoginModal] = useState<{ isOpen: boolean; userType: "admin" | "pnp" }>({
     isOpen: false,
     userType: "admin",
   })
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
+
+  // Debug database tables on component mount
+  React.useEffect(() => {
+    AuthService.debugDatabaseTables()
+  }, [])
 
   const handleLoginClick = (userType: "admin" | "pnp") => {
+    setAuthError(null)
     setLoginModal({ isOpen: true, userType })
   }
 
-  const handleLoginSuccess = (userType: "admin" | "pnp") => {
-    onViewChange(userType)
-    setLoginModal({ isOpen: false, userType })
+  const handleLoginSuccess = async (userType: "admin" | "pnp") => {
+    setIsValidating(true)
+    setAuthError(null)
+    
+    try {
+      // Get current user from Firebase auth directly to avoid race conditions
+      const { auth } = await import('@/lib/firebase')
+      const currentUser = auth.currentUser
+      
+      if (!currentUser) {
+        setAuthError("Authentication failed. Please try again.")
+        setIsValidating(false)
+        return
+      }
+
+      console.log(`🔐 Validating ${userType} access for user:`, currentUser.uid)
+
+      // Validate user has the correct role for the requested dashboard
+      const { isValid, userProfile, errorMessage } = await AuthService.validateUserAccess(currentUser.uid, userType)
+      
+      if (isValid && userProfile) {
+        // Success - user has correct role
+        console.log(`✅ Access granted for ${userType} dashboard`)
+        setLoginModal({ isOpen: false, userType })
+        setAuthError(null)
+        setIsValidating(false)
+        onViewChange(userType)
+      } else {
+        // Access denied - user doesn't have required role
+        console.log(`❌ Access denied: ${errorMessage}`)
+        setAuthError(errorMessage || 'Access denied')
+        setIsValidating(false)
+        
+        // Don't automatically sign out - let user see the error and try correct dashboard
+        // They can manually logout if needed
+      }
+    } catch (error: any) {
+      console.error('Role validation failed:', error)
+      setAuthError(error.message || 'Authentication validation failed')
+      setIsValidating(false)
+      
+      // Don't auto sign out on validation error - might be temporary network issue
+    }
+  }
+
+  const handleCloseModal = () => {
+    // Don't allow closing while validation is in progress
+    if (isValidating) return
+    
+    setLoginModal({ isOpen: false, userType: loginModal.userType })
+    setAuthError(null)
+    setIsValidating(false)
   }
 
   const features = [
@@ -333,10 +393,24 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
       {/* Login Modal */}
       <LoginModal
         isOpen={loginModal.isOpen}
-        onClose={() => setLoginModal({ ...loginModal, isOpen: false })}
+        onClose={handleCloseModal}
         userType={loginModal.userType}
         onLogin={handleLoginSuccess}
+        authError={authError}
+        isValidating={isValidating}
       />
+
+      {/* Loading Overlay */}
+      {isValidating && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-2xl">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="text-slate-900 dark:text-white font-medium">Validating access...</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

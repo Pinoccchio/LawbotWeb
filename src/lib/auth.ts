@@ -184,22 +184,150 @@ export class AuthService {
     }
   }
 
-  // Get user profile from Supabase
+  // Validate user role access for specific dashboard type
+  static async validateUserAccess(firebaseUid: string, requiredRole: 'admin' | 'pnp'): Promise<{ isValid: boolean; userProfile: any | null; errorMessage?: string }> {
+    try {
+      console.log(`🔐 Validating access for role: ${requiredRole}, Firebase UID: ${firebaseUid}`)
+      
+      const userProfile = await this.getUserProfile(firebaseUid)
+      console.log('👤 Retrieved user profile:', userProfile)
+      
+      if (!userProfile) {
+        console.log('❌ No user profile found')
+        return { 
+          isValid: false, 
+          userProfile: null, 
+          errorMessage: 'User profile not found. Please contact support.' 
+        }
+      }
+
+      console.log(`🔍 User type: ${userProfile.user_type}, Required: ${requiredRole === 'admin' ? 'ADMIN' : 'PNP_OFFICER'}`)
+
+      // Check if user has the required role
+      if (requiredRole === 'admin' && userProfile.user_type === 'ADMIN') {
+        console.log('✅ Admin access granted')
+        return { isValid: true, userProfile }
+      }
+      
+      if (requiredRole === 'pnp' && userProfile.user_type === 'PNP_OFFICER') {
+        console.log('✅ PNP access granted')
+        return { isValid: true, userProfile }
+      }
+
+      // User doesn't have the required role
+      const currentRole = userProfile.user_type === 'ADMIN' ? 'Administrator' : 
+                         userProfile.user_type === 'PNP_OFFICER' ? 'PNP Officer' : 'Regular User'
+      const requiredRoleText = requiredRole === 'admin' ? 'Administrator' : 'PNP Officer'
+      
+      console.log(`❌ Access denied. Current: ${currentRole}, Required: ${requiredRoleText}`)
+      
+      return { 
+        isValid: false, 
+        userProfile, 
+        errorMessage: `Access denied. Your account (${currentRole}) doesn't have access to the ${requiredRoleText} dashboard. Please use the correct login portal for your role.` 
+      }
+    } catch (error: any) {
+      console.error('💥 Error in validateUserAccess:', error)
+      return { 
+        isValid: false, 
+        userProfile: null, 
+        errorMessage: `Authentication error: ${error.message}` 
+      }
+    }
+  }
+
+  // Get user profile from Supabase - checks all profile tables
   static async getUserProfile(firebaseUid: string) {
     try {
-      const { data, error } = await supabase
+      console.log('🔍 Looking up user profile for Firebase UID:', firebaseUid)
+      
+      // First try admin_profiles table
+      console.log('📋 Checking admin_profiles table...')
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .eq('firebase_uid', firebaseUid)
+        .maybeSingle()
+
+      console.log('Admin query result:', { adminData, adminError })
+
+      if (adminData && !adminError) {
+        console.log('✅ Found admin profile:', adminData)
+        return { ...adminData, user_type: 'ADMIN', profile_source: 'admin_profiles' }
+      }
+
+      // Then try pnp_officer_profiles table
+      console.log('👮 Checking pnp_officer_profiles table...')
+      const { data: pnpData, error: pnpError } = await supabase
+        .from('pnp_officer_profiles')
+        .select('*')
+        .eq('firebase_uid', firebaseUid)
+        .maybeSingle()
+
+      console.log('PNP query result:', { pnpData, pnpError })
+
+      if (pnpData && !pnpError) {
+        console.log('✅ Found PNP profile:', pnpData)
+        return { ...pnpData, user_type: 'PNP_OFFICER', profile_source: 'pnp_officer_profiles' }
+      }
+
+      // Finally try regular user_profiles table (for mobile app users)
+      console.log('👤 Checking user_profiles table...')
+      const { data: userData, error: userError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('firebase_uid', firebaseUid)
         .maybeSingle()
 
-      if (error) {
-        throw new Error(`Failed to get user profile: ${error.message}`)
+      console.log('User query result:', { userData, userError })
+
+      if (userData && !userError) {
+        console.log('✅ Found user profile:', userData)
+        return { ...userData, profile_source: 'user_profiles' }
       }
 
-      return data
+      // If user not found in any table
+      console.log('❌ User not found in any profile table')
+      return null
     } catch (error: any) {
+      console.error('💥 Error in getUserProfile:', error)
       throw new Error(`Failed to get user profile: ${error.message}`)
+    }
+  }
+
+  // Debug method to check table existence and structure
+  static async debugDatabaseTables() {
+    try {
+      console.log('🔍 Testing database table access...')
+      
+      // Test admin_profiles table
+      const { data: adminTest, error: adminError } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .limit(1)
+      
+      console.log('📋 admin_profiles table test:', { adminTest, adminError })
+      
+      // Test pnp_officer_profiles table  
+      const { data: pnpTest, error: pnpError } = await supabase
+        .from('pnp_officer_profiles')
+        .select('*')
+        .limit(1)
+        
+      console.log('👮 pnp_officer_profiles table test:', { pnpTest, pnpError })
+      
+      // Test user_profiles table
+      const { data: userTest, error: userError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .limit(1)
+        
+      console.log('👤 user_profiles table test:', { userTest, userError })
+      
+      return { adminError, pnpError, userError }
+    } catch (error) {
+      console.error('💥 Database test failed:', error)
+      return { error }
     }
   }
 
