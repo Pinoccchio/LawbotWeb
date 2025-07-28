@@ -263,22 +263,3 @@ export const mockCases = [
   },
 ]
 
-export const mockOfficers = [
-  { id: 1, name: "Maria Santos", unit: "Cyber Crime Investigation Cell", cases: 12, resolved: 8, badge: "PNP-001" },
-  {
-    id: 2,
-    name: "Diana Lopez",
-    unit: "Cyber Crime Against Women and Children",
-    cases: 15,
-    resolved: 11,
-    badge: "PNP-002",
-  },
-  { id: 3, name: "John Rodriguez", unit: "Economic Offenses Wing", cases: 9, resolved: 7, badge: "PNP-003" },
-  { id: 4, name: "Carlos Mendoza", unit: "Cyber Security Division", cases: 18, resolved: 14, badge: "PNP-004" },
-  { id: 5, name: "Roberto Cruz", unit: "Cyber Crime Technical Unit", cases: 11, resolved: 9, badge: "PNP-005" },
-  { id: 6, name: "Ana Reyes", unit: "Special Investigation Team", cases: 14, resolved: 10, badge: "PNP-006" },
-  { id: 7, name: "Miguel Torres", unit: "Critical Infrastructure Protection Unit", cases: 8, resolved: 6, badge: "PNP-007" },
-  { id: 8, name: "Sofia Reyes", unit: "National Security Cyber Division", cases: 7, resolved: 5, badge: "PNP-008" },
-  { id: 9, name: "Lisa Garcia", unit: "Advanced Cyber Forensics Unit", cases: 10, resolved: 8, badge: "PNP-009" },
-  { id: 10, name: "Eduardo Santos", unit: "Special Cyber Operations Unit", cases: 6, resolved: 4, badge: "PNP-010" },
-]

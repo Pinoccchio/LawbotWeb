@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockOfficers } from "@/lib/mock-data"
 import { AddOfficerModal } from "@/components/admin/modals/add-officer-modal"
 import { EditOfficerModal } from "@/components/admin/modals/edit-officer-modal"
 import { DeleteOfficerModal } from "@/components/admin/modals/delete-officer-modal"
@@ -64,8 +63,8 @@ export function UserManagementView() {
 
       if (error) {
         console.error('Error fetching PNP officers:', error)
-        // Fall back to mock data if there's an error
-        setPnpOfficers(mockOfficers)
+        // No fallback data - use empty array
+        setPnpOfficers([])
       } else {
         // Transform Supabase data to match expected format
         const transformedOfficers = data.map((officer: any) => ({
@@ -86,7 +85,7 @@ export function UserManagementView() {
       }
     } catch (error) {
       console.error('Error fetching PNP officers:', error)
-      setPnpOfficers(mockOfficers)
+      setPnpOfficers([])
     } finally {
       setIsLoadingOfficers(false)
     }
@@ -103,7 +102,7 @@ export function UserManagementView() {
   }
 
   // Filter officers based on search term
-  const filteredOfficers = (pnpOfficers.length > 0 ? pnpOfficers : mockOfficers).filter(officer =>
+  const filteredOfficers = pnpOfficers.filter(officer =>
     officer.name.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.badge.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.unit.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||

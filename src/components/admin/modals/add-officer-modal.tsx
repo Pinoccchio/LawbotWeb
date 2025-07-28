@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { X, Shield, User, Lock, Mail, Phone, Eye, EyeOff, Badge, MapPin, Building } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge as UIBadge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/AuthContext"
+import PSGCApiService, { SimplifiedRegion, APISource, APIEndpoint } from "@/lib/psgc-api"
 
 interface AddOfficerModalProps {
   isOpen: boolean
@@ -23,6 +24,10 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const [regions, setRegions] = useState<SimplifiedRegion[]>([])
+  const [isLoadingRegions, setIsLoadingRegions] = useState(false)
+  const [selectedAPISource, setSelectedAPISource] = useState<APISource>('auto')
+  const [availableAPIs, setAvailableAPIs] = useState<APIEndpoint[]>([])
   
   const [officerForm, setOfficerForm] = useState({
     firstName: "",
@@ -36,6 +41,34 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     unit: "",
     region: "",
   })
+
+  // Initialize available APIs when modal opens
+  useEffect(() => {
+    if (isOpen && availableAPIs.length === 0) {
+      setAvailableAPIs(PSGCApiService.getAPIEndpoints())
+    }
+  }, [isOpen])
+
+  // Fetch regions when modal opens or API source changes
+  useEffect(() => {
+    if (isOpen) {
+      fetchRegions()
+    }
+  }, [isOpen, selectedAPISource])
+
+  const fetchRegions = async () => {
+    setIsLoadingRegions(true)
+    try {
+      const fetchedRegions = await PSGCApiService.getRegions(selectedAPISource)
+      setRegions(fetchedRegions)
+      console.log(`✅ Loaded ${fetchedRegions.length} regions using ${selectedAPISource} API source`)
+    } catch (error) {
+      console.error('Error fetching regions:', error)
+      // Regions state will remain empty, and we'll show an error message
+    } finally {
+      setIsLoadingRegions(false)
+    }
+  }
 
   if (!isOpen) return null
 
@@ -209,24 +242,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     "Special Cyber Operations Unit",
   ]
 
-  const regions = [
-    "National Capital Region (NCR)",
-    "Region I - Ilocos Region",
-    "Region II - Cagayan Valley",
-    "Region III - Central Luzon",
-    "Region IV-A - CALABARZON",
-    "Region IV-B - MIMAROPA",
-    "Region V - Bicol Region",
-    "Region VI - Western Visayas",
-    "Region VII - Central Visayas",
-    "Region VIII - Eastern Visayas",
-    "Region IX - Zamboanga Peninsula",
-    "Region X - Northern Mindanao",
-    "Region XI - Davao Region",
-    "Region XII - SOCCSKSARGEN",
-    "Region XIII - Caraga",
-    "BARMM - Bangsamoro Autonomous Region",
-  ]
+  // Regions are now fetched dynamically from PSGC API
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -415,6 +431,47 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                   )}
                 </div>
 
+                {/* API Source Selector for Testing */}
+                <div className="space-y-2">
+                  <Label htmlFor="apiSource">API Data Source (Compare APIs)</Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Select value={selectedAPISource} onValueChange={(value: APISource) => {
+                      setSelectedAPISource(value)
+                      setRegions([]) // Clear regions to trigger refetch
+                    }}>
+                      <SelectTrigger className="pl-10">
+                        <SelectValue placeholder="Select API source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem key="auto" value="auto">
+                          <div className="flex flex-col">
+                            <span>🔄 Auto (Try All APIs)</span>
+                            <span className="text-xs text-gray-500">Automatically tries all endpoints in order</span>
+                          </div>
+                        </SelectItem>
+                        {availableAPIs.map((api) => (
+                          <SelectItem key={api.source} value={api.source}>
+                            <div className="flex flex-col">
+                              <span>{api.name}</span>
+                              <span className="text-xs text-gray-500">{api.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        <SelectItem key="fallback" value="fallback">
+                          <div className="flex flex-col">
+                            <span>📋 Fallback (Hardcoded)</span>
+                            <span className="text-xs text-gray-500">Use built-in Philippine regions data</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                    🧪 Compare different API endpoints for Philippine regions data. Select specific APIs to test their response formats and data quality.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="region">Region *</Label>
                   <div className="relative">
@@ -422,21 +479,44 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                     <Select onValueChange={(value) => {
                       setOfficerForm({ ...officerForm, region: value })
                       if (errors.region) setErrors({ ...errors, region: '' })
-                    }}>
+                    }} disabled={isLoadingRegions}>
                       <SelectTrigger className={`pl-10 ${errors.region ? 'border-red-500 focus:border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select region" />
+                        <SelectValue placeholder={isLoadingRegions ? "Loading regions..." : "Select region"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {regions.map((region) => (
-                          <SelectItem key={region} value={region}>
-                            {region}
+                        {isLoadingRegions ? (
+                          <SelectItem key="loading-regions" value="loading" disabled>
+                            <div className="flex items-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                              <span>Loading Philippine regions...</span>
+                            </div>
                           </SelectItem>
-                        ))}
+                        ) : regions.length === 0 ? (
+                          <SelectItem key="error-regions" value="error" disabled>
+                            <span className="text-red-600">Failed to load regions. Please try again.</span>
+                          </SelectItem>
+                        ) : (
+                          regions.map((region) => (
+                            <SelectItem key={region.id} value={region.name}>
+                              <div className="flex flex-col">
+                                <span key={`${region.id}-name`}>{region.name}</span>
+                                {region.population !== 'N/A' && (
+                                  <span key={`${region.id}-population`} className="text-xs text-gray-500">Population: {region.population}</span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   {errors.region && (
                     <p className="text-red-600 text-xs mt-1">{errors.region}</p>
+                  )}
+                  {!isLoadingRegions && regions.length > 0 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ✅ Data from Philippine Statistics Authority (PSGC)
+                    </p>
                   )}
                 </div>
 

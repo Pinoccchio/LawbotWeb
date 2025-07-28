@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
-import { mockCases, mockOfficers } from "@/lib/mock-data"
+import { mockCases } from "@/lib/mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function AdminDashboardView() {
@@ -233,55 +233,18 @@ export function AdminDashboardView() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockOfficers.slice(0, 5).map((officer, index) => {
-                const successRate = officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0
-                return (
-                  <div 
-                    key={officer.id} 
-                    className="group flex items-center justify-between p-4 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-300 hover:border-lawbot-emerald-300 dark:hover:border-lawbot-emerald-600 animate-fade-in-up"
-                    style={{ animationDelay: `${(index + 9) * 100}ms` }}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-10 w-10 border-2 border-lawbot-blue-200 dark:border-lawbot-blue-700">
-                        <AvatarFallback className="bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-semibold">
-                          {officer.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-sm text-lawbot-slate-900 dark:text-white">
-                          {officer.name}
-                        </p>
-                        <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                          {officer.badge} • {officer.unit}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={successRate} className="h-1.5 w-20" />
-                          <span className="text-xs text-lawbot-slate-500">
-                            {successRate}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center space-x-1">
-                        <span className="text-lg font-bold text-lawbot-emerald-600">
-                          {officer.resolved}
-                        </span>
-                        <span className="text-sm text-lawbot-slate-500">
-                          / {officer.cases}
-                        </span>
-                      </div>
-                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                        Cases Resolved
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="mx-auto w-12 h-12 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 rounded-full flex items-center justify-center">
+                  <Users className="h-6 w-6 text-lawbot-slate-500" />
+                </div>
+                <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                  Officer performance data will be displayed here
+                </p>
+                <p className="text-xs text-lawbot-slate-500">
+                  Data is now managed through the User Management system
+                </p>
+              </div>
             </div>
             <div className="mt-4 pt-4 border-t border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <Button variant="outline" className="w-full btn-modern">
