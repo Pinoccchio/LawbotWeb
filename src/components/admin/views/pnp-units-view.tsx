@@ -159,7 +159,8 @@ export function PNPUnitsView() {
       {/* Enhanced Units Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {pnpUnits.map((unit, index) => {
-          const successRate = Math.round((unit.resolvedCases / (unit.resolvedCases + unit.activeCases)) * 100)
+          const totalCases = unit.resolvedCases + unit.activeCases
+          const successRate = totalCases > 0 ? Math.round((unit.resolvedCases / totalCases) * 100) : 0
           return (
             <Card key={unit.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
               <CardHeader>

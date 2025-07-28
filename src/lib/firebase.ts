@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from 'firebase/app'
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
 
 // Firebase configuration function that validates environment variables
@@ -31,25 +31,51 @@ function getFirebaseConfig() {
   }
 }
 
-// Initialize Firebase app (only once)
-function initializeFirebaseApp() {
-  // Check if Firebase has already been initialized
-  if (getApps().length > 0) {
-    return getApps()[0]
+// Initialize Primary Firebase app (only once)
+function initializePrimaryApp(): FirebaseApp {
+  // Check if primary app has already been initialized
+  const existingApp = getApps().find(app => app.name === '[DEFAULT]')
+  if (existingApp) {
+    return existingApp
   }
 
   const config = getFirebaseConfig()
   return initializeApp(config)
 }
 
-// Get Firebase Auth instance
-function getFirebaseAuth(): Auth {
-  const app = initializeFirebaseApp()
+// Initialize Secondary Firebase app (for user creation without affecting admin session)
+function initializeSecondaryApp(): FirebaseApp {
+  // Check if secondary app has already been initialized
+  const existingApp = getApps().find(app => app.name === 'secondary')
+  if (existingApp) {
+    return existingApp
+  }
+
+  const config = getFirebaseConfig()
+  return initializeApp(config, 'secondary')
+}
+
+// Get Primary Firebase Auth instance (for admin authentication)
+function getPrimaryAuth(): Auth {
+  const app = initializePrimaryApp()
   return getAuth(app)
 }
 
-// Export auth instance (lazy initialization)
-export const auth = getFirebaseAuth()
+// Get Secondary Firebase Auth instance (for creating new users)
+function getSecondaryAuth(): Auth {
+  const app = initializeSecondaryApp()
+  return getAuth(app)
+}
 
-// Export app for other uses
-export default initializeFirebaseApp()
+// Export primary auth instance (for admin authentication)
+export const auth = getPrimaryAuth()
+
+// Export secondary auth instance (for user creation)
+export const secondaryAuth = getSecondaryAuth()
+
+// Export apps for other uses
+export const primaryApp = initializePrimaryApp()
+export const secondaryApp = initializeSecondaryApp()
+
+// Default export remains the primary app for backward compatibility
+export default primaryApp

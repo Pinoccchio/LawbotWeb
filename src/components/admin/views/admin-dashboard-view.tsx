@@ -235,7 +235,7 @@ export function AdminDashboardView() {
           <CardContent>
             <div className="space-y-4">
               {mockOfficers.slice(0, 5).map((officer, index) => {
-                const successRate = Math.round((officer.resolved / officer.cases) * 100)
+                const successRate = officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0
                 return (
                   <div 
                     key={officer.id} 

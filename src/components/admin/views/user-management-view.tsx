@@ -1,6 +1,7 @@
 "use client"
 
-import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,8 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { mockOfficers } from "@/lib/mock-data"
+import { AddOfficerModal } from "@/components/admin/modals/add-officer-modal"
+import { supabase } from "@/lib/supabase"
 
 export function UserManagementView() {
+  const [isAddOfficerModalOpen, setIsAddOfficerModalOpen] = useState(false)
+  const [pnpOfficers, setPnpOfficers] = useState<any[]>([])
+  const [isLoadingOfficers, setIsLoadingOfficers] = useState(false)
+  
   const mockClients = [
     { id: 1, name: "John Doe", email: "john.doe@email.com", phone: "+63 912 345 6789", cases: 2, status: "active" },
     {
@@ -39,6 +46,58 @@ export function UserManagementView() {
     },
   ]
 
+  // Fetch PNP officers from Supabase
+  const fetchPnpOfficers = async () => {
+    setIsLoadingOfficers(true)
+    try {
+      const { data, error } = await supabase
+        .from('pnp_officer_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching PNP officers:', error)
+        // Fall back to mock data if there's an error
+        setPnpOfficers(mockOfficers)
+      } else {
+        // Transform Supabase data to match expected format
+        const transformedOfficers = data.map((officer: any) => ({
+          id: officer.id,
+          name: officer.full_name,
+          email: officer.email,
+          phone: officer.phone_number || 'N/A',
+          badge: officer.badge_number,
+          rank: officer.rank,
+          unit: officer.unit,
+          region: officer.region,
+          status: officer.status,
+          cases: officer.total_cases || 0,
+          resolved: officer.resolved_cases || 0,
+          created_at: officer.created_at
+        }))
+        setPnpOfficers(transformedOfficers)
+      }
+    } catch (error) {
+      console.error('Error fetching PNP officers:', error)
+      setPnpOfficers(mockOfficers)
+    } finally {
+      setIsLoadingOfficers(false)
+    }
+  }
+
+  // Load officers on component mount
+  useEffect(() => {
+    fetchPnpOfficers()
+  }, [])
+
+  const handleOfficerCreated = () => {
+    // Refresh the officers list after successful creation
+    fetchPnpOfficers()
+  }
+
+  // Use real data if available, otherwise fall back to mock data
+  const displayOfficers = pnpOfficers.length > 0 ? pnpOfficers : mockOfficers
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between animate-fade-in-up">
@@ -55,9 +114,12 @@ export function UserManagementView() {
             <Settings className="h-4 w-4 mr-2" />
             Bulk Actions
           </Button>
-          <Button className="btn-gradient">
+          <Button 
+            className="btn-gradient"
+            onClick={() => setIsAddOfficerModalOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
-            Add User
+            Add PNP Officer
           </Button>
         </div>
       </div>
@@ -69,7 +131,7 @@ export function UserManagementView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Officers</p>
-                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{mockOfficers.length}</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{displayOfficers.length}</p>
               </div>
               <div className="p-3 bg-lawbot-blue-500 rounded-lg">
                 <Shield className="h-6 w-6 text-white" />
@@ -83,7 +145,9 @@ export function UserManagementView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active Officers</p>
-                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{mockOfficers.length}</p>
+                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                  {displayOfficers.filter(officer => officer.status === 'active').length}
+                </p>
               </div>
               <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
                 <Activity className="h-6 w-6 text-white" />
@@ -155,9 +219,22 @@ export function UserManagementView() {
                       className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" 
                     />
                   </div>
-                  <Button className="btn-gradient">
+                  <Button 
+                    className="btn-gradient"
+                    onClick={() => setIsAddOfficerModalOpen(true)}
+                    disabled={isLoadingOfficers}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Officer
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fetchPnpOfficers()}
+                    disabled={isLoadingOfficers}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingOfficers ? 'animate-spin' : ''}`} />
+                    Refresh
                   </Button>
                 </div>
               </div>
@@ -178,89 +255,110 @@ export function UserManagementView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockOfficers.map((officer, index) => (
-                      <TableRow 
-                        key={officer.id} 
-                        className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-10 w-10 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
-                              <AvatarImage src={`/placeholder.svg?height=40&width=40`} />
-                              <AvatarFallback className="bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-semibold">
-                                {officer.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-semibold text-lawbot-slate-900 dark:text-white">{officer.name}</p>
-                              <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.rank}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono">
-                            {officer.badge}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            <p className="font-medium text-lawbot-slate-900 dark:text-white truncate">{officer.unit}</p>
-                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.region}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                              {officer.cases - officer.resolved}
-                            </span>
-                            <div className="w-2 h-2 bg-lawbot-amber-500 rounded-full animate-pulse" />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                              {officer.resolved}
-                            </span>
-                            <div className="w-2 h-2 bg-lawbot-emerald-500 rounded-full" />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className={`text-lg font-bold ${
-                              Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'text-lawbot-emerald-600' :
-                              Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'text-lawbot-amber-600' :
-                              'text-lawbot-red-600'
-                            }`}>
-                              {Math.round((officer.resolved / officer.cases) * 100)}%
-                            </span>
-                            <div className={`w-2 h-2 rounded-full ${
-                              Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'bg-lawbot-emerald-500' :
-                              Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'bg-lawbot-amber-500' :
-                              'bg-lawbot-red-500'
-                            }`} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                            ✅ Active
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
-                              <Edit className="h-4 w-4 text-lawbot-blue-500" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
-                              <Trash2 className="h-4 w-4 text-lawbot-red-500" />
-                            </Button>
+                    {isLoadingOfficers ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <div className="flex items-center justify-center space-x-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <span>Loading PNP officers...</span>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : displayOfficers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <div className="text-gray-500">
+                            <Shield className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>No PNP officers found</p>
+                            <p className="text-sm">Click "Add Officer" to create the first officer account</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      displayOfficers.map((officer, index) => (
+                        <TableRow 
+                          key={officer.id} 
+                          className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-10 w-10 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
+                                <AvatarImage src={`/placeholder.svg?height=40&width=40`} />
+                                <AvatarFallback className="bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-semibold">
+                                  {officer.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-lawbot-slate-900 dark:text-white">{officer.name}</p>
+                                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.rank}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono">
+                              {officer.badge}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              <p className="font-medium text-lawbot-slate-900 dark:text-white truncate">{officer.unit}</p>
+                              <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.region}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                                {officer.cases - officer.resolved}
+                              </span>
+                              <div className="w-2 h-2 bg-lawbot-amber-500 rounded-full animate-pulse" />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                                {officer.resolved}
+                              </span>
+                              <div className="w-2 h-2 bg-lawbot-emerald-500 rounded-full" />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className={`text-lg font-bold ${
+                                Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'text-lawbot-emerald-600' :
+                                Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'text-lawbot-amber-600' :
+                                'text-lawbot-red-600'
+                              }`}>
+                                {Math.round((officer.resolved / officer.cases) * 100)}%
+                              </span>
+                              <div className={`w-2 h-2 rounded-full ${
+                                Math.round((officer.resolved / officer.cases) * 100) >= 80 ? 'bg-lawbot-emerald-500' :
+                                Math.round((officer.resolved / officer.cases) * 100) >= 60 ? 'bg-lawbot-amber-500' :
+                                'bg-lawbot-red-500'
+                              }`} />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                              ✅ Active
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
+                                <Edit className="h-4 w-4 text-lawbot-blue-500" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
+                                <Trash2 className="h-4 w-4 text-lawbot-red-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -510,6 +608,13 @@ export function UserManagementView() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Add Officer Modal */}
+      <AddOfficerModal
+        isOpen={isAddOfficerModalOpen}
+        onClose={() => setIsAddOfficerModalOpen(false)}
+        onSuccess={handleOfficerCreated}
+      />
     </div>
   )
 }

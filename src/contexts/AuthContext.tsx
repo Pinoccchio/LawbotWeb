@@ -7,6 +7,7 @@ import { AuthService } from '@/lib/auth'
 interface AuthContextType {
   user: User | null
   userProfile: any | null
+  userRole: 'admin' | 'pnp' | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, fullName: string, userType: string, metadata?: any) => Promise<void>
@@ -31,6 +32,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<any | null>(null)
+  const [userRole, setUserRole] = useState<'admin' | 'pnp' | null>(null)
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
 
@@ -48,12 +50,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
             try {
               const profile = await AuthService.getUserProfile(user.uid)
               setUserProfile(profile)
+              
+              // Determine user role and save to localStorage
+              if (profile) {
+                const role = profile.user_type === 'ADMIN' ? 'admin' : 
+                           profile.user_type === 'PNP_OFFICER' ? 'pnp' : null
+                setUserRole(role)
+                
+                // Persist authentication state
+                if (role) {
+                  localStorage.setItem('userRole', role)
+                  localStorage.setItem('authPersistence', 'true')
+                }
+              } else {
+                setUserRole(null)
+                localStorage.removeItem('userRole')
+                localStorage.removeItem('authPersistence')
+              }
             } catch (error) {
               console.error('Error fetching user profile:', error)
               setUserProfile(null)
+              setUserRole(null)
+              localStorage.removeItem('userRole')
+              localStorage.removeItem('authPersistence')
             }
           } else {
             setUserProfile(null)
+            setUserRole(null)
+            localStorage.removeItem('userRole')
+            localStorage.removeItem('authPersistence')
           }
           
           setLoading(false)
@@ -117,6 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     user,
     userProfile,
+    userRole,
     loading,
     signIn,
     signUp,
