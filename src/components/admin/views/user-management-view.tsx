@@ -108,7 +108,8 @@ export function UserManagementView() {
     officer.badge.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.unit.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.rank.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
-    officer.region.toLowerCase().includes(officerSearchTerm.toLowerCase())
+    officer.region.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    (officer.status || 'active').toLowerCase().includes(officerSearchTerm.toLowerCase())
   )
 
   // Filter clients based on search term
@@ -130,6 +131,7 @@ export function UserManagementView() {
     setSelectedOfficer(officer)
     setIsDeleteOfficerModalOpen(true)
   }
+
 
   // Handle modal success callbacks
   const handleEditSuccess = () => {
@@ -191,7 +193,7 @@ export function UserManagementView() {
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active Officers</p>
                 <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                  {displayOfficers.filter(officer => officer.status === 'active').length}
+                  {displayOfficers.filter(officer => (officer.status || 'active') === 'active').length}
                 </p>
               </div>
               <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
@@ -219,8 +221,10 @@ export function UserManagementView() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Pending Reviews</p>
-                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">3</p>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">On Leave / Suspended</p>
+                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                  {displayOfficers.filter(officer => ['on_leave', 'suspended'].includes(officer.status || 'active')).length}
+                </p>
               </div>
               <div className="p-3 bg-lawbot-amber-500 rounded-lg">
                 <AlertTriangle className="h-6 w-6 text-white" />
@@ -413,9 +417,38 @@ export function UserManagementView() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                              ✅ Active
-                            </Badge>
+                            {(() => {
+                              const status = officer.status || 'active'
+                              const statusConfig = {
+                                active: {
+                                  icon: '✅',
+                                  label: 'Active',
+                                  classes: 'bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800'
+                                },
+                                on_leave: {
+                                  icon: '🏖️',
+                                  label: 'On Leave',
+                                  classes: 'bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800'
+                                },
+                                suspended: {
+                                  icon: '⚠️',
+                                  label: 'Suspended',
+                                  classes: 'bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 dark:text-lawbot-amber-300 dark:border-lawbot-amber-800'
+                                },
+                                retired: {
+                                  icon: '🏆',
+                                  label: 'Retired',
+                                  classes: 'bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-900/20 dark:to-lawbot-slate-800/20 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800'
+                                }
+                              }
+                              const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active
+                              
+                              return (
+                                <Badge className={config.classes}>
+                                  {config.icon} {config.label}
+                                </Badge>
+                              )
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
@@ -720,6 +753,7 @@ export function UserManagementView() {
         onSuccess={handleDeleteSuccess}
         officer={selectedOfficer}
       />
+
     </div>
   )
 }

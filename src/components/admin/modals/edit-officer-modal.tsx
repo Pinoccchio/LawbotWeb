@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Shield, User, Mail, Phone, Badge, MapPin, Building, Edit } from "lucide-react"
+import { X, Shield, User, Mail, Phone, Badge, MapPin, Building, Edit, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -40,6 +40,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     rank: "",
     unit: "",
     region: "",
+    status: "",
   })
 
   // Populate form when officer data changes
@@ -55,6 +56,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         rank: officer.rank || '',
         unit: officer.unit || '',
         region: officer.region || '',
+        status: officer.status || 'active',
       })
     }
   }, [officer, isOpen])
@@ -111,6 +113,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       rank: "",
       unit: "",
       region: "",
+      status: "",
     })
     onClose()
   }
@@ -157,6 +160,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         rank: officerForm.rank,
         unit: officerForm.unit,
         region: officerForm.region,
+        status: officerForm.status,
         updated_at: new Date().toISOString()
       }
 
@@ -256,6 +260,13 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     "National Security Cyber Division",
     "Advanced Cyber Forensics Unit",
     "Special Cyber Operations Unit",
+  ]
+
+  const statusOptions = [
+    { value: 'active', label: 'Active', icon: '✅', description: 'Officer is actively working' },
+    { value: 'on_leave', label: 'On Leave', icon: '🏖️', description: 'Officer is on approved leave' },
+    { value: 'suspended', label: 'Suspended', icon: '⚠️', description: 'Officer is temporarily suspended' },
+    { value: 'retired', label: 'Retired', icon: '🏆', description: 'Officer has retired from service' }
   ]
 
   // Regions are now fetched dynamically from PSGC API
@@ -512,6 +523,39 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="status">Officer Status *</Label>
+                  <div className="relative">
+                    <Activity className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Select value={officerForm.status} onValueChange={(value) => {
+                      setOfficerForm({ ...officerForm, status: value })
+                      if (errors.status) setErrors({ ...errors, status: '' })
+                    }}>
+                      <SelectTrigger className={`pl-10 ${errors.status ? 'border-red-500 focus:border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select officer status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            <div className="flex items-center space-x-2">
+                              <span>{status.icon}</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{status.label}</span>
+                                <span className="text-xs text-gray-500">{status.description}</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {errors.status && (
+                    <p className="text-red-600 text-xs mt-1">{errors.status}</p>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💼 Current operational status of this officer
+                  </p>
+                </div>
 
                 <Button
                   type="submit"

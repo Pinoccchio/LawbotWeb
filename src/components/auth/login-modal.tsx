@@ -140,7 +140,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
       setErrors({})
       
       // Show success message
-      setSuccessMessage(`✅ ${userType === 'admin' ? 'Admin' : 'PNP Officer'} account created successfully! Please log in with your new credentials.`)
+      setSuccessMessage(`✅ ${userType === 'admin' ? 'Admin' : 'PNP Officer'} account created successfully! Redirecting to dashboard...`)
       
       // Clear the form
       setSignupForm({
@@ -156,14 +156,14 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         rank: "",
       })
       
-      // Force logout to require login with new credentials
-      await signOut()
-      
-      // Auto close after 3 seconds or wait for user to manually close
+      // Wait a moment for auth state to update, then redirect to dashboard
       setTimeout(() => {
         setSuccessMessage('')
+        // Call onLogin callback to trigger dashboard redirect - the parent component will handle validation and navigation
+        onLogin(userType)
+        // Close modal after successful signup and redirect
         onClose()
-      }, 3000)
+      }, 1000)
     } catch (error: any) {
       console.error('Signup failed:', error)
       setErrors({ general: error.toString().replace('Error: ', '') })
@@ -329,7 +329,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                       {successMessage}
                     </p>
                     <p className="text-green-700 dark:text-green-300 text-xs mt-1">
-                      This modal will close automatically in a few seconds...
+                      Redirecting you to the dashboard...
                     </p>
                   </div>
                 )}
