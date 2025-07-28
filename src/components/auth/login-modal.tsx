@@ -51,13 +51,23 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
 
   // Clear success message when modal is closed
   const handleClose = () => {
+    // Don't allow closing if loading/validating
+    if (isLoading || isValidating) {
+      console.log('⚠️ Cannot close modal while operation is in progress')
+      return
+    }
+    
+    console.log('🔒 Closing auth modal')
+    // Reset form state
     setSuccessMessage('')
     setErrors({})
+    
+    // Call parent's onClose handler
     onClose()
   }
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault() // This stops the form from causing a page refresh
     setErrors({})
     setIsLoading(true)
     
@@ -65,30 +75,67 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
       // Validate required fields
       if (!loginForm.email || !loginForm.password) {
         setErrors({ general: 'Please fill in all required fields' })
+        setIsLoading(false)
         return
       }
 
-      // Use actual Firebase authentication
-      const user = await signIn(loginForm.email, loginForm.password)
+      console.log('🔑 Attempting login with:', { email: loginForm.email, userType })
       
-      // Wait a moment for auth state to update
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Call onLogin callback - the parent component will handle validation and navigation
-      onLogin(userType)
-      
-      // Don't close modal immediately - let parent handle it after validation
-      // onClose() will be called by parent component after successful validation
+      try {
+        // Use actual Firebase authentication
+        const user = await signIn(loginForm.email, loginForm.password)
+        
+        // Log authentication result
+        console.log('✅ Firebase auth successful, user:', user?.uid)
+        
+        // Wait a moment for auth state to update
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Call onLogin callback - the parent component will handle validation and navigation
+        // IMPORTANT: This is where we trigger the parent component to start its validation process
+        // The parent component will handle redirection and closing the modal after validation succeeds
+        onLogin(userType)
+        
+        // IMPORTANT: Don't set isLoading to false here - the parent component will handle that
+        // after successful validation. This keeps the loading indicator visible in the modal.
+        
+        // Don't close modal immediately - let parent handle it after validation
+        // onClose() will be called by parent component after successful validation
+      } catch (error: any) {
+        // Keep this modal open and show error
+        console.error('❌ Login failed:', error)
+        
+        // Format error message for display
+        let errorMessage = error.toString().replace('Error: ', '')
+        
+        // Friendly error messages for common errors
+        if (errorMessage.includes('invalid-credential') || 
+            errorMessage.includes('wrong-password') || 
+            errorMessage.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.'
+        } else if (errorMessage.includes('user-not-found')) {
+          errorMessage = 'No account found with this email. Please check your email or sign up.'
+        } else if (errorMessage.includes('too-many-requests')) {
+          errorMessage = 'Too many failed login attempts. Please try again later or reset your password.'
+        }
+        
+        setErrors({ general: errorMessage })
+        setIsLoading(false)
+        
+        // Ensure modal stays open
+        return
+      }
     } catch (error: any) {
-      console.error('Login failed:', error)
-      setErrors({ general: error.toString().replace('Error: ', '') })
+      console.error('❌ Login handler error:', error)
+      // Format error message for display
+      const errorMessage = error.toString().replace('Error: ', '')
+      setErrors({ general: errorMessage })
       setIsLoading(false)
     }
-    // Don't set loading to false here - let parent component handle it
   }
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault() // This prevents the form from causing a page refresh
     setErrors({})
     setIsLoading(true)
     
@@ -120,6 +167,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
+        setIsLoading(false) // Make sure to set loading to false on validation error
         return
       }
 
@@ -128,47 +176,84 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
       // Create account with appropriate user type
       const userTypeForDB = userType === 'admin' ? 'ADMIN' : 'PNP_OFFICER'
       
-      await signUp(signupForm.email, signupForm.password, fullName, userTypeForDB, {
-        phoneNumber: signupForm.phone,
-        badgeNumber: signupForm.badgeNumber,
-        unit: signupForm.unit,
-        rank: signupForm.rank,
-        region: signupForm.region
+      console.log('🔐 Creating new account:', { 
+        email: signupForm.email, 
+        fullName, 
+        userType: userTypeForDB,
+        badge: signupForm.badgeNumber || 'N/A'
       })
       
-      // Clear any previous errors
-      setErrors({})
-      
-      // Show success message
-      setSuccessMessage(`✅ ${userType === 'admin' ? 'Admin' : 'PNP Officer'} account created successfully! Redirecting to dashboard...`)
-      
-      // Clear the form
-      setSignupForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        phone: "",
-        badgeNumber: "",
-        unit: "",
-        region: "",
-        rank: "",
-      })
-      
-      // Wait a moment for auth state to update, then redirect to dashboard
-      setTimeout(() => {
-        setSuccessMessage('')
-        // Call onLogin callback to trigger dashboard redirect - the parent component will handle validation and navigation
-        onLogin(userType)
-        // Close modal after successful signup and redirect
-        onClose()
-      }, 1000)
+      try {
+        // Create user account and profile
+        await signUp(signupForm.email, signupForm.password, fullName, userTypeForDB, {
+          phoneNumber: signupForm.phone,
+          badgeNumber: signupForm.badgeNumber,
+          unit: signupForm.unit,
+          rank: signupForm.rank,
+          region: signupForm.region
+        })
+        
+        console.log('✅ Account created successfully!')
+        
+        // Clear any previous errors
+        setErrors({})
+        
+        // Show success message
+        setSuccessMessage(`✅ ${userType === 'admin' ? 'Admin' : 'PNP Officer'} account created successfully! Redirecting to dashboard...`)
+        
+        // Clear the form
+        setSignupForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          phone: "",
+          badgeNumber: "",
+          unit: "",
+          region: "",
+          rank: "",
+        })
+        
+        // Wait a moment for auth state to update, then redirect to dashboard
+        setTimeout(() => {
+          console.log('🔄 Redirecting to dashboard after successful signup...')
+          // Call onLogin callback to trigger dashboard redirect
+          onLogin(userType)
+          // Close modal after successful signup and redirect
+          onClose()
+        }, 2000) // Increased timeout to ensure user sees success message
+      } catch (error: any) {
+        // Keep this modal open and show error
+        console.error('❌ Signup failed:', error)
+        
+        // Format error message for display
+        let errorMessage = error.toString().replace('Error: ', '')
+        
+        // Friendly error messages for common errors
+        if (errorMessage.includes('email-already-in-use')) {
+          errorMessage = 'This email is already registered. Please use a different email or sign in.'
+        } else if (errorMessage.includes('invalid-email')) {
+          errorMessage = 'Please enter a valid email address.'
+        } else if (errorMessage.includes('weak-password')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.'
+        }
+        
+        setErrors({ general: errorMessage })
+        setIsLoading(false)
+        
+        // Ensure modal stays open
+        return
+      }
     } catch (error: any) {
-      console.error('Signup failed:', error)
-      setErrors({ general: error.toString().replace('Error: ', '') })
-    } finally {
+      console.error('❌ Signup handler error:', error)
+      // Format and display error message
+      const errorMessage = error.toString().replace('Error: ', '')
+      setErrors({ general: errorMessage })
       setIsLoading(false)
+    } finally {
+      // This ensures loading state is reset even if there's an unexpected error
+      if (isLoading) setIsLoading(false)
     }
   }
 
@@ -225,7 +310,17 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden">
         <CardHeader className="relative">
-          <Button variant="ghost" size="sm" onClick={handleClose} className="absolute right-2 top-2 h-8 w-8 p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => {
+              e.preventDefault(); // Prevent any default action
+              e.stopPropagation(); // Stop event propagation
+              handleClose();
+            }} 
+            className="absolute right-2 top-2 h-8 w-8 p-0"
+            disabled={isLoading || isValidating}
+          >
             <X className="h-4 w-4" />
           </Button>
           <div className="flex items-center space-x-3 mb-2">
@@ -256,10 +351,18 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
                 {(errors.general || authError) && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    <p className="text-red-800 dark:text-red-200 text-sm font-medium">
-                      ⚠️ {authError || errors.general}
-                    </p>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
+                    <div className="flex items-start space-x-2">
+                      <div className="text-red-600 dark:text-red-400 mt-0.5">⚠️</div>
+                      <div>
+                        <p className="text-red-800 dark:text-red-200 text-sm font-medium">
+                          {authError || errors.general}
+                        </p>
+                        <p className="text-red-600 dark:text-red-300 text-xs mt-1">
+                          Please check your credentials and try again.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className="space-y-2">
@@ -307,8 +410,17 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                   disabled={isLoading || isValidating}
                   className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
                 >
-                  <Shield className="mr-2 h-4 w-4" />
-                  {isLoading ? 'Signing in...' : isValidating ? 'Validating access...' : `Login to ${userType === "admin" ? "Admin" : "PNP"} Portal`}
+                  {isLoading || isValidating ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isLoading ? 'Signing in...' : isValidating ? 'Validating access...' : 'Loading...'}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <Shield className="mr-2 h-4 w-4" />
+                      {`Login to ${userType === "admin" ? "Admin" : "PNP"} Portal`}
+                    </span>
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -316,10 +428,20 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
             <TabsContent value="signup" className="space-y-3 mt-4">
               <form onSubmit={handleSignup} className="space-y-3">
                 {errors.general && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    <p className="text-red-800 dark:text-red-200 text-sm font-medium">
-                      ⚠️ {errors.general}
-                    </p>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
+                    <div className="flex items-start space-x-2">
+                      <div className="text-red-600 dark:text-red-400 mt-0.5">⚠️</div>
+                      <div>
+                        <p className="text-red-800 dark:text-red-200 text-sm font-medium">
+                          {errors.general}
+                        </p>
+                        <p className="text-red-600 dark:text-red-300 text-xs mt-1">
+                          {errors.general.includes('email-already-in-use') ? 
+                            'Please try signing in instead or use a different email.' :
+                            'Please correct the error and try again.'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
@@ -541,8 +663,17 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                   disabled={isLoading}
                   className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
                 >
-                  <User className="mr-2 h-4 w-4" />
-                  {isLoading ? 'Creating Account...' : `Create ${userType === "admin" ? "Admin" : "PNP"} Account`}
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating Account...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <User className="mr-2 h-4 w-4" />
+                      {`Create ${userType === "admin" ? "Admin" : "PNP"} Account`}
+                    </span>
+                  )}
                 </Button>
                 </>
                 )}

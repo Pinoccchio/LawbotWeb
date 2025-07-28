@@ -241,57 +241,65 @@ export class AuthService {
     try {
       console.log('🔍 Looking up user profile for Firebase UID:', firebaseUid)
       
-      // First try admin_profiles table
-      console.log('📋 Checking admin_profiles table...')
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_profiles')
-        .select('*')
-        .eq('firebase_uid', firebaseUid)
-        .maybeSingle()
-
-      console.log('Admin query result:', { adminData, adminError })
-
-      if (adminData && !adminError) {
-        console.log('✅ Found admin profile:', adminData)
-        return { ...adminData, user_type: 'ADMIN', profile_source: 'admin_profiles' }
+      // Use Promise.race with a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Profile lookup timeout')), 5000)
+      })
+      
+      const profileLookup = async () => {
+        // First try admin_profiles table - this is the most likely for web app users
+        console.log('📋 Checking admin_profiles table...')
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_profiles')
+          .select('*')
+          .eq('firebase_uid', firebaseUid)
+          .maybeSingle()
+  
+        if (adminData && !adminError) {
+          console.log('✅ Found admin profile')
+          return { ...adminData, user_type: 'ADMIN', profile_source: 'admin_profiles' }
+        }
+  
+        // Then try pnp_officer_profiles table
+        console.log('👮 Checking pnp_officer_profiles table...')
+        const { data: pnpData, error: pnpError } = await supabase
+          .from('pnp_officer_profiles')
+          .select('*')
+          .eq('firebase_uid', firebaseUid)
+          .maybeSingle()
+  
+        if (pnpData && !pnpError) {
+          console.log('✅ Found PNP profile')
+          return { ...pnpData, user_type: 'PNP_OFFICER', profile_source: 'pnp_officer_profiles' }
+        }
+  
+        // Finally try regular user_profiles table (for mobile app users)
+        console.log('👤 Checking user_profiles table...')
+        const { data: userData, error: userError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('firebase_uid', firebaseUid)
+          .maybeSingle()
+  
+        if (userData && !userError) {
+          console.log('✅ Found user profile')
+          return { ...userData, profile_source: 'user_profiles' }
+        }
+  
+        // If user not found in any table
+        console.log('❌ User not found in any profile table')
+        return null
       }
 
-      // Then try pnp_officer_profiles table
-      console.log('👮 Checking pnp_officer_profiles table...')
-      const { data: pnpData, error: pnpError } = await supabase
-        .from('pnp_officer_profiles')
-        .select('*')
-        .eq('firebase_uid', firebaseUid)
-        .maybeSingle()
-
-      console.log('PNP query result:', { pnpData, pnpError })
-
-      if (pnpData && !pnpError) {
-        console.log('✅ Found PNP profile:', pnpData)
-        return { ...pnpData, user_type: 'PNP_OFFICER', profile_source: 'pnp_officer_profiles' }
-      }
-
-      // Finally try regular user_profiles table (for mobile app users)
-      console.log('👤 Checking user_profiles table...')
-      const { data: userData, error: userError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('firebase_uid', firebaseUid)
-        .maybeSingle()
-
-      console.log('User query result:', { userData, userError })
-
-      if (userData && !userError) {
-        console.log('✅ Found user profile:', userData)
-        return { ...userData, profile_source: 'user_profiles' }
-      }
-
-      // If user not found in any table
-      console.log('❌ User not found in any profile table')
-      return null
+      // Use Promise.race to handle timeouts
+      return await Promise.race([profileLookup(), timeoutPromise]) as any
     } catch (error: any) {
+      if (error.message === 'Profile lookup timeout') {
+        console.error('⏱️ Profile lookup timed out')
+        return null
+      }
       console.error('💥 Error in getUserProfile:', error)
-      throw new Error(`Failed to get user profile: ${error.message}`)
+      return null // Return null instead of throwing to prevent crashes
     }
   }
 

@@ -63,7 +63,12 @@ export default function LawBotSystem() {
   // Check authentication state and redirect to appropriate dashboard
   useEffect(() => {
     if (!loading && !isInitialized) {
-      console.log('🔍 Checking authentication state...', { user: !!user, userRole, loading })
+      console.log('🔍 Checking authentication state...', { 
+        userExists: !!user, 
+        userId: user?.uid || 'none',
+        userRole, 
+        loading 
+      })
       
       if (user && userRole) {
         // User is authenticated, redirect to their dashboard
@@ -78,11 +83,14 @@ export default function LawBotSystem() {
       setIsInitialized(true)
     }
   }, [user, userRole, loading, isInitialized])
-
+  
   // Handle view changes from child components
   const handleViewChange = (newView: UserRole) => {
     console.log(`🔄 View change requested: ${currentView} → ${newView}`)
-    setCurrentView(newView)
+    // Prevent redundant view changes to avoid re-renders
+    if (currentView !== newView) {
+      setCurrentView(newView)
+    }
   }
 
   const toggleTheme = () => {
@@ -98,13 +106,33 @@ export default function LawBotSystem() {
     }
   }
 
-  // Show loading state while authentication is being checked
-  if (loading || !isInitialized) {
+  // Add a safety timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      // Set a timeout to force initialization after 8 seconds
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn('⚠️ Loading timeout reached - forcing initialization')
+          setIsInitialized(true)
+        }
+      }, 8000)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [loading])
+
+  // Skip loading screen after login authentication
+  // Only show loading screen on initial page load
+  // Once isInitialized is true, we won't show this anymore
+  if ((loading && !isInitialized) || (!isInitialized && currentView === "landing")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600 dark:text-slate-300">Loading LawBot System...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            {loading ? 'Starting application...' : 'Initializing components...'}
+          </p>
         </div>
       </div>
     )

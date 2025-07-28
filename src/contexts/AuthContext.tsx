@@ -9,8 +9,8 @@ interface AuthContextType {
   userProfile: any | null
   userRole: 'admin' | 'pnp' | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, fullName: string, userType: string, metadata?: any) => Promise<void>
+  signIn: (email: string, password: string) => Promise<User | void>
+  signUp: (email: string, password: string, fullName: string, userType: string, metadata?: any) => Promise<User | void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
 }
@@ -43,18 +43,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Import auth dynamically to avoid SSR issues
       import('@/lib/firebase').then(({ auth }) => {
         unsubscribe = onAuthStateChanged(auth, async (user) => {
+          console.log('🔄 Auth state changed:', user ? `User: ${user.uid}` : 'No user')
           setUser(user)
           
           if (user) {
+            // Set a timeout to prevent infinite loading
+            const timeoutId = setTimeout(() => {
+              console.log('⚠️ Profile fetch timeout - setting loading to false')
+              setLoading(false)
+            }, 5000) // 5 second timeout
+            
             // Fetch user profile from Supabase
             try {
+              console.log('🔍 Fetching user profile for:', user.uid)
               const profile = await AuthService.getUserProfile(user.uid)
+              
+              // Clear timeout since we got a response
+              clearTimeout(timeoutId)
+              
+              console.log('📋 User profile fetched:', profile ? 'Success' : 'Not found')
               setUserProfile(profile)
               
               // Determine user role and save to localStorage
               if (profile) {
                 const role = profile.user_type === 'ADMIN' ? 'admin' : 
                            profile.user_type === 'PNP_OFFICER' ? 'pnp' : null
+                
+                console.log(`🔑 User role determined: ${role}`)
                 setUserRole(role)
                 
                 // Persist authentication state
@@ -63,25 +78,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   localStorage.setItem('authPersistence', 'true')
                 }
               } else {
+                console.log('⚠️ No profile found for user')
                 setUserRole(null)
                 localStorage.removeItem('userRole')
                 localStorage.removeItem('authPersistence')
               }
             } catch (error) {
-              console.error('Error fetching user profile:', error)
+              console.error('❌ Error fetching user profile:', error)
               setUserProfile(null)
               setUserRole(null)
               localStorage.removeItem('userRole')
               localStorage.removeItem('authPersistence')
+            } finally {
+              // Always set loading to false when done
+              setLoading(false)
             }
           } else {
+            console.log('👋 User signed out or no user')
             setUserProfile(null)
             setUserRole(null)
             localStorage.removeItem('userRole')
             localStorage.removeItem('authPersistence')
+            setLoading(false)
           }
-          
-          setLoading(false)
         })
       }).catch((error) => {
         console.error('Error initializing Firebase Auth:', error)
@@ -104,8 +123,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     setLoading(true)
     try {
-      await AuthService.signInWithEmail(email, password)
+      const user = await AuthService.signInWithEmail(email, password)
+      console.log('👤 User signed in successfully:', user.uid)
+      // Loading will be set to false in the onAuthStateChanged listener
+      return user
     } catch (error) {
+      console.error('❌ Sign in error:', error)
       setLoading(false)
       throw error
     }
@@ -114,8 +137,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signUp = async (email: string, password: string, fullName: string, userType: string, metadata?: any) => {
     setLoading(true)
     try {
-      await AuthService.signUpWithEmail(email, password, fullName, userType, metadata)
+      const user = await AuthService.signUpWithEmail(email, password, fullName, userType, metadata)
+      console.log('👤 User signed up successfully:', user.uid)
+      // Loading will be set to false in the onAuthStateChanged listener
+      return user
     } catch (error) {
+      console.error('❌ Sign up error:', error)
       setLoading(false)
       throw error
     }
@@ -124,8 +151,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setLoading(true)
     try {
+      console.log('🚪 Signing out user...')
       await AuthService.signOut()
+      console.log('✅ User signed out successfully')
+      // Loading will be set to false in the onAuthStateChanged listener
     } catch (error) {
+      console.error('❌ Sign out error:', error)
       setLoading(false)
       throw error
     }

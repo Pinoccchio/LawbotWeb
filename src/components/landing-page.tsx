@@ -44,45 +44,72 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
       const currentUser = auth.currentUser
       
       if (!currentUser) {
+        console.error('❌ No current user found after login')
         setAuthError("Authentication failed. Please try again.")
         setIsValidating(false)
+        // Keep modal open to show error
         return
       }
 
       console.log(`🔐 Validating ${userType} access for user:`, currentUser.uid)
 
-      // Validate user has the correct role for the requested dashboard
-      const { isValid, userProfile, errorMessage } = await AuthService.validateUserAccess(currentUser.uid, userType)
-      
-      if (isValid && userProfile) {
-        // Success - user has correct role
-        console.log(`✅ Access granted for ${userType} dashboard`)
-        setLoginModal({ isOpen: false, userType })
-        setAuthError(null)
-        setIsValidating(false)
-        onViewChange(userType)
-      } else {
-        // Access denied - user doesn't have required role
-        console.log(`❌ Access denied: ${errorMessage}`)
-        setAuthError(errorMessage || 'Access denied')
+      try {
+        // Validate user has the correct role for the requested dashboard
+        const { isValid, userProfile, errorMessage } = await AuthService.validateUserAccess(currentUser.uid, userType)
+        
+        if (isValid && userProfile) {
+          // Success - user has correct role
+          console.log(`✅ Access granted for ${userType} dashboard`, userProfile)
+          
+          // IMPORTANT: Instead of closing the modal and showing the general loading screen,
+          // we keep the modal open with its own loading state until we're ready to switch views
+          // Then redirect to the appropriate dashboard (this will trigger the view change)
+          onViewChange(userType)
+          
+          // Close the modal only after the view change has been triggered
+          setLoginModal({ isOpen: false, userType })
+          // Then clear loading state
+          setAuthError(null)
+          setIsValidating(false)
+        } else {
+          // Access denied - user doesn't have required role
+          console.log(`❌ Access denied: ${errorMessage}`)
+          setAuthError(errorMessage || 'Access denied')
+          setIsValidating(false)
+          
+          // IMPORTANT: Keep modal open to show the error message
+          // The modal will only be closed when the user clicks the close button
+          // or when authentication is successful
+        }
+      } catch (error: any) {
+        // Error during role validation
+        console.error('❌ Role validation error:', error)
+        setAuthError(error.message || 'Authentication validation failed')
         setIsValidating(false)
         
-        // Don't automatically sign out - let user see the error and try correct dashboard
-        // They can manually logout if needed
+        // Keep modal open to show error message
+        return
       }
     } catch (error: any) {
-      console.error('Role validation failed:', error)
-      setAuthError(error.message || 'Authentication validation failed')
+      // Error getting current user
+      console.error('❌ Auth error:', error)
+      setAuthError('Authentication error: ' + (error.message || 'Unknown error'))
       setIsValidating(false)
       
-      // Don't auto sign out on validation error - might be temporary network issue
+      // Keep modal open to show error message
+      return
     }
   }
 
   const handleCloseModal = () => {
     // Don't allow closing while validation is in progress
-    if (isValidating) return
+    if (isValidating) {
+      console.log('⚠️ Cannot close modal while validation is in progress')
+      return
+    }
     
+    console.log('🔒 Closing login modal')
+    // Reset all form state when closing the modal
     setLoginModal({ isOpen: false, userType: loginModal.userType })
     setAuthError(null)
     setIsValidating(false)

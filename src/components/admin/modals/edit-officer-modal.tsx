@@ -40,14 +40,16 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     rank: "",
     unit: "",
     region: "",
-    status: "",
+    status: "active", // Default to active status
   })
 
   // Populate form when officer data changes
   useEffect(() => {
     if (officer && isOpen) {
       const nameParts = officer.name?.split(' ') || ['', '']
-      setOfficerForm({
+      
+      // Extract all the officer data we need with fallbacks
+      const officerData = {
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
         email: officer.email || '',
@@ -57,7 +59,33 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         unit: officer.unit || '',
         region: officer.region || '',
         status: officer.status || 'active',
+      }
+      
+      console.log('🔍 Populating edit form with officer data:', {
+        officerName: officer.name,
+        officerStatus: officer.status,
+        statusToBeSet: officerData.status,
+        fullOfficerData: officer
       })
+      
+      // Update form state and manually force state update for each field
+      setOfficerForm(officerData)
+      
+      // Use refs to manually update the select component values if needed
+      setTimeout(() => {
+        // Check if status is populating correctly
+        console.log('🔄 Form state after update:', {
+          currentStatus: officerData.status,
+          formStatus: document.querySelector('[data-testid="status-trigger"]')?.textContent?.trim()
+        })
+        
+        // Try setting the status again if it's not being applied
+        if (officerData.status && 
+            document.querySelector('[data-testid="status-trigger"]')?.textContent?.includes('Select officer status')) {
+          console.log('⚠️ Status not applied, forcing update...')
+          setOfficerForm(current => ({...current, status: officerData.status}))
+        }
+      }, 200)
     }
   }, [officer, isOpen])
 
@@ -65,8 +93,40 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
   useEffect(() => {
     if (isOpen) {
       fetchRegions()
+      
+      // Debug the dropdown rendering
+      setTimeout(() => {
+        console.log('🔍 Current officer data:', {
+          status: officer?.status,
+          rank: officer?.rank,
+          region: officer?.region
+        })
+        console.log('🔍 Current form data:', {
+          status: officerForm.status,
+          rank: officerForm.rank,
+          region: officerForm.region
+        })
+        
+        // Check if the trigger elements are properly updated
+        const statusTrigger = document.querySelector('[data-testid="status-trigger"]')
+        const rankTrigger = document.querySelector('[data-testid="rank-trigger"]')
+        
+        if (statusTrigger) {
+          console.log('📌 Status trigger content:', statusTrigger.textContent)
+        }
+        
+        if (rankTrigger) {
+          console.log('📌 Rank trigger content:', rankTrigger.textContent)
+        }
+        
+        // Check dropdown components structure
+        console.log('⚙️ Select components comparison:', {
+          statusTriggerHtml: statusTrigger?.innerHTML,
+          rankTriggerHtml: rankTrigger?.innerHTML
+        })
+      }, 500)
     }
-  }, [isOpen])
+  }, [isOpen, officer?.status, officerForm.status])
 
   const fetchRegions = async () => {
     setIsLoadingRegions(true)
@@ -113,7 +173,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       rank: "",
       unit: "",
       region: "",
-      status: "",
+      status: "active", // Default to active instead of empty string
     })
     onClose()
   }
@@ -428,11 +488,18 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="rank">Rank *</Label>
-                    <Select value={officerForm.rank} onValueChange={(value) => {
-                      setOfficerForm({ ...officerForm, rank: value })
-                      if (errors.rank) setErrors({ ...errors, rank: '' })
-                    }}>
-                      <SelectTrigger className={errors.rank ? 'border-red-500 focus:border-red-500' : ''}>
+                    <Select 
+                      value={officerForm.rank} 
+                      onValueChange={(value) => {
+                        console.log('🔄 Rank changed to:', value)
+                        setOfficerForm({ ...officerForm, rank: value })
+                        if (errors.rank) setErrors({ ...errors, rank: '' })
+                      }}
+                    >
+                      <SelectTrigger 
+                        data-testid="rank-trigger"
+                        className={errors.rank ? 'border-red-500 focus:border-red-500' : ''}
+                      >
                         <SelectValue placeholder="Select rank" />
                       </SelectTrigger>
                       <SelectContent>
@@ -528,11 +595,33 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   <div className="relative">
                     <Activity className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Select value={officerForm.status} onValueChange={(value) => {
+                      console.log('🔄 Status changed to:', value)
                       setOfficerForm({ ...officerForm, status: value })
                       if (errors.status) setErrors({ ...errors, status: '' })
                     }}>
-                      <SelectTrigger className={`pl-10 ${errors.status ? 'border-red-500 focus:border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select officer status" />
+                      <SelectTrigger 
+                        data-testid="status-trigger" 
+                        className={`pl-10 ${errors.status ? 'border-red-500 focus:border-red-500' : ''}`}
+                      >
+                        {/* Conditionally render the value or placeholder */}
+                        {officerForm.status ? (
+                          <span className="flex items-center space-x-2">
+                            <span>
+                              {officerForm.status === 'active' && '✅'}
+                              {officerForm.status === 'on_leave' && '🏖️'}
+                              {officerForm.status === 'suspended' && '⚠️'}
+                              {officerForm.status === 'retired' && '🏆'}
+                            </span>
+                            <span>
+                              {officerForm.status === 'active' && 'Active'}
+                              {officerForm.status === 'on_leave' && 'On Leave'}
+                              {officerForm.status === 'suspended' && 'Suspended'}
+                              {officerForm.status === 'retired' && 'Retired'}
+                            </span>
+                          </span>
+                        ) : (
+                          <SelectValue placeholder="Select officer status" />
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((status) => (
