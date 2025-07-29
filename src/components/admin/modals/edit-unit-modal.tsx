@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Shield, Target, Building, MapPin, Hash, MessageCircle, Plus, Users, Check } from "lucide-react"
+import { X, Shield, Target, Building, MapPin, Hash, MessageCircle, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,18 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 import PSGCApiService, { SimplifiedRegion } from "@/lib/psgc-api"
-import PNPUnitsService from "@/lib/pnp-units-service"
+import PNPUnitsService, { PNPUnit } from "@/lib/pnp-units-service"
 
-interface CreateUnitModalProps {
+interface EditUnitModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  unit: PNPUnit | null
 }
 
-export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalProps) {
+export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModalProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
@@ -28,11 +29,6 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
   const [successMessage, setSuccessMessage] = useState('')
   const [regions, setRegions] = useState<SimplifiedRegion[]>([])
   const [isLoadingRegions, setIsLoadingRegions] = useState(false)
-  const [isAutoFilled, setIsAutoFilled] = useState({
-    unitName: false,
-    description: false,
-    primaryCrimeTypes: false,
-  })
   
   const [unitForm, setUnitForm] = useState({
     unitName: "",
@@ -42,63 +38,26 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
     region: "",
     maxOfficers: "",
     primaryCrimeTypes: [] as string[],
+    status: "active" as "active" | "inactive" | "disbanded"
   })
 
-  // Define unit data by category based on WEB_DOCUMENTATION.md
-  const unitDataByCategory: {[key: string]: {unitName: string, description: string, crimeTypes: string[]}} = {
-    "Communication & Social Media Crimes": {
-      unitName: "Cyber Crime Investigation Cell",
-      description: "Specialized unit handling social media scams, phishing, online impersonation and communication-based cybercrimes.",
-      crimeTypes: ["Phishing", "Social Engineering", "Spam Messages", "Fake Social Media Profiles", "Online Impersonation", "Business Email Compromise", "SMS Fraud"]
-    },
-    "Financial & Economic Crimes": {
-      unitName: "Economic Offenses Wing",
-      description: "Elite unit dedicated to financial fraud, online banking scams, cryptocurrency crimes and economic cybercrimes.",
-      crimeTypes: ["Online Banking Fraud", "Credit Card Fraud", "Investment Scams", "Cryptocurrency Fraud", "Online Shopping Scams", "Payment Gateway Fraud", "Money Laundering"]
-    },
-    "Data & Privacy Crimes": {
-      unitName: "Cyber Security Division",
-      description: "Expert team investigating data breaches, identity theft, unauthorized access and privacy violations.",
-      crimeTypes: ["Identity Theft", "Data Breach", "Unauthorized System Access", "Corporate Espionage", "Government Data Theft", "Medical Records Theft", "Personal Information Theft"]
-    },
-    "Malware & System Attacks": {
-      unitName: "Cyber Crime Technical Unit",
-      description: "Technical unit handling ransomware, malware, viruses and technical system exploitation cases.",
-      crimeTypes: ["Ransomware", "Virus Attacks", "Trojan Horses", "Spyware", "Adware", "Worms", "Keyloggers", "Rootkits"]
-    },
-    "Harassment & Exploitation": {
-      unitName: "Cyber Crime Against Women and Children",
-      description: "Dedicated unit for cyberbullying, online harassment, stalking and exploitation crimes.",
-      crimeTypes: ["Cyberstalking", "Online Harassment", "Cyberbullying", "Revenge Porn", "Sextortion", "Online Predatory Behavior", "Doxxing"]
-    },
-    "Content-Related Crimes": {
-      unitName: "Special Investigation Team",
-      description: "Specialized team handling illegal content distribution, copyright violations and illicit material.",
-      crimeTypes: ["Child Sexual Abuse Material", "Illegal Content Distribution", "Copyright Infringement", "Software Piracy", "Illegal Online Gambling"]
-    },
-    "System Disruption & Sabotage": {
-      unitName: "Critical Infrastructure Protection Unit",
-      description: "Expert unit protecting against DDoS attacks, system sabotage and critical infrastructure threats.",
-      crimeTypes: ["Denial of Service Attacks", "Website Defacement", "System Sabotage", "Network Intrusion", "SQL Injection", "Cross-Site Scripting"]
-    },
-    "Government & Terrorism": {
-      unitName: "National Security Cyber Division",
-      description: "Elite division handling cyberterrorism, government system attacks and national security threats.",
-      crimeTypes: ["Cyberterrorism", "Cyber Warfare", "Government System Hacking", "Election Interference", "Critical Infrastructure Attacks", "Propaganda Distribution"]
-    },
-    "Technical Exploitation": {
-      unitName: "Advanced Cyber Forensics Unit",
-      description: "Advanced technical unit handling zero-day exploits, sophisticated technical attacks and forensic analysis.",
-      crimeTypes: ["Zero-Day Exploits", "Vulnerability Exploitation", "Backdoor Creation", "Privilege Escalation", "Code Injection", "Buffer Overflow Attacks"]
-    },
-    "Targeted Attacks": {
-      unitName: "Special Cyber Operations Unit",
-      description: "Specialized operations unit for advanced persistent threats, targeted attacks and sophisticated campaigns.",
-      crimeTypes: ["Advanced Persistent Threats", "Spear Phishing", "CEO Fraud", "Supply Chain Attacks", "Insider Threats"]
+  // Populate form when unit data changes
+  useEffect(() => {
+    if (unit && isOpen) {
+      setUnitForm({
+        unitName: unit.unit_name || "",
+        category: unit.category || "",
+        unitCode: unit.unit_code || "",
+        description: unit.description || "",
+        region: unit.region || "",
+        maxOfficers: unit.max_officers ? String(unit.max_officers) : "",
+        primaryCrimeTypes: unit.crime_types || [],
+        status: unit.status || "active"
+      })
     }
-  }
+  }, [unit, isOpen])
 
-  // Fetch regions when modal opens using PSGC Cloud API as default
+  // Fetch regions when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchRegions()
@@ -130,7 +89,7 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !unit) return null
 
   const handleClose = () => {
     setSuccessMessage('')
@@ -143,64 +102,12 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
       region: "",
       maxOfficers: "",
       primaryCrimeTypes: [],
-    })
-    setIsAutoFilled({
-      unitName: false,
-      description: false,
-      primaryCrimeTypes: false,
+      status: "active"
     })
     onClose()
   }
 
-
-
-  // Generate a unit code based on category and random number
-  const generateUnitCode = (category: string): string => {
-    // Create abbreviation from category (first letter of each word)
-    const abbr = category
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-    
-    // Generate random 3-digit number
-    const randomNum = Math.floor(100 + Math.random() * 900)
-    
-    // Format as PCU-XXX
-    return `PCU-${randomNum}`
-  }
-
-  const handleCategoryChange = (value: string) => {
-    const categoryData = unitDataByCategory[value]
-    
-    if (categoryData) {
-      // Generate unique unit code
-      const unitCode = generateUnitCode(value)
-      
-      // Auto-fill fields based on selected category
-      setUnitForm({
-        ...unitForm,
-        category: value,
-        unitName: categoryData.unitName,
-        unitCode: unitCode,
-        description: categoryData.description,
-        primaryCrimeTypes: [...categoryData.crimeTypes]
-      })
-      // Mark fields as auto-filled
-      setIsAutoFilled({
-        unitName: true,
-        description: true,
-        primaryCrimeTypes: true,
-      })
-    } else {
-      // Just update the category if no matching data
-      setUnitForm({ ...unitForm, category: value })
-    }
-    
-    if (errors.category) setErrors({ ...errors, category: '' })
-  }
-
-  const handleCreateUnit = async (e: React.FormEvent) => {
+  const handleUpdateUnit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
     setIsLoading(true)
@@ -215,6 +122,7 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
       if (!unitForm.description.trim()) newErrors.description = 'Description is required'
       if (!unitForm.region) newErrors.region = 'Region is required'
       if (!unitForm.maxOfficers.trim()) newErrors.maxOfficers = 'Maximum officers is required'
+      if (!unitForm.status) newErrors.status = 'Status is required'
       if (unitForm.primaryCrimeTypes.length === 0) newErrors.primaryCrimeTypes = 'At least one crime type is required'
       
       // Unit code validation (format: PCU-XXX)
@@ -244,16 +152,9 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
         return
       }
 
-      // Get ID token for authentication
-      const idToken = await user.getIdToken()
-      
-      // Create the unit in the database
-      console.log('🔐 Getting admin ID token for authentication...')
-      console.log('📡 Creating PNP unit in Supabase database...')
-      
+      // Update the unit
       try {
-        // Create the unit using PNPUnitsService
-        await PNPUnitsService.createPNPUnit({
+        await PNPUnitsService.updatePNPUnit(unit.id, {
           unit_name: unitForm.unitName,
           unit_code: unitForm.unitCode,
           category: unitForm.category,
@@ -263,35 +164,20 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
           primary_crime_types: unitForm.primaryCrimeTypes
         })
         
-        console.log('✅ PNP Unit created successfully in database')
+        // Change status if needed
+        if (unit.status !== unitForm.status) {
+          await PNPUnitsService.changeUnitStatus(unit.id, unitForm.status)
+        }
         
         // Show toast notification for success
         toast({
-          title: "New Unit Created",
-          description: `${unitForm.unitName} has been successfully added to the system`,
+          title: "Unit Updated",
+          description: `${unitForm.unitName} has been successfully updated`,
           variant: "success",
         })
         
         // Show success message in modal
-        setSuccessMessage(`✅ PNP Unit "${unitForm.unitName}" created successfully! (Code: ${unitForm.unitCode})`)
-        
-        // Clear the form
-        setUnitForm({
-          unitName: "",
-          category: "",
-          unitCode: "",
-          description: "",
-          region: "",
-          maxOfficers: "",
-          primaryCrimeTypes: [],
-        })
-        
-        // Reset auto-filled flags
-        setIsAutoFilled({
-          unitName: false,
-          description: false,
-          primaryCrimeTypes: false,
-        })
+        setSuccessMessage(`✅ PNP Unit "${unitForm.unitName}" updated successfully!`)
         
         // Notify parent component of success
         onSuccess()
@@ -302,11 +188,11 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
           handleClose()
         }, 2000)
       } catch (dbError: any) {
-        console.error('Database error creating unit:', dbError)
+        console.error('Database error updating unit:', dbError)
         setErrors({ general: dbError.toString().replace('Error: ', '') })
       }
     } catch (error: any) {
-      console.error('Unit creation failed:', error)
+      console.error('Unit update failed:', error)
       setErrors({ general: error.toString().replace('Error: ', '') })
     } finally {
       setIsLoading(false)
@@ -326,7 +212,28 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
     "Targeted Attacks"
   ]
 
-  // Regions are now loaded dynamically from PSGC API
+  const statusOptions = [
+    { value: 'active', label: 'Active', icon: '✅', description: 'Unit is operational' },
+    { value: 'inactive', label: 'Inactive', icon: '⚠️', description: 'Unit is temporarily inactive' },
+    { value: 'disbanded', label: 'Disbanded', icon: '🚫', description: 'Unit has been disbanded' }
+  ]
+
+  // All possible crime types organized by category
+  const allCrimeTypes: Record<string, string[]> = {
+    "Communication & Social Media Crimes": ["Phishing", "Social Engineering", "Spam Messages", "Fake Social Media Profiles", "Online Impersonation", "Business Email Compromise", "SMS Fraud"],
+    "Financial & Economic Crimes": ["Online Banking Fraud", "Credit Card Fraud", "Investment Scams", "Cryptocurrency Fraud", "Online Shopping Scams", "Payment Gateway Fraud", "Money Laundering"],
+    "Data & Privacy Crimes": ["Identity Theft", "Data Breach", "Unauthorized System Access", "Corporate Espionage", "Government Data Theft", "Medical Records Theft", "Personal Information Theft"],
+    "Malware & System Attacks": ["Ransomware", "Virus Attacks", "Trojan Horses", "Spyware", "Adware", "Worms", "Keyloggers", "Rootkits"],
+    "Harassment & Exploitation": ["Cyberstalking", "Online Harassment", "Cyberbullying", "Revenge Porn", "Sextortion", "Online Predatory Behavior", "Doxxing"],
+    "Content-Related Crimes": ["Child Sexual Abuse Material", "Illegal Content Distribution", "Copyright Infringement", "Software Piracy", "Illegal Online Gambling"],
+    "System Disruption & Sabotage": ["Denial of Service Attacks", "Website Defacement", "System Sabotage", "Network Intrusion", "SQL Injection", "Cross-Site Scripting"],
+    "Government & Terrorism": ["Cyberterrorism", "Cyber Warfare", "Government System Hacking", "Election Interference", "Critical Infrastructure Attacks", "Propaganda Distribution"],
+    "Technical Exploitation": ["Zero-Day Exploits", "Vulnerability Exploitation", "Backdoor Creation", "Privilege Escalation", "Code Injection", "Buffer Overflow Attacks"],
+    "Targeted Attacks": ["Advanced Persistent Threats", "Spear Phishing", "CEO Fraud", "Supply Chain Attacks", "Insider Threats"]
+  }
+
+  // Get crime types based on selected category
+  const availableCrimeTypes = unitForm.category ? allCrimeTypes[unitForm.category] || [] : []
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -340,19 +247,19 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl">Create PNP Unit</CardTitle>
+              <CardTitle className="text-xl">Edit PNP Unit</CardTitle>
               <CardDescription>
-                Add a new specialized cybercrime investigation unit
+                Update specialized cybercrime investigation unit
               </CardDescription>
             </div>
           </div>
           <Badge variant="outline" className="w-fit">
-            🛡️ Specialized Unit Configuration
+            🛡️ {unit.unit_code} - {unit.unit_name}
           </Badge>
         </CardHeader>
 
         <CardContent className="overflow-y-auto max-h-[calc(90vh-180px)]">
-          <form onSubmit={handleCreateUnit} className="space-y-4">
+          <form onSubmit={handleUpdateUnit} className="space-y-4">
             {errors.general && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
                 <p className="text-red-800 dark:text-red-200 text-sm font-medium">
@@ -374,10 +281,21 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
             
             {!successMessage && (
               <>
-                {/* Crime Category - Auto-fills other fields */}
+                {/* Crime Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category">Crime Category *</Label>
-                  <Select onValueChange={handleCategoryChange}>
+                  <Select 
+                    value={unitForm.category} 
+                    onValueChange={(value) => {
+                      setUnitForm({ 
+                        ...unitForm, 
+                        category: value,
+                        // Clear crime types when changing category
+                        primaryCrimeTypes: []
+                      })
+                      if (errors.category) setErrors({ ...errors, category: '' })
+                    }}
+                  >
                     <SelectTrigger className={errors.category ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -392,52 +310,28 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                   {errors.category && (
                     <p className="text-red-600 text-xs mt-1">{errors.category}</p>
                   )}
-                  {unitForm.category && unitDataByCategory[unitForm.category] && (
-                    <p className="text-lawbot-blue-600 dark:text-lawbot-blue-400 text-xs mt-1">
-                      <span className="font-medium">Selected category</span> will auto-fill unit details
-                    </p>
-                  )}
                 </div>
                 
-                {/* Unit Name - Auto-filled and non-editable after category selection */}
+                {/* Unit Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="unitName">
-                    Unit Name * 
-                    {isAutoFilled.unitName && (
-                      <span className="ml-2 text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
-                        (Auto-filled)
-                      </span>
-                    )}
-                  </Label>
+                  <Label htmlFor="unitName">Unit Name *</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="unitName"
-                      placeholder={!unitForm.category ? "Select a crime category first" : "e.g., Advanced Cyber Forensics Unit"}
-                      className={`pl-10 ${errors.unitName ? 'border-red-500 focus:border-red-500' : ''} ${isAutoFilled.unitName ? 'bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800' : ''}`}
+                      placeholder="e.g., Advanced Cyber Forensics Unit"
+                      className={`pl-10 ${errors.unitName ? 'border-red-500 focus:border-red-500' : ''}`}
                       value={unitForm.unitName}
                       onChange={(e) => {
-                        // Unit Name is not editable after auto-fill
+                        setUnitForm({ ...unitForm, unitName: e.target.value })
+                        if (errors.unitName) setErrors({ ...errors, unitName: '' })
                       }}
-                      disabled={!unitForm.category || isAutoFilled.unitName}
-                      readOnly={isAutoFilled.unitName}
                     />
                   </div>
                   {errors.unitName && (
                     <p className="text-red-600 text-xs mt-1">{errors.unitName}</p>
                   )}
-                  {!unitForm.category && (
-                    <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
-                      Select a crime category above to auto-fill unit details
-                    </p>
-                  )}
-                  {isAutoFilled.unitName && (
-                    <p className="text-lawbot-blue-600 dark:text-lawbot-blue-400 text-xs mt-1">
-                      Unit name is automatically set based on crime category
-                    </p>
-                  )}
                 </div>
-
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -446,23 +340,17 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                       <Hash className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="unitCode"
-                        placeholder={!unitForm.category ? "Select a crime category first" : "PCU-XXX"}
-                        className={`pl-10 font-mono ${errors.unitCode ? 'border-red-500 focus:border-red-500' : ''} ${unitForm.unitCode ? 'bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800' : ''}`}
+                        placeholder="PCU-XXX"
+                        className={`pl-10 font-mono ${errors.unitCode ? 'border-red-500 focus:border-red-500' : ''}`}
                         value={unitForm.unitCode}
                         onChange={(e) => {
                           setUnitForm({ ...unitForm, unitCode: e.target.value.toUpperCase() })
                           if (errors.unitCode) setErrors({ ...errors, unitCode: '' })
                         }}
-                        disabled={!unitForm.category}
                       />
                     </div>
                     {errors.unitCode && (
                       <p className="text-red-600 text-xs mt-1">{errors.unitCode}</p>
-                    )}
-                    {unitForm.category && unitForm.unitCode && (
-                      <p className="text-lawbot-blue-600 dark:text-lawbot-blue-400 text-xs mt-1">
-                        Auto-generated code, you can edit if needed
-                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -474,14 +362,13 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                         type="number"
                         min="1"
                         max="50"
-                        placeholder={!unitForm.category ? "Select a crime category first" : "10"}
+                        placeholder="10"
                         className={`pl-10 ${errors.maxOfficers ? 'border-red-500 focus:border-red-500' : ''}`}
                         value={unitForm.maxOfficers}
                         onChange={(e) => {
                           setUnitForm({ ...unitForm, maxOfficers: e.target.value })
                           if (errors.maxOfficers) setErrors({ ...errors, maxOfficers: '' })
                         }}
-                        disabled={!unitForm.category}
                       />
                     </div>
                     {errors.maxOfficers && (
@@ -493,17 +380,16 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                 <div className="space-y-2">
                   <Label htmlFor="region">Primary Region *</Label>
                   <Select 
+                    value={unitForm.region} 
                     onValueChange={(value) => {
                       setUnitForm({ ...unitForm, region: value })
                       if (errors.region) setErrors({ ...errors, region: '' })
                     }}
-                    disabled={!unitForm.category || isLoadingRegions}
+                    disabled={isLoadingRegions}
                   >
                     <SelectTrigger className={errors.region ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder={
-                        !unitForm.category ? "Select a crime category first" : 
-                        isLoadingRegions ? "Loading regions..." : 
-                        "Select region"
+                        isLoadingRegions ? "Loading regions..." : "Select region"
                       } />
                     </SelectTrigger>
                     <SelectContent>
@@ -542,32 +428,52 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                   )}
                 </div>
 
-                {/* Unit Description - Auto-filled but editable after category selection */}
+                {/* Unit Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">
-                    Unit Description * 
-                    {isAutoFilled.description && (
-                      <span className="ml-2 text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
-                        (Auto-filled)
-                      </span>
-                    )}
-                  </Label>
+                  <Label htmlFor="status">Unit Status *</Label>
+                  <Select 
+                    value={unitForm.status} 
+                    onValueChange={(value: "active" | "inactive" | "disbanded") => {
+                      setUnitForm({ ...unitForm, status: value })
+                      if (errors.status) setErrors({ ...errors, status: '' })
+                    }}
+                  >
+                    <SelectTrigger className={errors.status ? 'border-red-500 focus:border-red-500' : ''}>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          <div className="flex items-center space-x-2">
+                            <span>{status.icon}</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{status.label}</span>
+                              <span className="text-xs text-gray-500">{status.description}</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.status && (
+                    <p className="text-red-600 text-xs mt-1">{errors.status}</p>
+                  )}
+                </div>
+
+                {/* Unit Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Unit Description *</Label>
                   <div className="relative">
                     <MessageCircle className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Textarea
                       id="description"
-                      placeholder={!unitForm.category ? "Select a crime category first" : "Describe the unit's responsibilities and jurisdiction..."}
-                      className={`pl-10 min-h-[100px] ${errors.description ? 'border-red-500 focus:border-red-500' : ''} ${isAutoFilled.description ? 'bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800' : ''}`}
+                      placeholder="Describe the unit's responsibilities and jurisdiction..."
+                      className={`pl-10 min-h-[100px] ${errors.description ? 'border-red-500 focus:border-red-500' : ''}`}
                       value={unitForm.description}
                       onChange={(e) => {
                         setUnitForm({ ...unitForm, description: e.target.value })
-                        // If we're editing, it's no longer auto-filled
-                        if (isAutoFilled.description) {
-                          setIsAutoFilled({...isAutoFilled, description: false})
-                        }
                         if (errors.description) setErrors({ ...errors, description: '' })
                       }}
-                      disabled={!unitForm.category}
                     />
                   </div>
                   {errors.description && (
@@ -575,48 +481,107 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                   )}
                 </div>
 
-                {/* Primary Crime Types - Auto-filled */}
+                {/* Primary Crime Types */}
                 <div className="space-y-2">
                   <Label htmlFor="primaryCrimeTypes">
                     Primary Crime Types * 
-                    {isAutoFilled.primaryCrimeTypes && (
-                      <span className="ml-2 text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
-                        (Auto-filled)
-                      </span>
-                    )}
                   </Label>
                   {errors.primaryCrimeTypes && (
                     <p className="text-red-600 text-xs mt-1">{errors.primaryCrimeTypes}</p>
                   )}
                   
-                  {unitForm.primaryCrimeTypes.length > 0 && (
-                    <div className={`flex flex-wrap gap-2 mt-2 p-3 rounded-lg ${isAutoFilled.primaryCrimeTypes ? 'bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border border-lawbot-blue-200 dark:border-lawbot-blue-800' : ''}`}>
-                      {unitForm.primaryCrimeTypes.map((crimeType) => (
-                        <Badge 
-                          key={crimeType} 
-                          className="bg-lawbot-purple-100 text-lawbot-purple-800 hover:bg-lawbot-purple-200 border border-lawbot-purple-200 dark:bg-lawbot-purple-900/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800"
-                        >
-                          {crimeType}
-                        </Badge>
-                      ))}
-                    </div>
+                  {unitForm.category && availableCrimeTypes.length > 0 && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {availableCrimeTypes.map((crimeType) => {
+                          const isSelected = unitForm.primaryCrimeTypes.includes(crimeType)
+                          return (
+                            <div 
+                              key={crimeType} 
+                              className={`flex items-center p-2 border rounded-md cursor-pointer ${
+                                isSelected 
+                                  ? 'bg-lawbot-blue-50 border-lawbot-blue-300 dark:bg-lawbot-blue-900/20 dark:border-lawbot-blue-700' 
+                                  : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                              }`}
+                              onClick={() => {
+                                let newCrimeTypes = [...unitForm.primaryCrimeTypes]
+                                if (isSelected) {
+                                  newCrimeTypes = newCrimeTypes.filter(type => type !== crimeType)
+                                } else {
+                                  newCrimeTypes.push(crimeType)
+                                }
+                                setUnitForm({ ...unitForm, primaryCrimeTypes: newCrimeTypes })
+                                if (errors.primaryCrimeTypes) setErrors({ ...errors, primaryCrimeTypes: '' })
+                              }}
+                            >
+                              <div className={`w-4 h-4 mr-2 border rounded ${
+                                isSelected 
+                                  ? 'bg-lawbot-blue-500 border-lawbot-blue-500' 
+                                  : 'border-gray-300 dark:border-gray-600'
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="text-sm">{crimeType}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 mb-2">
+                          Selected Crime Types ({unitForm.primaryCrimeTypes.length}):
+                        </p>
+                        <div className="flex flex-wrap gap-2 w-full">
+                          {unitForm.primaryCrimeTypes.map((crimeType) => (
+                            <Badge 
+                              key={crimeType} 
+                              className="bg-lawbot-purple-100 text-lawbot-purple-800 hover:bg-lawbot-purple-200 border border-lawbot-purple-200 dark:bg-lawbot-purple-900/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800"
+                            >
+                              {crimeType}
+                              <button 
+                                className="ml-1 text-lawbot-purple-600 dark:text-lawbot-purple-300 hover:text-lawbot-purple-800 dark:hover:text-lawbot-purple-100"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  setUnitForm({ 
+                                    ...unitForm, 
+                                    primaryCrimeTypes: unitForm.primaryCrimeTypes.filter(type => type !== crimeType) 
+                                  })
+                                }}
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  {!unitForm.category && (
+                    <p className="text-amber-600 dark:text-amber-400 text-sm mt-2">
+                      Please select a crime category to view available crime types
+                    </p>
                   )}
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={isLoading || !unitForm.category}
+                  disabled={isLoading}
                   className="w-full text-white bg-lawbot-blue-600 hover:bg-lawbot-blue-700 disabled:opacity-50"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating Unit...
+                      Updating Unit...
                     </>
                   ) : (
                     <>
                       <Shield className="mr-2 h-4 w-4" />
-                      Create PNP Unit
+                      Update PNP Unit
                     </>
                   )}
                 </Button>
