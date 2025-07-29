@@ -146,12 +146,65 @@ export class PNPUnitsService {
   }
 
   /**
+   * Check if a unit code already exists
+   */
+  static async checkUnitCodeExists(unitCode: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('pnp_units')
+        .select('id')
+        .eq('unit_code', unitCode.toUpperCase())
+        .limit(1)
+
+      if (error) {
+        console.error('Error checking unit code:', error)
+        return false // In case of error, allow creation (better than blocking)
+      }
+
+      return data && data.length > 0
+    } catch (error) {
+      console.error('Unit code check failed:', error)
+      return false
+    }
+  }
+
+  /**
+   * Generate a unique unit code
+   */
+  static async generateUniqueUnitCode(category: string, maxAttempts: number = 10): Promise<string> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // Generate random 3-digit number
+      const randomNum = Math.floor(100 + Math.random() * 900)
+      const unitCode = `PCU-${randomNum}`
+      
+      // Check if this code already exists
+      const exists = await this.checkUnitCodeExists(unitCode)
+      
+      if (!exists) {
+        console.log(`✅ Generated unique unit code: ${unitCode} (attempt ${attempt})`)
+        return unitCode
+      }
+      
+      console.log(`⚠️ Unit code ${unitCode} already exists, trying again... (attempt ${attempt})`)
+    }
+    
+    // If we can't generate a unique code after max attempts, throw error
+    throw new Error(`Failed to generate unique unit code after ${maxAttempts} attempts. Please try again.`)
+  }
+
+  /**
    * Create a new PNP unit with crime types
    */
   static async createPNPUnit(unitData: CreatePNPUnitPayload) {
     try {
       if (!this.currentUserId) {
         throw new Error('User not authenticated')
+      }
+
+      // Check if unit code already exists
+      const codeExists = await this.checkUnitCodeExists(unitData.unit_code)
+      if (codeExists) {
+        throw new Error(`Unit code '${unitData.unit_code}' already exists. Please use a different code or generate a new one.`)
       }
 
       // Get admin ID using firebase_uid
@@ -170,7 +223,7 @@ export class PNPUnitsService {
         .from('pnp_units')
         .insert({
           unit_name: unitData.unit_name,
-          unit_code: unitData.unit_code,
+          unit_code: unitData.unit_code.toUpperCase(), // Ensure uppercase
           category: unitData.category,
           description: unitData.description,
           region: unitData.region,
@@ -181,6 +234,10 @@ export class PNPUnitsService {
         .single()
 
       if (unitError) {
+        // Check if it's a unique constraint violation
+        if (unitError.code === '23505' && unitError.message.includes('unit_code')) {
+          throw new Error(`Unit code '${unitData.unit_code}' already exists. Please use a different code.`)
+        }
         throw new Error(`Failed to create PNP unit: ${unitError.message}`)
       }
 
@@ -196,10 +253,13 @@ export class PNPUnitsService {
           .insert(crimeTypeInserts)
 
         if (crimeTypesError) {
+          // If crime types fail, clean up the unit record
+          await supabase.from('pnp_units').delete().eq('id', unit.id)
           throw new Error(`Failed to add crime types: ${crimeTypesError.message}`)
         }
       }
 
+      console.log(`✅ PNP Unit created successfully with code: ${unitData.unit_code}`)
       return unit.id
     } catch (error: any) {
       console.error('Error creating PNP unit:', error)
@@ -229,6 +289,10 @@ export class PNPUnitsService {
         .eq('id', unitId)
 
       if (unitError) {
+        // Check if it's a unique constraint violation for unit_code
+        if (unitError.code === '23505' && unitError.message.includes('unit_code')) {
+          throw new Error(`Unit code already exists. Please use a different unit code.`)
+        }
         throw new Error(`Failed to update PNP unit: ${unitError.message}`)
       }
 
@@ -347,6 +411,42 @@ export class PNPUnitsService {
     } catch (error) {
       console.error('Error getting unit cases:', error)
       return []
+    }
+  }
+
+  /**
+   * Delete a PNP unit
+   */
+  static async deletePNPUnit(unitId: string) {
+    try {
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated')
+      }
+
+      // First, delete associated crime types
+      const { error: crimeTypesError } = await supabase
+        .from('pnp_unit_crime_types')
+        .delete()
+        .eq('unit_id', unitId)
+
+      if (crimeTypesError) {
+        throw new Error(`Failed to delete unit crime types: ${crimeTypesError.message}`)
+      }
+
+      // Then, delete the unit itself
+      const { error: unitError } = await supabase
+        .from('pnp_units')
+        .delete()
+        .eq('id', unitId)
+
+      if (unitError) {
+        throw new Error(`Failed to delete PNP unit: ${unitError.message}`)
+      }
+
+      return true
+    } catch (error: any) {
+      console.error('Error deleting PNP unit:', error)
+      throw new Error(`Failed to delete PNP unit: ${error.message}`)
     }
   }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, Users, BarChart3, Plus, Edit, Activity, Target, TrendingUp, Award } from "lucide-react"
+import { Shield, Users, BarChart3, Plus, Edit, Activity, Target, TrendingUp, Award, Trash2, X, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,7 @@ import { UnitAnalyticsModal } from "../modals/unit-analytics-modal"
 import { CreateUnitModal } from "../modals/create-unit-modal"
 import { EditUnitModal } from "../modals/edit-unit-modal"
 import PNPUnitsService, { PNPUnit } from "@/lib/pnp-units-service"
+import { useToast } from "@/hooks/use-toast"
 
 export function PNPUnitsView() {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false)
@@ -18,6 +19,8 @@ export function PNPUnitsView() {
   const [selectedUnit, setSelectedUnit] = useState<PNPUnit | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [pnpUnits, setPnpUnits] = useState<PNPUnit[]>([])
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{unitId: string, unitName: string} | null>(null)
+  const { toast } = useToast()
   const [stats, setStats] = useState({
     totalUnits: 0,
     totalOfficers: 0,
@@ -67,6 +70,35 @@ export function PNPUnitsView() {
   }, [isCreateUnitModalOpen, isEditUnitModalOpen]) // Refetch when modal closes after creation
   
   // No longer using mock data for non-configured units
+  
+  // Handle unit deletion
+  const handleDeleteUnit = async () => {
+    if (!deleteConfirmation) return
+    
+    try {
+      await PNPUnitsService.deletePNPUnit(deleteConfirmation.unitId)
+      
+      // Show success toast
+      toast({
+        title: "Unit Deleted",
+        description: `${deleteConfirmation.unitName} has been permanently removed`,
+        variant: "success",
+      })
+      
+      // Refresh the units list
+      fetchPNPUnits()
+      
+      // Clear confirmation dialog
+      setDeleteConfirmation(null)
+    } catch (error: any) {
+      console.error('Error deleting unit:', error)
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete the unit",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -195,63 +227,87 @@ export function PNPUnitsView() {
             
             return (
               <Card key={unit.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 rounded-xl ${unitColor} shadow-lg animate-pulse`}></div>
-                      <div>
-                        <div className="flex items-start justify-between mb-1">
-                          <CardTitle className="text-lg font-bold text-lawbot-slate-900 dark:text-white">{unit.unit_name}</CardTitle>
-                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-950/20 dark:to-lawbot-blue-900/30 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono ml-2 shadow-sm">
-                            {unit.unit_code}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center mt-1 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100/30 dark:from-lawbot-blue-950/20 dark:to-lawbot-blue-900/10 px-2 py-1 rounded-md">
-                          <span className="mr-1.5">📍</span>
-                          <CardDescription className="font-medium text-lawbot-blue-700 dark:text-lawbot-blue-400 truncate">
-                            {unit.category}
-                          </CardDescription>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100/50 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-950/20 dark:to-lawbot-blue-900/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
-                            <span className="mr-1">🏢</span>
-                            {unit.region}
-                          </Badge>
-                          
-                          {unit.status === 'active' && (
-                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-950/20 dark:to-lawbot-blue-900/30 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
-                              <span className="mr-1">✅</span>
-                              Active
-                            </Badge>
-                          )}
-                          
-                          {unit.status === 'inactive' && (
-                            <Badge className="bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border border-yellow-200 dark:from-yellow-950/20 dark:to-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
-                              <span className="mr-1">⚠️</span>
-                              Inactive
-                            </Badge>
-                          )}
-                          
-                          {unit.status === 'disbanded' && (
-                            <Badge className="bg-gradient-to-r from-red-50 to-red-100 text-red-700 border border-red-200 dark:from-red-950/20 dark:to-red-900/30 dark:text-red-300 dark:border-red-800">
-                              <span className="mr-1">🚫</span>
-                              Disbanded
-                            </Badge>
-                          )}
-                        </div>
+                <CardHeader className="pb-4">
+                  {/* Top row: Unit indicator, name, and action button */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className={`w-3 h-8 rounded-full ${unitColor} shadow-md`}></div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white leading-tight">
+                          {unit.unit_name}
+                        </CardTitle>
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20"
-                      onClick={() => {
-                        setSelectedUnit(unit)
-                        setIsEditUnitModalOpen(true)
-                      }}
-                    >
-                      <Edit className="h-4 w-4 text-lawbot-blue-500" />
-                    </Button>
+                    <div className="flex items-center space-x-1 shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20"
+                        onClick={() => {
+                          setSelectedUnit(unit)
+                          setIsEditUnitModalOpen(true)
+                        }}
+                      >
+                        <Edit className="h-4 w-4 text-lawbot-blue-500" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="btn-icon hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => {
+                          setDeleteConfirmation({
+                            unitId: unit.id,
+                            unitName: unit.unit_name
+                          })
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Second row: Category with better styling */}
+                  <div className="mb-3">
+                    <div className="inline-flex items-center bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100/40 dark:from-lawbot-blue-950/30 dark:to-lawbot-blue-900/20 px-3 py-1.5 rounded-lg">
+                      <span className="mr-2 text-lawbot-blue-600 dark:text-lawbot-blue-400">📍</span>
+                      <CardDescription className="font-medium text-lawbot-blue-700 dark:text-lawbot-blue-400 text-sm">
+                        {unit.category}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  {/* Third row: Unit code, region, and status in organized layout */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-gradient-to-r from-lawbot-indigo-50 to-lawbot-indigo-100 text-lawbot-indigo-700 border border-lawbot-indigo-200 dark:from-lawbot-indigo-950/20 dark:to-lawbot-indigo-900/30 dark:text-lawbot-indigo-300 dark:border-lawbot-indigo-800 font-mono font-semibold">
+                      <span className="mr-1.5">🏷️</span>
+                      {unit.unit_code}
+                    </Badge>
+                    
+                    <Badge className="bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-950/20 dark:to-lawbot-slate-900/30 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800">
+                      <span className="mr-1.5">🏢</span>
+                      {unit.region}
+                    </Badge>
+                    
+                    {unit.status === 'active' && (
+                      <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-950/20 dark:to-lawbot-blue-900/30 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
+                        <span className="mr-1.5">✅</span>
+                        Active
+                      </Badge>
+                    )}
+                    
+                    {unit.status === 'inactive' && (
+                      <Badge className="bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border border-yellow-200 dark:from-yellow-950/20 dark:to-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
+                        <span className="mr-1.5">⚠️</span>
+                        Inactive
+                      </Badge>
+                    )}
+                    
+                    {unit.status === 'disbanded' && (
+                      <Badge className="bg-gradient-to-r from-red-50 to-red-100 text-red-700 border border-red-200 dark:from-red-950/20 dark:to-red-900/30 dark:text-red-300 dark:border-red-800">
+                        <span className="mr-1.5">🚫</span>
+                        Disbanded
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -392,6 +448,105 @@ export function PNPUnitsView() {
         }}
         unit={selectedUnit}
       />
+      
+      {/* Modern Delete Confirmation Dialog */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-white dark:bg-slate-800 shadow-2xl">
+            <CardHeader className="relative">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setDeleteConfirmation(null)} 
+                className="absolute right-2 top-2 h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="p-2 rounded-lg bg-red-600">
+                  <Trash2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-red-600 dark:text-red-400">Delete PNP Unit</CardTitle>
+                  <CardDescription>
+                    This action cannot be undone
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge className="w-fit bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
+                🔥 Permanent Unit Deletion
+              </Badge>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {/* Unit Information Display */}
+              <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-red-600">
+                    <Shield className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{deleteConfirmation.unitName}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Specialized Cybercrime Unit</p>
+                    <Badge className="bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 font-mono text-xs mt-1">
+                      Unit ID: {deleteConfirmation.unitId}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">Will be deleted</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Data:</span>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">All associated records</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning Message */}
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
+                      Are you absolutely sure?
+                    </p>
+                    <p className="text-amber-700 dark:text-amber-300">
+                      This will permanently delete the PNP unit and all its associated crime types and data. 
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="flex-1"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteUnit}
+                  className="flex-1"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Unit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

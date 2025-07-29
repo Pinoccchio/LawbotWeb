@@ -189,11 +189,29 @@ export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModa
         }, 2000)
       } catch (dbError: any) {
         console.error('Database error updating unit:', dbError)
-        setErrors({ general: dbError.toString().replace('Error: ', '') })
+        const errorMessage = dbError.toString().replace('Error: ', '')
+        
+        // Show toast notification for error
+        toast({
+          title: "Update Failed",
+          description: errorMessage,
+          variant: "destructive",
+        })
+        
+        setErrors({ general: errorMessage })
       }
     } catch (error: any) {
       console.error('Unit update failed:', error)
-      setErrors({ general: error.toString().replace('Error: ', '') })
+      const errorMessage = error.toString().replace('Error: ', '')
+      
+      // Show toast notification for error
+      toast({
+        title: "Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      
+      setErrors({ general: errorMessage })
     } finally {
       setIsLoading(false)
     }

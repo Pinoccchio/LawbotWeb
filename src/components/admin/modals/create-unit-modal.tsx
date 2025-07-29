@@ -154,44 +154,54 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
 
 
 
-  // Generate a unit code based on category and random number
-  const generateUnitCode = (category: string): string => {
-    // Create abbreviation from category (first letter of each word)
-    const abbr = category
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-    
-    // Generate random 3-digit number
-    const randomNum = Math.floor(100 + Math.random() * 900)
-    
-    // Format as PCU-XXX
-    return `PCU-${randomNum}`
+  // Generate a unique unit code using the service
+  const generateUniqueUnitCode = async (category: string): Promise<string> => {
+    try {
+      return await PNPUnitsService.generateUniqueUnitCode(category)
+    } catch (error) {
+      console.error('Failed to generate unique unit code:', error)
+      // Fallback to random generation (may still conflict)
+      const randomNum = Math.floor(100 + Math.random() * 900)
+      return `PCU-${randomNum}`
+    }
   }
 
-  const handleCategoryChange = (value: string) => {
+  const handleCategoryChange = async (value: string) => {
     const categoryData = unitDataByCategory[value]
     
     if (categoryData) {
-      // Generate unique unit code
-      const unitCode = generateUnitCode(value)
-      
-      // Auto-fill fields based on selected category
-      setUnitForm({
-        ...unitForm,
-        category: value,
-        unitName: categoryData.unitName,
-        unitCode: unitCode,
-        description: categoryData.description,
-        primaryCrimeTypes: [...categoryData.crimeTypes]
-      })
-      // Mark fields as auto-filled
-      setIsAutoFilled({
-        unitName: true,
-        description: true,
-        primaryCrimeTypes: true,
-      })
+      // Generate unique unit code asynchronously
+      try {
+        const uniqueUnitCode = await generateUniqueUnitCode(value)
+        
+        // Auto-fill fields based on selected category
+        setUnitForm({
+          ...unitForm,
+          category: value,
+          unitName: categoryData.unitName,
+          unitCode: uniqueUnitCode,
+          description: categoryData.description,
+          primaryCrimeTypes: [...categoryData.crimeTypes]
+        })
+        // Mark fields as auto-filled
+        setIsAutoFilled({
+          unitName: true,
+          description: true,
+          primaryCrimeTypes: true,
+        })
+      } catch (error) {
+        console.error('Error generating unique unit code:', error)
+        // Still set other fields, but show error for unit code
+        setUnitForm({
+          ...unitForm,
+          category: value,
+          unitName: categoryData.unitName,
+          unitCode: '', // Leave empty if generation fails
+          description: categoryData.description,
+          primaryCrimeTypes: [...categoryData.crimeTypes]
+        })
+        setErrors({ ...errors, unitCode: 'Failed to generate unique unit code. Please enter one manually.' })
+      }
     } else {
       // Just update the category if no matching data
       setUnitForm({ ...unitForm, category: value })
@@ -377,7 +387,7 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                 {/* Crime Category - Auto-fills other fields */}
                 <div className="space-y-2">
                   <Label htmlFor="category">Crime Category *</Label>
-                  <Select onValueChange={handleCategoryChange}>
+                  <Select onValueChange={(value) => handleCategoryChange(value)}>
                     <SelectTrigger className={errors.category ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -461,7 +471,12 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                     )}
                     {unitForm.category && unitForm.unitCode && (
                       <p className="text-lawbot-blue-600 dark:text-lawbot-blue-400 text-xs mt-1">
-                        Auto-generated code, you can edit if needed
+                        ✅ Unique code generated, you can edit if needed
+                      </p>
+                    )}
+                    {!unitForm.unitCode && unitForm.category && (
+                      <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+                        ⚠️ Please enter a unit code manually
                       </p>
                     )}
                   </div>
