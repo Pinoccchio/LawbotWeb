@@ -10,7 +10,7 @@ interface CreateOfficerRequest {
   phoneNumber?: string
   badgeNumber: string
   rank: string
-  unit: string
+  unitId: string  // Now using unit_id directly instead of unit name
   region: string
 }
 
@@ -20,11 +20,12 @@ interface CreateOfficerResponse {
   message: string
   officerId?: string
   error?: string
+  debug?: any
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<CreateOfficerResponse>> {
   try {
-    console.log('🚀 API: Creating PNP officer account...')
+    console.log('🚀 API: Creating PNP officer account with revised schema...')
     
     // Get authorization header
     const authHeader = request.headers.get('authorization')
@@ -71,9 +72,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
     const body: CreateOfficerRequest = await request.json()
     
     // Validate required fields
-    const { email, password, fullName, phoneNumber, badgeNumber, rank, unit, region } = body
+    const { email, password, fullName, phoneNumber, badgeNumber, rank, unitId, region } = body
     
-    if (!email || !password || !fullName || !badgeNumber || !rank || !unit || !region) {
+    if (!email || !password || !fullName || !badgeNumber || !rank || !unitId || !region) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields', error: 'VALIDATION_ERROR' },
         { status: 400 }
@@ -112,51 +113,51 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
       )
     }
 
+    // Verify the unit exists and is active
+    const { data: unitData, error: unitError } = await supabase
+      .from('pnp_units')
+      .select('id, unit_name, status, current_officers, max_officers')
+      .eq('id', unitId)
+      .single()
+
+    if (unitError || !unitData) {
+      console.error('💥 Unit verification failed:', unitError)
+      return NextResponse.json(
+        { success: false, message: 'Invalid unit selected. Please choose a valid unit.', error: 'INVALID_UNIT' },
+        { status: 400 }
+      )
+    }
+
+    if (unitData.status !== 'active') {
+      return NextResponse.json(
+        { success: false, message: `Unit "${unitData.unit_name}" is not active and cannot accept new officers.`, error: 'INACTIVE_UNIT' },
+        { status: 400 }
+      )
+    }
+
+    // Check if unit has capacity (optional check)
+    if (unitData.current_officers >= unitData.max_officers) {
+      return NextResponse.json(
+        { success: false, message: `Unit "${unitData.unit_name}" is at maximum capacity (${unitData.max_officers} officers).`, error: 'UNIT_FULL' },
+        { status: 400 }
+      )
+    }
+
+    console.log('✅ Unit verified:', {
+      unitId: unitData.id,
+      unitName: unitData.unit_name,
+      currentOfficers: unitData.current_officers,
+      maxOfficers: unitData.max_officers
+    })
+
     console.log('👤 Creating Firebase user with Admin SDK...')
     
     // Create user with Firebase Admin SDK (server-side, no client auth affected)
     const firebaseUser = await createUserWithAdmin(email, password, fullName)
     
-    console.log('📝 Looking up unit_id for unit:', unit)
-    
-    // Debug: First, let's see what units are actually in the database
-    const { data: allUnits, error: allUnitsError } = await supabase
-      .from('pnp_units')
-      .select('id, unit_name, status')
-    
-    console.log('🔍 All units in database:', allUnits)
-    console.log('🔍 Looking for unit with name:', unit)
-    
-    // First, get the unit_id from the pnp_units table
-    const { data: unitData, error: unitError } = await supabase
-      .from('pnp_units')
-      .select('id, unit_name')
-      .eq('unit_name', unit)
-      .eq('status', 'active')
-      .single()
-
-    if (unitError || !unitData) {
-      console.error('💥 Unit lookup error:', unitError)
-      
-      // Clean up Firebase user if unit lookup fails
-      try {
-        const { deleteUser } = await import('@/lib/firebase-admin')
-        await deleteUser(firebaseUser.uid)
-        console.log('🧹 Cleaned up Firebase user after unit lookup error')
-      } catch (cleanupError) {
-        console.error('💥 Cleanup error:', cleanupError)
-      }
-      
-      return NextResponse.json(
-        { success: false, message: `Invalid or inactive unit: ${unit}. Please select a valid active unit.`, error: 'INVALID_UNIT' },
-        { status: 400 }
-      )
-    }
-
-    console.log('✅ Unit found:', { unitId: unitData.id, unitName: unit })
     console.log('📝 Creating PNP officer profile in Supabase...')
     
-    // Create PNP officer profile in Supabase with both unit name and unit_id
+    // Create PNP officer profile in Supabase with direct unit_id reference
     const now = new Date().toISOString()
     const { data: officerProfile, error: supabaseError } = await supabase
       .from('pnp_officer_profiles')
@@ -167,8 +168,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
         phone_number: phoneNumber || '',
         badge_number: badgeNumber,
         rank: rank,
-        unit: unit,
-        unit_id: unitData.id,
+        unit_id: unitId,  // Direct foreign key reference - no lookup needed!
         region: region,
         status: 'active',
         total_cases: 0,
@@ -204,56 +204,48 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
       email: firebaseUser.email,
       badge: badgeNumber,
       profileId: officerProfile.id,
-      unit: unit,
-      unit_id: unitData.id,
-      fullProfile: officerProfile
+      unitId: unitId
     })
 
-    // Debug: Check if the unit officer count was updated
-    const { data: updatedUnit, error: unitCheckError } = await supabase
+    // Wait a moment for trigger to execute
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Verify the trigger worked by checking updated unit count
+    const { data: updatedUnit, error: verifyError } = await supabase
       .from('pnp_units')
       .select('id, unit_name, current_officers')
-      .eq('id', unitData.id)
+      .eq('id', unitId)
       .single()
 
     console.log('🔍 Unit after officer creation:', updatedUnit)
 
-    // Debug: Count officers in this unit manually
+    // Also manually count to verify
     const { data: officersInUnit, error: countError } = await supabase
       .from('pnp_officer_profiles')
-      .select('id, full_name, unit, unit_id')
-      .eq('unit_id', unitData.id)
+      .select('id')
+      .eq('unit_id', unitId)
+      .eq('status', 'active')
     
-    console.log('🔍 Officers in this unit:', officersInUnit)
-    console.log('🔍 Manual count:', officersInUnit?.length || 0)
-
-    // Fallback: Manually update unit officer count if trigger didn't work
-    if (updatedUnit && updatedUnit.current_officers !== (officersInUnit?.length || 0)) {
-      console.log('⚠️ Trigger may not have worked, manually updating unit count...')
-      
-      const { error: manualUpdateError } = await supabase
-        .from('pnp_units')
-        .update({ 
-          current_officers: officersInUnit?.length || 0,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', unitData.id)
-
-      if (manualUpdateError) {
-        console.error('💥 Manual unit count update failed:', manualUpdateError)
-      } else {
-        console.log('✅ Manually updated unit officer count to:', officersInUnit?.length || 0)
-      }
-    }
+    const manualCount = officersInUnit?.length || 0
+    console.log('🔍 Manual count of active officers in unit:', manualCount)
 
     return NextResponse.json({
       success: true,
-      message: `PNP Officer created successfully! Badge: ${badgeNumber}`,
+      message: `PNP Officer created successfully! Badge: ${badgeNumber} assigned to ${unitData.unit_name}`,
       officerId: firebaseUser.uid,
       debug: {
-        unitFound: unitData,
-        unitAfterCreation: updatedUnit,
-        officersInUnit: officersInUnit?.length || 0
+        unitBeforeCreation: {
+          id: unitData.id,
+          name: unitData.unit_name,
+          officersBefore: unitData.current_officers
+        },
+        unitAfterCreation: {
+          id: updatedUnit?.id,
+          name: updatedUnit?.unit_name,
+          officersAfter: updatedUnit?.current_officers
+        },
+        manualCount: manualCount,
+        triggerWorked: updatedUnit?.current_officers === manualCount
       }
     })
 
@@ -274,9 +266,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
 // GET method to test the endpoint
 export async function GET() {
   return NextResponse.json({
-    message: 'PNP Officer Creation API',
+    message: 'PNP Officer Creation API (Revised Schema)',
     method: 'POST',
-    description: 'Use POST method to create a new PNP officer account',
+    description: 'Use POST method to create a new PNP officer account with revised database schema',
     requiredHeaders: {
       'Authorization': 'Bearer <admin_id_token>',
       'Content-Type': 'application/json'
@@ -288,8 +280,13 @@ export async function GET() {
       phoneNumber: 'string (optional)',
       badgeNumber: 'string (PNP-XXXXX format)',
       rank: 'string',
-      unit: 'string',
+      unitId: 'string (UUID of the PNP unit)',
       region: 'string'
+    },
+    changes: {
+      schema: 'Updated to use unit_id directly instead of unit name lookup',
+      triggers: 'Enhanced with logging and active officer filtering',
+      validation: 'Added unit capacity and status checks'
     }
   })
 }

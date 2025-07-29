@@ -58,7 +58,10 @@ export function UserManagementView() {
     try {
       const { data, error } = await supabase
         .from('pnp_officer_profiles')
-        .select('*')
+        .select(`
+          *,
+          pnp_units(id, unit_name)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -74,7 +77,8 @@ export function UserManagementView() {
           phone: officer.phone_number || 'N/A',
           badge: officer.badge_number,
           rank: officer.rank,
-          unit: officer.unit,
+          unit: officer.pnp_units?.unit_name || 'No Unit',  // Get unit name from join
+          unitId: officer.unit_id,  // Keep unit_id for editing
           region: officer.region,
           status: officer.status,
           cases: officer.total_cases || 0,
@@ -98,7 +102,11 @@ export function UserManagementView() {
 
   const handleOfficerCreated = () => {
     // Refresh the officers list after successful creation
+    console.log('🔄 Officer created callback triggered, refreshing data...')
     fetchPnpOfficers()
+    
+    // Also trigger a global refresh event that the PNP Units view can listen to
+    window.dispatchEvent(new CustomEvent('officer-created'))
   }
 
   // Filter officers based on search term

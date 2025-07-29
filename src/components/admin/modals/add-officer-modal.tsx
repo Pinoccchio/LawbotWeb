@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge as UIBadge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/AuthContext"
 import PSGCApiService, { SimplifiedRegion, APISource, APIEndpoint } from "@/lib/psgc-api"
+import PNPUnitsService, { PNPUnit } from "@/lib/pnp-units-service"
 
 interface AddOfficerModalProps {
   isOpen: boolean
@@ -26,6 +27,9 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
   const [successMessage, setSuccessMessage] = useState('')
   const [regions, setRegions] = useState<SimplifiedRegion[]>([])
   const [isLoadingRegions, setIsLoadingRegions] = useState(false)
+  const [pnpUnits, setPnpUnits] = useState<PNPUnit[]>([])
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false)
+  const [selectedUnitCrimeTypes, setSelectedUnitCrimeTypes] = useState<string[]>([])
   // Removed API source selector - now using PSGC Cloud API as default
   // const [selectedAPISource, setSelectedAPISource] = useState<APISource>('auto')
   // const [availableAPIs, setAvailableAPIs] = useState<APIEndpoint[]>([])
@@ -39,14 +43,15 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     phoneNumber: "",
     badgeNumber: "",
     rank: "",
-    unit: "",
+    unitId: "",  // Changed from unit to unitId
     region: "",
   })
 
-  // Fetch regions when modal opens using PSGC Cloud API as default
+  // Fetch regions and PNP units when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchRegions()
+      fetchPNPUnits()
     }
   }, [isOpen])
 
@@ -80,11 +85,27 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     }
   }
 
+  const fetchPNPUnits = async () => {
+    setIsLoadingUnits(true)
+    try {
+      // Fetch only active PNP units from the database
+      const units = await PNPUnitsService.getAllUnits({ status: 'active' })
+      setPnpUnits(units)
+      console.log(`✅ Loaded ${units.length} active PNP units from database`)
+    } catch (error) {
+      console.error('Error fetching PNP units:', error)
+      setPnpUnits([])
+    } finally {
+      setIsLoadingUnits(false)
+    }
+  }
+
   if (!isOpen) return null
 
   const handleClose = () => {
     setSuccessMessage('')
     setErrors({})
+    setSelectedUnitCrimeTypes([])
     setOfficerForm({
       firstName: "",
       lastName: "",
@@ -94,7 +115,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       phoneNumber: "",
       badgeNumber: "",
       rank: "",
-      unit: "",
+      unitId: "",
       region: "",
     })
     onClose()
@@ -116,7 +137,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       if (!officerForm.confirmPassword) newErrors.confirmPassword = 'Please confirm password'
       if (!officerForm.badgeNumber.trim()) newErrors.badgeNumber = 'Badge number is required'
       if (!officerForm.rank) newErrors.rank = 'Rank is required'
-      if (!officerForm.unit) newErrors.unit = 'Unit is required'
+      if (!officerForm.unitId) newErrors.unit = 'Unit is required'
       if (!officerForm.region) newErrors.region = 'Region is required'
       
       if (officerForm.password !== officerForm.confirmPassword) {
@@ -160,7 +181,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       console.log('📡 Calling API to create PNP officer...')
       
       // Call API to create PNP officer (server-side, admin stays logged in)
-      const response = await fetch('/api/admin/create-officer', {
+      const response = await fetch('/api/admin/create-officer-revised', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +194,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
           phoneNumber: officerForm.phoneNumber,
           badgeNumber: officerForm.badgeNumber,
           rank: officerForm.rank,
-          unit: officerForm.unit,
+          unitId: officerForm.unitId,  // Now sending unitId instead of unit name
           region: officerForm.region
         })
       })
@@ -193,6 +214,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       setSuccessMessage(`✅ PNP Officer account created successfully! Badge: ${officerForm.badgeNumber} | Admin session preserved (Server-side)`)
       
       // Clear the form
+      setSelectedUnitCrimeTypes([])
       setOfficerForm({
         firstName: "",
         lastName: "",
@@ -202,7 +224,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
         phoneNumber: "",
         badgeNumber: "",
         rank: "",
-        unit: "",
+        unitId: "",
         region: "",
       })
       
@@ -219,6 +241,22 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       setErrors({ general: error.toString().replace('Error: ', '') })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Handle unit selection and update crime types
+  const handleUnitSelection = (unitId: string) => {
+    setOfficerForm({ ...officerForm, unitId: unitId })
+    if (errors.unit) setErrors({ ...errors, unit: '' })
+    
+    // Find the selected unit and get its crime types
+    const selectedUnit = pnpUnits.find(unit => unit.id === unitId)
+    if (selectedUnit && selectedUnit.crime_types) {
+      setSelectedUnitCrimeTypes(selectedUnit.crime_types)
+      console.log(`✅ Selected unit: ${selectedUnit.unit_name}, Crime types:`, selectedUnit.crime_types)
+    } else {
+      setSelectedUnitCrimeTypes([])
+      console.log(`⚠️ No crime types found for unit ID: ${unitId}`)
     }
   }
 
@@ -239,20 +277,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     "Police Colonel",
   ]
 
-  const pnpUnits = [
-    "Cyber Crime Investigation Cell",
-    "Economic Offenses Wing",
-    "Cyber Security Division",
-    "Cyber Crime Technical Unit",
-    "Cyber Crime Against Women and Children",
-    "Special Investigation Team",
-    "Critical Infrastructure Protection Unit",
-    "National Security Cyber Division",
-    "Advanced Cyber Forensics Unit",
-    "Special Cyber Operations Unit",
-  ]
-
-  // Regions are now fetched dynamically from PSGC API
+  // Regions and PNP Units are now fetched dynamically from APIs/Database
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -420,24 +445,65 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                   <Label htmlFor="unit">Specialized Unit *</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Select onValueChange={(value) => {
-                      setOfficerForm({ ...officerForm, unit: value })
-                      if (errors.unit) setErrors({ ...errors, unit: '' })
-                    }}>
+                    <Select value={officerForm.unitId} onValueChange={handleUnitSelection} disabled={isLoadingUnits}>
                       <SelectTrigger className={`pl-10 ${errors.unit ? 'border-red-500 focus:border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select specialized unit" />
+                        <SelectValue placeholder={isLoadingUnits ? "Loading units..." : "Select specialized unit"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {pnpUnits.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
+                        {isLoadingUnits ? (
+                          <SelectItem key="loading-units" value="loading" disabled>
+                            <div className="flex items-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                              <span>Loading PNP units...</span>
+                            </div>
                           </SelectItem>
-                        ))}
+                        ) : pnpUnits.length === 0 ? (
+                          <SelectItem key="error-units" value="error" disabled>
+                            <span className="text-red-600">No active units found. Please create units first.</span>
+                          </SelectItem>
+                        ) : (
+                          pnpUnits.map((unit) => (
+                            <SelectItem key={unit.id} value={unit.id}>
+                              <div className="flex flex-col">
+                                <span key={`${unit.id}-name`}>{unit.unit_name}</span>
+                                <span key={`${unit.id}-code`} className="text-xs text-gray-500">{unit.unit_code} • {unit.category}</span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   {errors.unit && (
                     <p className="text-red-600 text-xs mt-1">{errors.unit}</p>
+                  )}
+                  {!isLoadingUnits && pnpUnits.length > 0 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ✅ Units loaded from database ({pnpUnits.length} active units)
+                    </p>
+                  )}
+                  
+                  {/* Display crime types for selected unit */}
+                  {selectedUnitCrimeTypes.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                        <span className="mr-2">🎯</span>
+                        Specialized Crime Types:
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedUnitCrimeTypes.map((crimeType, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700 rounded-md"
+                          >
+                            {crimeType}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                        This officer will handle these types of cybercrime cases
+                      </p>
+                    </div>
                   )}
                 </div>
 

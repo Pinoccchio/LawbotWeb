@@ -33,8 +33,7 @@ export function PNPUnitsView() {
     setIsLoading(true)
     try {
       // Get all units from database regardless of status
-      // Pass null instead of undefined to ensure the status filter is not applied
-      const units = await PNPUnitsService.getAllUnits({ status: null })
+      const units = await PNPUnitsService.getAllUnits({})
       setPnpUnits(units)
       
       // Calculate statistics
@@ -68,6 +67,20 @@ export function PNPUnitsView() {
   useEffect(() => {
     fetchPNPUnits()
   }, [isCreateUnitModalOpen, isEditUnitModalOpen]) // Refetch when modal closes after creation
+
+  // Listen for officer creation events from User Management view
+  useEffect(() => {
+    const handleOfficerCreated = () => {
+      console.log('🔄 Received officer-created event, refreshing PNP units...')
+      fetchPNPUnits()
+    }
+
+    window.addEventListener('officer-created', handleOfficerCreated)
+    
+    return () => {
+      window.removeEventListener('officer-created', handleOfficerCreated)
+    }
+  }, [])
   
   // No longer using mock data for non-configured units
   
