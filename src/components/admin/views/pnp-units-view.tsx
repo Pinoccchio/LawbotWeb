@@ -34,14 +34,21 @@ export function PNPUnitsView() {
     try {
       // Get all units from database regardless of status
       const units = await PNPUnitsService.getAllUnits({})
-      setPnpUnits(units)
+      
+      // Get officers for each unit to show real names
+      const unitsWithOfficers = await Promise.all(units.map(async (unit) => {
+        const officers = await PNPUnitsService.getUnitOfficers(unit.id)
+        return { ...unit, officers: officers || [] }
+      }))
+      
+      setPnpUnits(unitsWithOfficers)
       
       // Calculate statistics
       let totalOfficers = 0
       let totalActiveCases = 0
       let totalResolvedCases = 0
       
-      units.forEach(unit => {
+      unitsWithOfficers.forEach(unit => {
         totalOfficers += unit.current_officers || 0
         totalActiveCases += unit.active_cases || 0
         totalResolvedCases += unit.resolved_cases || 0
@@ -364,20 +371,38 @@ export function PNPUnitsView() {
                       </h4>
                       <div className="flex items-center space-x-2">
                         <div className="flex -space-x-2">
-                          {Array.from({ length: Math.min(unit.current_officers || 0, 5) }).map((_, index) => (
-                            <Avatar key={index} className="h-8 w-8 border-2 border-white dark:border-lawbot-slate-800 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
-                              <AvatarFallback className="text-xs bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-bold">
-                                {String.fromCharCode(65 + index)}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
+                          {(unit.officers || []).slice(0, 5).map((officer, index) => {
+                            // Get officer initials from full name
+                            const initials = officer.full_name
+                              ?.split(' ')
+                              .map(name => name[0])
+                              .join('')
+                              .toUpperCase() || 'O'
+                            
+                            return (
+                              <Avatar key={officer.id || index} className="h-8 w-8 border-2 border-white dark:border-lawbot-slate-800 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800" title={officer.full_name}>
+                                <AvatarFallback className="text-xs bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-bold">
+                                  {initials}
+                                </AvatarFallback>
+                              </Avatar>
+                            )
+                          })}
                           {(unit.current_officers || 0) > 5 && (
                             <div className="h-8 w-8 rounded-full bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-600 border-2 border-white dark:border-lawbot-slate-800 flex items-center justify-center ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
                               <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-300 font-bold">+{(unit.current_officers || 0) - 5}</span>
                             </div>
                           )}
                         </div>
-                        <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">total officers</div>
+                        <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                          {unit.officers?.length > 0 ? (
+                            <>
+                              {unit.officers.slice(0, 3).map(officer => officer.full_name).join(', ')}
+                              {unit.officers.length > 3 && ` and ${unit.officers.length - 3} more`}
+                            </>
+                          ) : (
+                            'No officers assigned'
+                          )}
+                        </div>
                       </div>
                     </div>
 
