@@ -1,3 +1,136 @@
+// PNP Units Mock Data with Crime Types
+export const mockPNPUnits = [
+  {
+    id: "unit_001",
+    unitName: "Cyber Crime Investigation Cell",
+    unitCode: "PCU-001",
+    category: "Communication & Social Media Crimes",
+    description: "Handles phishing, social engineering, and communication-related cybercrimes",
+    region: "National Capital Region (NCR)",
+    maxOfficers: 20,
+    currentOfficers: 15,
+    activeCases: 34,
+    resolvedCases: 128,
+    successRate: 87.5,
+    status: "active",
+    crimeTypes: [
+      "Phishing",
+      "Social Engineering", 
+      "Spam Messages",
+      "Fake Social Media Profiles",
+      "Online Impersonation",
+      "Business Email Compromise",
+      "SMS Fraud"
+    ]
+  },
+  {
+    id: "unit_002", 
+    unitName: "Economic Offenses Wing",
+    unitCode: "PCU-002",
+    category: "Financial & Economic Crimes",
+    description: "Investigates online banking fraud, investment scams, and financial crimes",
+    region: "National Capital Region (NCR)",
+    maxOfficers: 25,
+    currentOfficers: 22,
+    activeCases: 45,
+    resolvedCases: 156,
+    successRate: 82.3,
+    status: "active",
+    crimeTypes: [
+      "Online Banking Fraud",
+      "Credit Card Fraud", 
+      "Investment Scams",
+      "Cryptocurrency Fraud",
+      "Online Shopping Scams",
+      "Payment Gateway Fraud",
+      "Insurance Fraud",
+      "Tax Fraud",
+      "Money Laundering"
+    ]
+  },
+  {
+    id: "unit_003",
+    unitName: "Cyber Crime Against Women and Children", 
+    unitCode: "PCU-005",
+    category: "Harassment & Exploitation",
+    description: "Investigates cyberstalking, online harassment, and exploitation",
+    region: "National Capital Region (NCR)",
+    maxOfficers: 22,
+    currentOfficers: 18,
+    activeCases: 28,
+    resolvedCases: 89,
+    successRate: 91.2,
+    status: "active",
+    crimeTypes: [
+      "Cyberstalking",
+      "Online Harassment",
+      "Cyberbullying", 
+      "Revenge Porn",
+      "Sextortion",
+      "Online Predatory Behavior",
+      "Doxxing",
+      "Hate Speech"
+    ]
+  }
+];
+
+// Mock PNP Officer Data
+export const mockOfficerProfile = {
+  id: "officer_001",
+  firebaseUid: "firebase_officer_001",
+  email: "j.smith@pnp.gov.ph",
+  fullName: "John Reynaldo Smith",
+  phoneNumber: "+63 912 345 6789",
+  badgeNumber: "PNP-12345",
+  rank: "Police Officer III",
+  unitId: "unit_001",
+  unit: mockPNPUnits[0], // Cyber Crime Investigation Cell
+  region: "National Capital Region (NCR)",
+  status: "active",
+  // Performance metrics
+  totalCases: 156,
+  activeCases: 12,
+  resolvedCases: 134,
+  successRate: 86,
+  avgResolutionTime: 4.2,
+  // Additional profile info
+  joinDate: "2020-03-15",
+  yearsOfService: 5,
+  specializations: ["Phishing Investigation", "Social Engineering", "Digital Forensics"],
+  certifications: [
+    {
+      name: "Certified Cyber Crime Investigator",
+      issuer: "PNP Cybercrime Division",
+      validUntil: "2025-12-31",
+      status: "active"
+    },
+    {
+      name: "Digital Evidence Specialist", 
+      issuer: "International Association of Computer Investigative Specialists",
+      validUntil: "2025-06-30",
+      status: "active"
+    }
+  ],
+  upcomingTraining: [
+    {
+      name: "Advanced Malware Analysis",
+      scheduledDate: "2025-02-15",
+      status: "enrolled"
+    },
+    {
+      name: "Cryptocurrency Investigation",
+      scheduledDate: "2025-03-10", 
+      status: "pending"
+    }
+  ],
+  profilePictureUrl: null,
+  bio: "Experienced cybercrime investigator specializing in phishing and social engineering cases. 5+ years with PNP Cybercrime Division.",
+  lastLogin: "2025-01-30T08:15:00+08:00",
+  loginCount: 847,
+  createdAt: "2020-03-15T09:00:00+08:00",
+  updatedAt: "2025-01-30T08:15:00+08:00"
+};
+
 export const mockCases = [
   {
     id: "CYB-2025-001",
