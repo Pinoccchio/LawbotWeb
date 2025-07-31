@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, Shield, User, Mail, Phone, Badge, MapPin, Building, Edit, Activity } from "lucide-react"
+import { X, Mail, Phone, Badge, MapPin, Building, Edit, CheckCircle, Clock, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,6 +45,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     unitId: "",  // Changed from unit to unitId
     region: "",
     status: "active", // Default to active status
+    // Simple availability status
+    availabilityStatus: "available",
   })
 
   // Populate form when officer data changes
@@ -63,6 +65,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         unitId: officer.unitId || '',  // Changed from unit to unitId
         region: officer.region || '',
         status: officer.status || 'active',
+        // Simple availability status with fallback
+        availabilityStatus: officer.availabilityStatus || 'available',
       }
       
       console.log('🔍 Populating edit form with officer data:', {
@@ -211,6 +215,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       unitId: "",  // Changed from unit to unitId
       region: "",
       status: "active", // Default to active instead of empty string
+      // Reset simple availability status
+      availabilityStatus: "available",
     })
     onClose()
   }
@@ -258,6 +264,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         unit_id: officerForm.unitId,  // Changed from unit to unit_id
         region: officerForm.region,
         status: officerForm.status,
+        // Simple availability status
+        availability_status: officerForm.availabilityStatus,
         updated_at: new Date().toISOString()
       }
 
@@ -372,6 +380,15 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     { value: 'suspended', label: 'Suspended', icon: '⚠️', description: 'Officer is temporarily suspended' },
     { value: 'retired', label: 'Retired', icon: '🏆', description: 'Officer has retired from service' }
   ]
+
+  const availabilityStatusOptions = [
+    { value: 'available', label: 'Available', icon: '✅', description: 'Ready for new case assignments' },
+    { value: 'busy', label: 'Busy', icon: '⏰', description: 'At capacity but can take urgent cases' },
+    { value: 'overloaded', label: 'Overloaded', icon: '🔴', description: 'Cannot take new cases' },
+    { value: 'on_leave', label: 'On Leave', icon: '🏖️', description: 'Currently on leave' }
+  ]
+
+
 
   // Regions and PNP Units are now fetched dynamically from APIs/Database
 
@@ -675,6 +692,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   )}
                 </div>
 
+                {/* Officer Status */}
                 <div className="space-y-2">
                   <Label htmlFor="status">Officer Status *</Label>
                   <div className="relative">
@@ -729,6 +747,49 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     💼 Current operational status of this officer
                   </p>
+                </div>
+
+                {/* Simplified Availability Management Section */}
+                <div className="border-t pt-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Availability Status
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="availabilityStatus">Availability Status</Label>
+                    <div className="relative">
+                      <CheckCircle className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Select 
+                        value={officerForm.availabilityStatus} 
+                        onValueChange={(value) => {
+                          setOfficerForm({ ...officerForm, availabilityStatus: value })
+                        }}
+                      >
+                        <SelectTrigger className="pl-10">
+                          <SelectValue placeholder="Select availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availabilityStatusOptions.map((status) => (
+                            <SelectItem key={status.value} value={status.value}>
+                              <div className="flex items-center space-x-2">
+                                <span>{status.icon}</span>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{status.label}</span>
+                                  <span className="text-xs text-gray-500">{status.description}</span>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ⚡ Real-time case assignment availability
+                    </p>
+                  </div>
                 </div>
 
                 <Button

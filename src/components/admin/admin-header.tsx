@@ -14,13 +14,14 @@ import { useAuth } from "@/contexts/AuthContext"
 
 interface AdminHeaderProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
+  onAdminViewChange: (view: "dashboard" | "cases" | "users" | "units" | "settings" | "notifications") => void
   isDark: boolean
   toggleTheme: () => void
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
 }
 
-export function AdminHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen }: AdminHeaderProps) {
+export function AdminHeader({ onViewChange, onAdminViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen }: AdminHeaderProps) {
   const { signOut, userProfile } = useAuth()
 
   const handleLogout = async () => {
@@ -70,13 +71,9 @@ export function AdminHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, se
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAdminViewChange("users")}>
                 <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
+                User Management
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

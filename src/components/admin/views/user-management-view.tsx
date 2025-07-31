@@ -52,7 +52,7 @@ export function UserManagementView() {
     },
   ]
 
-  // Fetch PNP officers from Supabase
+  // Fetch PNP officers from Supabase with enhanced availability data
   const fetchPnpOfficers = async () => {
     setIsLoadingOfficers(true)
     try {
@@ -60,7 +60,7 @@ export function UserManagementView() {
         .from('pnp_officer_profiles')
         .select(`
           *,
-          pnp_units(id, unit_name)
+          pnp_units(id, unit_name, unit_code, category)
         `)
         .order('created_at', { ascending: false })
 
@@ -69,7 +69,7 @@ export function UserManagementView() {
         // No fallback data - use empty array
         setPnpOfficers([])
       } else {
-        // Transform Supabase data to match expected format
+        // Transform Supabase data to match expected format with enhanced availability data
         const transformedOfficers = data.map((officer: any) => ({
           id: officer.id,
           name: officer.full_name,
@@ -79,13 +79,25 @@ export function UserManagementView() {
           rank: officer.rank,
           unit: officer.pnp_units?.unit_name || 'No Unit',  // Get unit name from join
           unitId: officer.unit_id,  // Keep unit_id for editing
+          unitCode: officer.pnp_units?.unit_code || 'N/A',
+          unitCategory: officer.pnp_units?.category || 'N/A',
           region: officer.region,
-          status: officer.status,
+          status: officer.status || 'active',
+          // Simple availability data
+          availabilityStatus: officer.availability_status || 'available',
+          // Activity tracking
+          lastLoginAt: officer.last_login_at,
+          lastCaseAssignmentAt: officer.last_case_assignment_at,
+          lastStatusUpdateAt: officer.last_status_update_at,
+          // Performance metrics
           cases: officer.total_cases || 0,
+          activeCases: officer.active_cases || 0,
           resolved: officer.resolved_cases || 0,
+          successRate: officer.success_rate || 0,
           created_at: officer.created_at
         }))
         setPnpOfficers(transformedOfficers)
+        console.log(`✅ Loaded ${transformedOfficers.length} officers with enhanced availability data`)
       }
     } catch (error) {
       console.error('Error fetching PNP officers:', error)
@@ -109,7 +121,7 @@ export function UserManagementView() {
     window.dispatchEvent(new CustomEvent('officer-created'))
   }
 
-  // Filter officers based on search term
+  // Filter officers based on search term (basic fields only)
   const filteredOfficers = pnpOfficers.filter(officer =>
     officer.name.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.email.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
@@ -117,7 +129,10 @@ export function UserManagementView() {
     officer.unit.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.rank.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
     officer.region.toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
-    (officer.status || 'active').toLowerCase().includes(officerSearchTerm.toLowerCase())
+    (officer.status || 'active').toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    (officer.availabilityStatus || 'available').toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    (officer.unitCode || '').toLowerCase().includes(officerSearchTerm.toLowerCase()) ||
+    (officer.unitCategory || '').toLowerCase().includes(officerSearchTerm.toLowerCase())
   )
 
   // Filter clients based on search term
@@ -179,8 +194,8 @@ export function UserManagementView() {
         </div>
       </div>
 
-      {/* User Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+      {/* Enhanced User Stats with Availability Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -199,13 +214,65 @@ export function UserManagementView() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active Officers</p>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Available</p>
                 <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                  {displayOfficers.filter(officer => (officer.status || 'active') === 'active').length}
+                  {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'available').length}
                 </p>
+                <p className="text-xs text-lawbot-emerald-500 dark:text-lawbot-emerald-400">Ready for assignment</p>
               </div>
               <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
                 <Activity className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Busy</p>
+                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                  {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'busy').length}
+                </p>
+                <p className="text-xs text-lawbot-amber-500 dark:text-lawbot-amber-400">High workload</p>
+              </div>
+              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Overloaded</p>
+                <p className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
+                  {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'overloaded').length}
+                </p>
+                <p className="text-xs text-lawbot-red-500 dark:text-lawbot-red-400">At capacity</p>
+              </div>
+              <div className="p-3 bg-lawbot-red-500 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card bg-gradient-to-br from-lawbot-slate-50 to-white dark:from-lawbot-slate-900/10 dark:to-lawbot-slate-800 border-lawbot-slate-200 dark:border-lawbot-slate-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">On Leave</p>
+                <p className="text-3xl font-bold text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                  {displayOfficers.filter(officer => (officer.status || 'active') === 'on_leave').length}
+                </p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Leave period</p>
+              </div>
+              <div className="p-3 bg-lawbot-slate-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -217,25 +284,10 @@ export function UserManagementView() {
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Client Accounts</p>
                 <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{mockClients.length}</p>
+                <p className="text-xs text-lawbot-purple-500 dark:text-lawbot-purple-400">Mobile app users</p>
               </div>
               <div className="p-3 bg-lawbot-purple-500 rounded-lg">
                 <Users className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">On Leave / Suspended</p>
-                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                  {displayOfficers.filter(officer => ['on_leave', 'suspended'].includes(officer.status || 'active')).length}
-                </p>
-              </div>
-              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -304,12 +356,9 @@ export function UserManagementView() {
                   <TableHeader>
                     <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Email & Contact</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Badge Number</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Specialized Unit</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Active Cases</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Resolved Cases</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Success Rate</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Contact & Unit</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Availability Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Cases & Performance</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Status</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
                     </TableRow>
@@ -317,7 +366,7 @@ export function UserManagementView() {
                   <TableBody>
                     {isLoadingOfficers ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <div className="flex items-center justify-center space-x-2">
                             <RefreshCw className="h-4 w-4 animate-spin" />
                             <span>Loading PNP officers...</span>
@@ -326,7 +375,7 @@ export function UserManagementView() {
                       </TableRow>
                     ) : displayOfficers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <div className="text-gray-500">
                             <Shield className="h-12 w-12 mx-auto mb-2 opacity-50" />
                             <p>No PNP officers found</p>
@@ -341,6 +390,7 @@ export function UserManagementView() {
                           className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
+                          {/* Officer Info */}
                           <TableCell>
                             <div className="flex items-center space-x-3">
                               <Avatar className="h-10 w-10 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
@@ -348,21 +398,26 @@ export function UserManagementView() {
                                 <AvatarFallback className="bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-semibold">
                                   {officer.name
                                     .split(" ")
-                                    .map((n) => n[0])
+                                    .map((n: string) => n[0])
                                     .join("")}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
                                 <p className="font-semibold text-lawbot-slate-900 dark:text-white">{officer.name}</p>
                                 <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.rank}</p>
+                                <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono text-xs">
+                                  {officer.badge}
+                                </Badge>
                               </div>
                             </div>
                           </TableCell>
+
+                          {/* Contact & Unit */}
                           <TableCell>
                             <div className="space-y-2">
                               <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
                                 <Mail className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                                <span className="truncate max-w-[200px]" title={officer.email}>
+                                <span className="truncate max-w-[180px]" title={officer.email}>
                                   {officer.email}
                                 </span>
                               </div>
@@ -372,58 +427,93 @@ export function UserManagementView() {
                                   {officer.phone}
                                 </div>
                               )}
+                              <div className="max-w-xs">
+                                <p className="font-medium text-lawbot-slate-900 dark:text-white truncate text-sm">{officer.unit}</p>
+                                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.unitCode} • {officer.region}</p>
+                              </div>
                             </div>
                           </TableCell>
+
+                          {/* Availability Status */}
                           <TableCell>
-                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 font-mono">
-                              {officer.badge}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-xs">
-                              <p className="font-medium text-lawbot-slate-900 dark:text-white truncate">{officer.unit}</p>
-                              <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">{officer.region}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                                {officer.cases - officer.resolved}
-                              </span>
-                              <div className="w-2 h-2 bg-lawbot-amber-500 rounded-full animate-pulse" />
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                                {officer.resolved}
-                              </span>
-                              <div className="w-2 h-2 bg-lawbot-emerald-500 rounded-full" />
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
+                            <div className="space-y-2">
                               {(() => {
-                                const successRate = officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0
+                                const availabilityStatus = officer.availabilityStatus || 'available'
+                                const availabilityConfig = {
+                                  available: {
+                                    icon: '🟢',
+                                    label: 'Available',
+                                    classes: 'bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800'
+                                  },
+                                  busy: {
+                                    icon: '🟡',
+                                    label: 'Busy',
+                                    classes: 'bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 dark:text-lawbot-amber-300 dark:border-lawbot-amber-800'
+                                  },
+                                  overloaded: {
+                                    icon: '🔴',
+                                    label: 'Overloaded',
+                                    classes: 'bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800'
+                                  },
+                                  unavailable: {
+                                    icon: '⚫',
+                                    label: 'Unavailable',
+                                    classes: 'bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-900/20 dark:to-lawbot-slate-800/20 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800'
+                                  }
+                                }
+                                const config = availabilityConfig[availabilityStatus as keyof typeof availabilityConfig] || availabilityConfig.available
+                                
                                 return (
                                   <>
-                                    <span className={`text-lg font-bold ${
-                                      successRate >= 80 ? 'text-lawbot-emerald-600' :
-                                      successRate >= 60 ? 'text-lawbot-amber-600' :
-                                      'text-lawbot-red-600'
-                                    }`}>
-                                      {successRate}%
-                                    </span>
-                                    <div className={`w-2 h-2 rounded-full ${
-                                      successRate >= 80 ? 'bg-lawbot-emerald-500' :
-                                      successRate >= 60 ? 'bg-lawbot-amber-500' :
-                                      'bg-lawbot-red-500'
-                                    }`} />
+                                    <Badge className={config.classes}>
+                                      {config.icon} {config.label}
+                                    </Badge>
                                   </>
                                 )
                               })()}
                             </div>
                           </TableCell>
+
+
+                          {/* Cases & Performance */}
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-4">
+                                <div className="text-center">
+                                  <div className="text-lg font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                                    {officer.activeCases || 0}
+                                  </div>
+                                  <div className="text-xs text-lawbot-slate-500">Active</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                                    {officer.resolved || 0}
+                                  </div>
+                                  <div className="text-xs text-lawbot-slate-500">Resolved</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {(() => {
+                                  const successRate = officer.successRate || (officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0)
+                                  return (
+                                    <>
+                                      <span className={`text-sm font-bold ${
+                                        successRate >= 80 ? 'text-lawbot-emerald-600' :
+                                        successRate >= 60 ? 'text-lawbot-amber-600' :
+                                        'text-lawbot-red-600'
+                                      }`}>
+                                        {successRate}%
+                                      </span>
+                                      <span className="text-xs text-lawbot-slate-500">success</span>
+                                    </>
+                                  )
+                                })()}
+                              </div>
+                            </div>
+                          </TableCell>
+
+
+                          {/* Status */}
                           <TableCell>
                             {(() => {
                               const status = officer.status || 'active'
@@ -458,6 +548,8 @@ export function UserManagementView() {
                               )
                             })()}
                           </TableCell>
+
+                          {/* Actions */}
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               <Button 

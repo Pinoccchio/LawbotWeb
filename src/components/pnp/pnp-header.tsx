@@ -17,20 +17,22 @@ import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
 
 interface PNPHeaderProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
+  onPNPViewChange: (view: "dashboard" | "cases" | "search" | "evidence" | "profile") => void
   isDark: boolean
   toggleTheme: () => void
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
+  refreshTrigger?: number // Add refresh trigger prop
 }
 
-export function PNPHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen }: PNPHeaderProps) {
+export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen, refreshTrigger }: PNPHeaderProps) {
   const { signOut, userProfile } = useAuth()
   const [officerProfile, setOfficerProfile] = useState<PNPOfficerProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadOfficerProfile()
-  }, [])
+  }, [refreshTrigger]) // Add refreshTrigger as dependency
 
   const loadOfficerProfile = async () => {
     try {
@@ -156,13 +158,9 @@ export function PNPHeader({ onViewChange, isDark, toggleTheme, sidebarOpen, setS
                   </>
                 )}
               </div>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onPNPViewChange("profile")}>
                 <User className="mr-2 h-4 w-4" />
                 Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

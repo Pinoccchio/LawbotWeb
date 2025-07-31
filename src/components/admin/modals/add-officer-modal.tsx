@@ -44,7 +44,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     badgeNumber: "",
     rank: "",
     unitId: "",  // Changed from unit to unitId
-    region: "",
+    region: ""
   })
 
   // Fetch regions and PNP units when modal opens
@@ -116,7 +116,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       badgeNumber: "",
       rank: "",
       unitId: "",
-      region: "",
+      region: ""
     })
     onClose()
   }
@@ -159,6 +159,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
       if (officerForm.badgeNumber && !badgeRegex.test(officerForm.badgeNumber)) {
         newErrors.badgeNumber = 'Badge number must be in format: PNP-XXXXX (e.g., PNP-12345)'
       }
+
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
@@ -260,6 +261,7 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     }
   }
 
+
   const pnpRanks = [
     "Police Officer I",
     "Police Officer II", 
@@ -276,6 +278,8 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
     "Police Lieutenant Colonel",
     "Police Colonel",
   ]
+
+
 
   // Regions and PNP Units are now fetched dynamically from APIs/Database
 
@@ -617,6 +621,8 @@ export function AddOfficerModal({ isOpen, onClose, onSuccess }: AddOfficerModalP
                     )}
                   </div>
                 </div>
+
+
 
                 <Button
                   type="submit"

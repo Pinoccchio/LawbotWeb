@@ -20,6 +20,12 @@ export type PNPView = "dashboard" | "cases" | "search" | "evidence" | "profile"
 export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboardProps) {
   const [currentView, setCurrentView] = useState<PNPView>("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [headerRefreshTrigger, setHeaderRefreshTrigger] = useState(0)
+
+  // Function to refresh header data
+  const refreshHeader = () => {
+    setHeaderRefreshTrigger(prev => prev + 1)
+  }
 
   const renderView = () => {
     switch (currentView) {
@@ -32,7 +38,7 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
       case "evidence":
         return <EvidenceViewerView />
       case "profile":
-        return <ProfileView />
+        return <ProfileView onProfileUpdate={refreshHeader} />
       default:
         return <PNPDashboardView />
     }
@@ -49,10 +55,12 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
       <div className="flex-1 flex flex-col overflow-hidden">
         <PNPHeader
           onViewChange={onViewChange}
+          onPNPViewChange={setCurrentView}
           isDark={isDark}
           toggleTheme={toggleTheme}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          refreshTrigger={headerRefreshTrigger}
         />
         <main className="flex-1 overflow-y-auto p-6">{renderView()}</main>
       </div>

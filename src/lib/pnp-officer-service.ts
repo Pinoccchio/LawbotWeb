@@ -13,6 +13,12 @@ export interface PNPOfficerProfile {
   unit_id: string | null
   region: string
   status: 'active' | 'on_leave' | 'suspended' | 'retired'
+  // Simple availability field
+  availability_status?: 'available' | 'busy' | 'overloaded' | 'unavailable'
+  last_login_at?: string | null
+  last_case_assignment_at?: string | null
+  last_status_update_at?: string | null
+  // Performance metrics
   total_cases: number
   active_cases: number
   resolved_cases: number
@@ -332,7 +338,7 @@ export class PNPOfficerService {
    * Update officer profile
    */
   static async updateOfficerProfile(
-    updates: Partial<Pick<PNPOfficerProfile, 'full_name' | 'phone_number' | 'email'>>
+    updates: Partial<Pick<PNPOfficerProfile, 'full_name' | 'phone_number' | 'region'>>
   ): Promise<boolean> {
     try {
       if (!this.currentUserId) {
@@ -355,6 +361,43 @@ export class PNPOfficerService {
       return true
     } catch (error) {
       console.error('Error updating officer profile:', error)
+      return false
+    }
+  }
+
+  /**
+   * Update officer availability status (simplified)
+   */
+  static async updateOfficerAvailability(
+    updates: {
+      availability_status?: 'available' | 'busy' | 'overloaded' | 'unavailable'
+    }
+  ): Promise<boolean> {
+    try {
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated')
+      }
+
+      const updateData = {
+        ...updates,
+        last_status_update_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('pnp_officer_profiles')
+        .update(updateData)
+        .eq('firebase_uid', this.currentUserId)
+
+      if (error) {
+        console.error('Error updating officer availability:', error)
+        return false
+      }
+
+      console.log('✅ Officer availability updated successfully')
+      return true
+    } catch (error) {
+      console.error('Error updating officer availability:', error)
       return false
     }
   }

@@ -72,7 +72,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
     const body: CreateOfficerRequest = await request.json()
     
     // Validate required fields
-    const { email, password, fullName, phoneNumber, badgeNumber, rank, unitId, region } = body
+    const { 
+      email, password, fullName, phoneNumber, badgeNumber, rank, unitId, region
+    } = body
     
     if (!email || !password || !fullName || !badgeNumber || !rank || !unitId || !region) {
       return NextResponse.json(
@@ -157,7 +159,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
     
     console.log('📝 Creating PNP officer profile in Supabase...')
     
-    // Create PNP officer profile in Supabase with direct unit_id reference
+    // Create PNP officer profile in Supabase with enhanced availability fields
     const now = new Date().toISOString()
     const { data: officerProfile, error: supabaseError } = await supabase
       .from('pnp_officer_profiles')
@@ -171,6 +173,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateOff
         unit_id: unitId,  // Direct foreign key reference - no lookup needed!
         region: region,
         status: 'active',
+        // Simple availability status - default to available for new officers
+        availability_status: 'available',
+        // Performance metrics
         total_cases: 0,
         active_cases: 0,
         resolved_cases: 0,

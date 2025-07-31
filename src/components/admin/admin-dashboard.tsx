@@ -52,6 +52,7 @@ export function AdminDashboard({ onViewChange, isDark, toggleTheme }: AdminDashb
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminHeader
           onViewChange={onViewChange}
+          onAdminViewChange={setCurrentView}
           isDark={isDark}
           toggleTheme={toggleTheme}
           sidebarOpen={sidebarOpen}

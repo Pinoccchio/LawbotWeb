@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, Award, Calendar, Mail, Phone, MapPin, Edit, Save, User, TrendingUp, Lock, Settings, Bell, Eye, Building2, Target, BookOpen, Loader2, AlertCircle } from "lucide-react"
+import { Shield, Mail, Phone, MapPin, Edit, Save, User, TrendingUp, Building2, Target, BookOpen, Loader2, AlertCircle, Activity, AlertTriangle, Calendar } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,11 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
+import PSGCApiService, { SimplifiedRegion } from "@/lib/psgc-api"
 
-export function ProfileView() {
+interface ProfileViewProps {
+  onProfileUpdate?: () => void // Callback to refresh header data
+}
+
+export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
   const [officerProfile, setOfficerProfile] = useState<PNPOfficerProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -23,9 +28,18 @@ export function ProfileView() {
   // Form state for editable fields
   const [formData, setFormData] = useState({
     full_name: '',
-    email: '',
-    phone_number: ''
+    phone_number: '',
+    region: ''
   })
+  
+  // Region-related state
+  const [regions, setRegions] = useState<SimplifiedRegion[]>([])
+  const [isLoadingRegions, setIsLoadingRegions] = useState(false)
+  
+  // Simple availability management state
+  const [availabilityMode, setAvailabilityMode] = useState(false)
+  const [availabilityStatus, setAvailabilityStatus] = useState<'available' | 'busy' | 'overloaded' | 'unavailable'>('available')
+  const [savingAvailability, setSavingAvailability] = useState(false)
 
   useEffect(() => {
     loadOfficerProfile()
@@ -41,9 +55,16 @@ export function ProfileView() {
         setOfficerProfile(profile)
         setFormData({
           full_name: profile.full_name,
-          email: profile.email,
-          phone_number: profile.phone_number || ''
+          phone_number: profile.phone_number || '',
+          region: profile.region || ''
         })
+        
+        // Load regions when profile is loaded and in edit mode
+        if (editMode) {
+          fetchRegions()
+        }
+        // Set simple availability status
+        setAvailabilityStatus(profile.availability_status || 'available')
       } else {
         setError('Officer profile not found. Please contact your administrator.')
       }
@@ -60,14 +81,18 @@ export function ProfileView() {
       setSaving(true)
       const success = await PNPOfficerService.updateOfficerProfile({
         full_name: formData.full_name,
-        email: formData.email,
-        phone_number: formData.phone_number || null
+        phone_number: formData.phone_number || null,
+        region: formData.region
       })
       
       if (success) {
         // Reload profile to get updated data
         await loadOfficerProfile()
         setEditMode(false)
+        // Trigger header refresh
+        if (onProfileUpdate) {
+          onProfileUpdate()
+        }
       } else {
         setError('Failed to update profile. Please try again.')
       }
@@ -76,6 +101,59 @@ export function ProfileView() {
       setError('Failed to save profile changes. Please try again.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSaveAvailability = async () => {
+    try {
+      setSavingAvailability(true)
+      setError(null)
+      
+      const success = await PNPOfficerService.updateOfficerAvailability({
+        availability_status: availabilityStatus
+      })
+      
+      if (success) {
+        // Reload profile to get updated data
+        await loadOfficerProfile()
+        setAvailabilityMode(false)
+        // Trigger header refresh
+        if (onProfileUpdate) {
+          onProfileUpdate()
+        }
+      } else {
+        setError('Failed to update availability status. Please try again.')
+      }
+    } catch (err) {
+      console.error('Error saving availability:', err)
+      setError('Failed to save availability changes. Please try again.')
+    } finally {
+      setSavingAvailability(false)
+    }
+  }
+
+  const fetchRegions = async () => {
+    setIsLoadingRegions(true)
+    try {
+      // Use PSGC Cloud API as default with fallback to other sources
+      const fetchedRegions = await PSGCApiService.getRegions('cloud')
+      setRegions(fetchedRegions)
+      console.log(`✅ Loaded ${fetchedRegions.length} regions using PSGC Cloud API`)
+    } catch (error) {
+      console.error('Error fetching regions from PSGC Cloud API:', error)
+      console.log('🔄 Attempting fallback to other API sources...')
+      
+      try {
+        // Fallback to auto mode (tries all APIs)
+        const fallbackRegions = await PSGCApiService.getRegions('auto')
+        setRegions(fallbackRegions)
+        console.log(`✅ Loaded ${fallbackRegions.length} regions using fallback API sources`)
+      } catch (fallbackError) {
+        console.error('All API sources failed:', fallbackError)
+        // Regions state will remain empty, and we'll show an error message
+      }
+    } finally {
+      setIsLoadingRegions(false)
     }
   }
 
@@ -132,8 +210,6 @@ export function ProfileView() {
     phone: officerProfile.phone_number || 'Not provided',
     location: officerProfile.region,
     joinDate: new Date(officerProfile.created_at).toLocaleDateString(),
-    specializations: [], // TODO: Add specializations to database schema
-    certifications: [], // TODO: Add certifications to database schema
     stats: {
       totalCases: officerProfile.total_cases,
       resolvedCases: officerProfile.resolved_cases,
@@ -214,7 +290,10 @@ export function ProfileView() {
               </div>
               <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📅 Joined {officerData.joinDate}</span>
             </div>
-            <Button onClick={() => setEditMode(true)} className="w-full mt-6 btn-gradient">
+            <Button onClick={() => {
+              setEditMode(true)
+              fetchRegions() // Load regions when entering edit mode
+            }} className="w-full mt-6 btn-gradient">
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
@@ -258,21 +337,15 @@ export function ProfileView() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-5">
-          <TabsTrigger value="details" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
-            👤 Personal Details
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-3">
+          <TabsTrigger value="details" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium text-xs">
+            👤 Personal
           </TabsTrigger>
-          <TabsTrigger value="unit" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-indigo-600 font-medium">
-            🏢 Unit Information
+          <TabsTrigger value="availability" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-green-600 font-medium text-xs">
+            ⚡ Availability
           </TabsTrigger>
-          <TabsTrigger value="specializations" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-            🎯 Specializations
-          </TabsTrigger>
-          <TabsTrigger value="certifications" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
-            🏆 Certifications
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
-            ⚙️ Settings
+          <TabsTrigger value="unit" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-indigo-600 font-medium text-xs">
+            🏢 Unit
           </TabsTrigger>
         </TabsList>
 
@@ -318,11 +391,13 @@ export function ProfileView() {
                   <Input 
                     id="email" 
                     type="email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    disabled={!editMode}
-                    className={editMode ? "border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500" : "bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600"}
+                    value={officerData.email}
+                    disabled
+                    className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600"
                   />
+                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400 font-medium">
+                    🔒 Managed by Firebase - Cannot be changed here
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="phone" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📱 Phone Number</Label>
@@ -335,23 +410,63 @@ export function ProfileView() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="location" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📍 Region</Label>
-                  <Input id="location" value={officerData.location} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
+                  <Label htmlFor="region" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📍 Region</Label>
+                  {editMode ? (
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Select 
+                        value={formData.region}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, region: value }))}
+                        disabled={isLoadingRegions}
+                      >
+                        <SelectTrigger className="pl-10 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500">
+                          <SelectValue placeholder={isLoadingRegions ? "Loading regions..." : "Select region"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isLoadingRegions ? (
+                            <SelectItem key="loading-regions" value="loading" disabled>
+                              <div className="flex items-center space-x-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span>Loading Philippine regions...</span>
+                              </div>
+                            </SelectItem>
+                          ) : regions.length === 0 ? (
+                            <SelectItem key="error-regions" value="error" disabled>
+                              <span className="text-red-600">Failed to load regions. Please try again.</span>
+                            </SelectItem>
+                          ) : (
+                            regions.map((region) => (
+                              <SelectItem key={region.id} value={region.name}>
+                                <div className="flex flex-col">
+                                  <span>{region.name}</span>
+                                  {region.population !== 'N/A' && (
+                                    <span className="text-xs text-gray-500">Population: {region.population}</span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {!isLoadingRegions && regions.length > 0 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          ✅ Data from Philippine Statistics Authority (PSGC Cloud API)
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <Input 
+                      id="region" 
+                      value={officerData.location} 
+                      disabled 
+                      className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" 
+                    />
+                  )}
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="joinDate" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📅 Join Date</Label>
                   <Input id="joinDate" value={officerData.joinDate} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
                 </div>
-              </div>
-              <div className="space-y-3">
-                <Label htmlFor="bio" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📝 Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Brief description about yourself and your experience in cybercrime investigation..."
-                  className="min-h-24 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500"
-                  disabled
-                />
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">Bio functionality coming soon</p>
               </div>
               <div className="flex space-x-3">
                 {editMode ? (
@@ -365,12 +480,224 @@ export function ProfileView() {
                     </Button>
                   </>
                 ) : (
-                  <Button onClick={() => setEditMode(true)} className="btn-gradient flex-1">
+                  <Button onClick={() => {
+                    setEditMode(true)
+                    fetchRegions() // Load regions when entering edit mode
+                  }} className="btn-gradient flex-1">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="availability">
+          <Card className="card-modern bg-gradient-to-br from-lawbot-green-50/30 to-white dark:from-lawbot-green-900/10 dark:to-lawbot-slate-800 border-lawbot-green-200 dark:border-lawbot-green-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-lawbot-green-500 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Availability Status</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Manage your availability for case assignments</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setAvailabilityMode(!availabilityMode)}
+                  variant={availabilityMode ? "outline" : "default"}
+                  className={availabilityMode ? "btn-modern" : "btn-gradient"}
+                >
+                  {availabilityMode ? (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Update Status
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Current Status Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Current Status</span>
+                      {(() => {
+                        const status = officerProfile.status || 'active'
+                        return (
+                          <Badge className={`${
+                            status === 'active' ? 'bg-green-100 text-green-800 border-green-200' :
+                            status === 'on_leave' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                            status === 'suspended' ? 'bg-red-100 text-red-800 border-red-200' :
+                            'bg-gray-100 text-gray-800 border-gray-200'
+                          }`}>
+                            {status === 'active' && '✅'}
+                            {status === 'on_leave' && '🏖️'}
+                            {status === 'suspended' && '⚠️'}
+                            {status === 'retired' && '🏆'}
+                            {' '}{status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        )
+                      })()}
+                    </div>
+                    <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                      {officerProfile.status === 'active' ? 'Operational and available for duty' :
+                       officerProfile.status === 'on_leave' ? 'Currently on approved leave' :
+                       officerProfile.status === 'suspended' ? 'Temporarily suspended from duty' :
+                       'Retired from active service'}
+                    </p>
+                    <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400 mt-2 font-medium">
+                      ⚠️ Managed by Admin - Contact your administrator to change this status
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Availability</span>
+                      {(() => {
+                        const availability = officerProfile.availability_status || 'available'
+                        return (
+                          <Badge className={`${
+                            availability === 'available' ? 'bg-green-100 text-green-800 border-green-200' :
+                            availability === 'busy' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                            availability === 'overloaded' ? 'bg-red-100 text-red-800 border-red-200' :
+                            'bg-gray-100 text-gray-800 border-gray-200'
+                          }`}>
+                            {availability === 'available' && '🟢'}
+                            {availability === 'busy' && '🟡'}
+                            {availability === 'overloaded' && '🔴'}
+                            {availability === 'unavailable' && '⚫'}
+                            {' '}{availability.toUpperCase()}
+                          </Badge>
+                        )
+                      })()}
+                    </div>
+                    <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                      {(officerProfile.availability_status || 'available') === 'available' ? 'Ready for new case assignments' :
+                       (officerProfile.availability_status || 'available') === 'busy' ? 'At capacity but can take urgent cases' :
+                       (officerProfile.availability_status || 'available') === 'overloaded' ? 'Cannot take new cases' :
+                       'Currently unavailable for assignments'}
+                    </p>
+                    <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mt-2 font-medium">
+                      ✅ You can update this - Use 'Update Status' button above
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+
+              {/* Edit Availability Form */}
+              {availabilityMode && (
+                <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-lawbot-slate-900 dark:text-white flex items-center">
+                      <Edit className="h-4 w-4 mr-2 text-lawbot-blue-500" />
+                      Update Availability Status
+                    </CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                      Update your availability status for case assignments
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Availability Status */}
+                    <div className="space-y-2">
+                      <Label htmlFor="availabilityStatus">Availability Status</Label>
+                      <Select 
+                        value={availabilityStatus}
+                        onValueChange={(value: 'available' | 'busy' | 'overloaded' | 'unavailable') => setAvailabilityStatus(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select availability status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">
+                            <div className="flex items-center space-x-2">
+                              <span>🟢</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">Available</span>
+                                <span className="text-xs text-gray-500">Ready for new case assignments</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="busy">
+                            <div className="flex items-center space-x-2">
+                              <span>🟡</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">Busy</span>
+                                <span className="text-xs text-gray-500">At capacity but can take urgent cases</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="overloaded">
+                            <div className="flex items-center space-x-2">
+                              <span>🔴</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">Overloaded</span>
+                                <span className="text-xs text-gray-500">Cannot take new cases</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="unavailable">
+                            <div className="flex items-center space-x-2">
+                              <span>⚫</span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">Unavailable</span>
+                                <span className="text-xs text-gray-500">Not available for assignments</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Save/Cancel Buttons */}
+                    <div className="flex space-x-3 pt-4">
+                      <Button
+                        onClick={handleSaveAvailability}
+                        disabled={savingAvailability}
+                        className="btn-gradient flex-1"
+                      >
+                        {savingAvailability ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        {savingAvailability ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button
+                        onClick={() => setAvailabilityMode(false)}
+                        variant="outline"
+                        className="btn-modern"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Info Alert */}
+              <Alert className="border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-lawbot-blue-700 dark:text-lawbot-blue-300">
+                  <strong>Important Reminders:</strong><br/>
+                  • <strong>Current Status</strong> (Active/On Leave/Suspended/Retired) - Only admins can change this<br/>
+                  • <strong>Availability Status</strong> (Available/Busy/Overloaded/Unavailable) - You can update this yourself<br/>
+                  • Availability changes affect your eligibility for new case assignments
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
         </TabsContent>
@@ -384,7 +711,7 @@ export function ProfileView() {
                 </div>
                 <div>
                   <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Unit Assignment Information</CardTitle>
-                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Your assigned PNP unit, specialization area, and crime types you handle</CardDescription>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Your assigned PNP unit and crime types you handle</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -429,7 +756,7 @@ export function ProfileView() {
                           <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
                             <Target className="h-4 w-4 text-white" />
                           </div>
-                          <CardTitle className="text-lg text-lawbot-slate-900 dark:text-white">Specialization Area</CardTitle>
+                          <CardTitle className="text-lg text-lawbot-slate-900 dark:text-white">Unit Category</CardTitle>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -490,7 +817,7 @@ export function ProfileView() {
                                   <h5 className="font-semibold text-lawbot-slate-900 dark:text-white mb-2">📚 Investigation Authority</h5>
                                   <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed">
                                     As a member of the <strong>{officerProfile.unit.unit_name}</strong>, you have specialized training and authority to investigate all crimes listed above. 
-                                    Cases involving these crime types will be automatically routed to your unit for assignment and investigation.
+                                    Citizens will see available officers from your unit when reporting these crime types through the mobile app, and assignments depend on your availability status.
                                   </p>
                                 </div>
                               </div>
@@ -534,89 +861,7 @@ export function ProfileView() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="specializations">
-          <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50/30 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Areas of Specialization</CardTitle>
-                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Your expertise in different cybercrime categories and investigation techniques</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Target className="h-16 w-16 text-lawbot-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-lawbot-slate-900 dark:text-white mb-2">Specializations Coming Soon</h3>
-                <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
-                  Individual officer specializations and training records will be added in a future update.
-                </p>
-                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-500">
-                  For now, your specializations are based on your unit assignment: <strong>{officerProfile.unit?.category || 'No unit assigned'}</strong>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="certifications">
-          <Card className="card-modern bg-gradient-to-br from-lawbot-purple-50/30 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-purple-500 rounded-lg">
-                  <Award className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Certifications & Training</CardTitle>
-                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Your professional certifications and completed training programs</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Award className="h-16 w-16 text-lawbot-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-lawbot-slate-900 dark:text-white mb-2">Certifications Coming Soon</h3>
-                <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
-                  Officer certifications and training records will be managed in a future update.
-                </p>
-                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-500">
-                  This will include PNP training completions, external certifications, and continuing education requirements.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <Card className="card-modern bg-gradient-to-br from-lawbot-amber-50/30 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-amber-500 rounded-lg">
-                  <Settings className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Account Settings</CardTitle>
-                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Manage your account preferences and security settings</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="text-center py-8">
-                <Settings className="h-16 w-16 text-lawbot-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-lawbot-slate-900 dark:text-white mb-2">Settings Coming Soon</h3>
-                <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
-                  Advanced account settings including notifications, security, and privacy preferences will be available in a future update.
-                </p>
-                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-500">
-                  For now, you can edit your basic profile information in the Personal Details tab.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )
