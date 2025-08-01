@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, Users, BarChart3, Plus, Edit, Activity, Target, TrendingUp, Award, Trash2, X, AlertTriangle } from "lucide-react"
+import { Shield, Users, BarChart3, Plus, Edit, Activity, Target, TrendingUp, Award, Trash2, X, AlertTriangle, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +32,10 @@ export function PNPUnitsView() {
   const fetchPNPUnits = async () => {
     setIsLoading(true)
     try {
+      // First refresh unit statistics to ensure they're accurate
+      console.log('🔄 Refreshing unit statistics...')
+      await PNPUnitsService.refreshUnitStatistics()
+      
       // Get all units from database regardless of status
       const units = await PNPUnitsService.getAllUnits({})
       
@@ -120,6 +124,31 @@ export function PNPUnitsView() {
     }
   }
 
+  // Handle manual statistics refresh
+  const handleRefreshStatistics = async () => {
+    try {
+      console.log('🔄 Manually refreshing unit statistics...')
+      await PNPUnitsService.refreshUnitStatistics()
+      
+      // Show success toast
+      toast({
+        title: "Statistics Refreshed",
+        description: "Unit officer counts and statistics have been updated",
+        variant: "success",
+      })
+      
+      // Refresh the units list
+      fetchPNPUnits()
+    } catch (error: any) {
+      console.error('Error refreshing statistics:', error)
+      toast({
+        title: "Refresh Failed",
+        description: error.message || "Failed to refresh unit statistics",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between animate-fade-in-up">
@@ -132,6 +161,14 @@ export function PNPUnitsView() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button 
+            variant="outline" 
+            className="btn-modern" 
+            onClick={handleRefreshStatistics}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Stats
+          </Button>
           <Button 
             variant="outline" 
             className="btn-modern" 

@@ -24,8 +24,7 @@ export interface PNPUnit {
     available: number
     busy: number
     overloaded: number
-    onLeave: number
-    averageWorkload: number
+    unavailable: number
   }
 }
 
@@ -34,32 +33,22 @@ export interface PNPOfficerProfile {
   firebase_uid: string
   email: string
   full_name: string
-  phone_number?: string
+  phone_number?: string | null
   badge_number: string
   rank: string
-  unit_id: string
+  unit_id: string | null
   region: string
   status: 'active' | 'on_leave' | 'suspended' | 'retired'
-  availability_status: 'available' | 'busy' | 'overloaded' | 'on_leave'
-  max_concurrent_cases: number
-  current_workload_percentage: number
-  specializations: string[]
-  skill_level: 'beginner' | 'intermediate' | 'advanced' | 'expert'
-  leave_start_date?: string
-  leave_end_date?: string
-  leave_type?: string
-  leave_reason?: string
-  last_login_at?: string
-  last_case_assignment_at?: string
-  last_status_update_at?: string
+  availability_status?: 'available' | 'busy' | 'overloaded' | 'unavailable'
+  total_cases: number
+  active_cases: number
+  resolved_cases: number
+  success_rate: number
+  last_login_at?: string | null
+  last_case_assignment_at?: string | null
+  last_status_update_at?: string | null
   created_at: string
   updated_at: string
-  // Computed fields
-  computedAvailabilityStatus?: 'available' | 'busy' | 'overloaded' | 'on_leave'
-  isOnLeave?: boolean
-  workloadStatus?: 'light' | 'moderate' | 'busy' | 'overloaded'
-  availableCapacity?: number
-  matchingSpecializations?: string[]
 }
 
 export interface UnitAvailabilityStats {
@@ -67,8 +56,7 @@ export interface UnitAvailabilityStats {
   available: number
   busy: number
   overloaded: number
-  onLeave: number
-  averageWorkload: number
+  unavailable: number
 }
 
 export interface CreatePNPUnitPayload {
@@ -83,8 +71,7 @@ export interface CreatePNPUnitPayload {
 
 export interface OfficerAvailabilityUpdate {
   officerId: string
-  availabilityStatus: 'available' | 'busy' | 'overloaded' | 'on_leave'
-  workloadPercentage?: number
+  availabilityStatus: 'available' | 'busy' | 'overloaded' | 'unavailable'
 }
 
 export class PNPUnitsService {
@@ -444,33 +431,31 @@ export class PNPUnitsService {
   }
 
   /**
-   * Get officers assigned to a unit with enhanced availability data
+   * Get officers assigned to a unit (simplified for basic availability)
    */
-  static async getUnitOfficers(unitId: string, includeAvailabilityData: boolean = true) {
+  static async getUnitOfficers(unitId: string) {
     try {
-      let selectClause = '*'
-      
-      if (includeAvailabilityData) {
-        selectClause = `
-          *,
-          availability_status,
-          max_concurrent_cases,
-          current_workload_percentage,
-          specializations,
-          skill_level,
-          leave_start_date,
-          leave_end_date,
-          leave_type,
-          leave_reason,
-          last_login_at,
-          last_case_assignment_at,
-          last_status_update_at
-        `
-      }
-
       const { data, error } = await supabase
         .from('pnp_officer_profiles')
-        .select(selectClause)
+        .select(`
+          id,
+          firebase_uid,
+          email,
+          full_name,
+          phone_number,
+          badge_number,
+          rank,
+          unit_id,
+          region,
+          status,
+          availability_status,
+          total_cases,
+          active_cases,
+          resolved_cases,
+          success_rate,
+          created_at,
+          updated_at
+        `)
         .eq('unit_id', unitId)
         .order('created_at', { ascending: false })
 
@@ -479,28 +464,7 @@ export class PNPUnitsService {
         return []
       }
 
-      // Transform data to include computed availability metrics
-      const enhancedOfficers = (data as unknown as PNPOfficerProfile[])?.map(officer => {
-        const workloadPercentage = officer.current_workload_percentage || 0
-        const isOnLeave = officer.leave_start_date && officer.leave_end_date && 
-          new Date() >= new Date(officer.leave_start_date) && 
-          new Date() <= new Date(officer.leave_end_date)
-        
-        return {
-          ...officer,
-          // Computed availability status based on workload and leave
-          computedAvailabilityStatus: isOnLeave ? 'on_leave' : 
-            workloadPercentage >= 100 ? 'overloaded' :
-            workloadPercentage >= 80 ? 'busy' : 'available',
-          isOnLeave,
-          workloadStatus: workloadPercentage >= 100 ? 'overloaded' :
-            workloadPercentage >= 80 ? 'busy' :
-            workloadPercentage >= 50 ? 'moderate' : 'light',
-          availableCapacity: Math.max(0, (officer.max_concurrent_cases || 10) - Math.floor((officer.max_concurrent_cases || 10) * workloadPercentage / 100))
-        }
-      }) || []
-
-      return enhancedOfficers
+      return data || []
     } catch (error) {
       console.error('Error getting unit officers:', error)
       return []
@@ -508,34 +472,40 @@ export class PNPUnitsService {
   }
 
   /**
-   * Get unit officers by availability status
+   * Get unit officers by availability status (simplified)
    */
   static async getUnitOfficersByAvailability(
     unitId: string, 
-    availabilityStatus?: 'available' | 'busy' | 'overloaded' | 'on_leave'
+    availabilityStatus?: 'available' | 'busy' | 'overloaded' | 'unavailable'
   ) {
     try {
       let query = supabase
         .from('pnp_officer_profiles')
         .select(`
-          *,
+          id,
+          firebase_uid,
+          email,
+          full_name,
+          phone_number,
+          badge_number,
+          rank,
+          unit_id,
+          region,
+          status,
           availability_status,
-          max_concurrent_cases,
-          current_workload_percentage,
-          specializations,
-          skill_level,
-          leave_start_date,
-          leave_end_date,
-          leave_type
+          active_cases,
+          created_at,
+          updated_at
         `)
         .eq('unit_id', unitId)
+        .eq('status', 'active')
 
       if (availabilityStatus) {
         query = query.eq('availability_status', availabilityStatus)
       }
 
       const { data, error } = await query
-        .order('current_workload_percentage', { ascending: true })
+        .order('active_cases', { ascending: true })
 
       if (error) {
         console.error('Error getting officers by availability:', error)
@@ -550,7 +520,7 @@ export class PNPUnitsService {
   }
 
   /**
-   * Get unit availability statistics
+   * Get unit availability statistics (simplified)
    */
   static async getUnitAvailabilityStats(unitId: string) {
     try {
@@ -558,9 +528,6 @@ export class PNPUnitsService {
         .from('pnp_officer_profiles')
         .select(`
           availability_status,
-          current_workload_percentage,
-          leave_start_date,
-          leave_end_date,
           status
         `)
         .eq('unit_id', unitId)
@@ -573,37 +540,35 @@ export class PNPUnitsService {
           available: 0,
           busy: 0,
           overloaded: 0,
-          onLeave: 0,
-          averageWorkload: 0
+          unavailable: 0
         }
       }
 
       const officers = data || []
-      const now = new Date()
       
       let available = 0
       let busy = 0
       let overloaded = 0
-      let onLeave = 0
-      let totalWorkload = 0
+      let unavailable = 0
 
       officers.forEach(officer => {
-        const workload = officer.current_workload_percentage || 0
-        totalWorkload += workload
+        const status = officer.availability_status || 'available'
         
-        // Check if on leave
-        const isOnLeave = officer.leave_start_date && officer.leave_end_date &&
-          now >= new Date(officer.leave_start_date) && 
-          now <= new Date(officer.leave_end_date)
-        
-        if (isOnLeave) {
-          onLeave++
-        } else if (workload >= 100) {
-          overloaded++
-        } else if (workload >= 80) {
-          busy++
-        } else {
-          available++
+        switch (status) {
+          case 'available':
+            available++
+            break
+          case 'busy':
+            busy++
+            break
+          case 'overloaded':
+            overloaded++
+            break
+          case 'unavailable':
+            unavailable++
+            break
+          default:
+            available++
         }
       })
 
@@ -612,8 +577,7 @@ export class PNPUnitsService {
         available,
         busy,
         overloaded,
-        onLeave,
-        averageWorkload: officers.length > 0 ? Math.round(totalWorkload / officers.length) : 0
+        unavailable
       }
     } catch (error) {
       console.error('Error getting unit availability stats:', error)
@@ -622,36 +586,40 @@ export class PNPUnitsService {
         available: 0,
         busy: 0,
         overloaded: 0,
-        onLeave: 0,
-        averageWorkload: 0
+        unavailable: 0
       }
     }
   }
 
   /**
-   * Find available officers for case assignment
+   * Find available officers for case assignment (simplified)
    */
-  static async findAvailableOfficersForCase(
-    unitId: string,
-    requiredSpecializations?: string[],
-    maxWorkloadThreshold: number = 80
-  ) {
+  static async findAvailableOfficersForCase(unitId: string) {
     try {
       const { data, error } = await supabase
         .from('pnp_officer_profiles')
         .select(`
-          *,
+          id,
+          firebase_uid,
+          email,
+          full_name,
+          phone_number,
+          badge_number,
+          rank,
+          unit_id,
+          region,
+          status,
           availability_status,
-          max_concurrent_cases,
-          current_workload_percentage,
-          specializations,
-          skill_level,
-          leave_start_date,
-          leave_end_date
+          active_cases,
+          total_cases,
+          resolved_cases,
+          success_rate,
+          created_at,
+          updated_at
         `)
         .eq('unit_id', unitId)
         .eq('status', 'active')
-        .lte('current_workload_percentage', maxWorkloadThreshold)
+        .in('availability_status', ['available', 'busy']) // Only available and busy officers
 
       if (error) {
         console.error('Error finding available officers:', error)
@@ -659,54 +627,13 @@ export class PNPUnitsService {
       }
 
       const officers = data || []
-      const now = new Date()
       
-      // Filter officers based on availability criteria
-      const availableOfficers = officers.filter(officer => {
-        // Check if not on leave
-        const isOnLeave = officer.leave_start_date && officer.leave_end_date &&
-          now >= new Date(officer.leave_start_date) && 
-          now <= new Date(officer.leave_end_date)
-        
-        if (isOnLeave) return false
-        
-        // Check availability status
-        if (officer.availability_status === 'on_leave' || officer.availability_status === 'overloaded') {
-          return false
-        }
-        
-        // Check specializations if required
-        if (requiredSpecializations && requiredSpecializations.length > 0) {
-          const officerSpecs = officer.specializations || []
-          const hasRequiredSpec = requiredSpecializations.some(spec => 
-            officerSpecs.includes(spec)
-          )
-          if (!hasRequiredSpec) return false
-        }
-        
-        return true
+      // Sort by active cases (ascending) - least busy first
+      const sortedOfficers = officers.sort((a, b) => {
+        return (a.active_cases || 0) - (b.active_cases || 0)
       })
 
-      // Sort by workload (lowest first) and skill level
-      const sortedOfficers = availableOfficers.sort((a, b) => {
-        // Primary sort: workload percentage (ascending)
-        const workloadDiff = (a.current_workload_percentage || 0) - (b.current_workload_percentage || 0)
-        if (workloadDiff !== 0) return workloadDiff
-        
-        // Secondary sort: skill level (expert > advanced > intermediate > beginner)
-        const skillOrder = { expert: 4, advanced: 3, intermediate: 2, beginner: 1 }
-        const aSkill = skillOrder[a.skill_level as keyof typeof skillOrder] || 2
-        const bSkill = skillOrder[b.skill_level as keyof typeof skillOrder] || 2
-        return bSkill - aSkill
-      })
-
-      return sortedOfficers.map(officer => ({
-        ...officer,
-        availableCapacity: Math.max(0, (officer.max_concurrent_cases || 10) - 
-          Math.floor((officer.max_concurrent_cases || 10) * (officer.current_workload_percentage || 0) / 100)),
-        matchingSpecializations: requiredSpecializations ? 
-          (officer.specializations || []).filter((spec: string) => requiredSpecializations.includes(spec)) : []
-      }))
+      return sortedOfficers
     } catch (error) {
       console.error('Error finding available officers for case:', error)
       return []
@@ -782,26 +709,21 @@ export class PNPUnitsService {
   }
 
   /**
-   * Update officer availability status
+   * Update officer availability status (simplified)
    */
   static async updateOfficerAvailability(
     officerId: string, 
-    availabilityStatus: 'available' | 'busy' | 'overloaded' | 'on_leave',
-    workloadPercentage?: number
+    availabilityStatus: 'available' | 'busy' | 'overloaded' | 'unavailable'
   ) {
     try {
       if (!this.currentUserId) {
         throw new Error('User not authenticated')
       }
 
-      const updateData: any = {
+      const updateData = {
         availability_status: availabilityStatus,
         last_status_update_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }
-
-      if (workloadPercentage !== undefined) {
-        updateData.current_workload_percentage = Math.max(0, Math.min(100, workloadPercentage))
       }
 
       const { error } = await supabase
@@ -813,7 +735,7 @@ export class PNPUnitsService {
         throw new Error(`Failed to update officer availability: ${error.message}`)
       }
 
-      console.log(`✅ Officer availability updated: ${availabilityStatus}${workloadPercentage !== undefined ? ` (${workloadPercentage}%)` : ''}`)
+      console.log(`✅ Officer availability updated: ${availabilityStatus}`)
       return true
     } catch (error: any) {
       console.error('Error updating officer availability:', error)
@@ -822,13 +744,12 @@ export class PNPUnitsService {
   }
 
   /**
-   * Bulk update multiple officers' availability
+   * Bulk update multiple officers' availability (simplified)
    */
   static async bulkUpdateOfficerAvailability(
     updates: Array<{
       officerId: string
-      availabilityStatus: 'available' | 'busy' | 'overloaded' | 'on_leave'
-      workloadPercentage?: number
+      availabilityStatus: 'available' | 'busy' | 'overloaded' | 'unavailable'
     }>
   ) {
     try {
@@ -840,8 +761,7 @@ export class PNPUnitsService {
         updates.map(update => 
           this.updateOfficerAvailability(
             update.officerId, 
-            update.availabilityStatus, 
-            update.workloadPercentage
+            update.availabilityStatus
           )
         )
       )
@@ -859,6 +779,80 @@ export class PNPUnitsService {
     } catch (error: any) {
       console.error('Error in bulk officer availability update:', error)
       throw new Error(`Bulk update failed: ${error.message}`)
+    }
+  }
+
+  /**
+   * Manually refresh unit officer counts and statistics (fix for missing triggers)
+   */
+  static async refreshUnitStatistics(unitId?: string) {
+    try {
+      if (!this.currentUserId) {
+        throw new Error('User not authenticated')
+      }
+
+      let unitsToUpdate: string[] = []
+
+      if (unitId) {
+        // Update specific unit
+        unitsToUpdate = [unitId]
+      } else {
+        // Update all units
+        const { data: units, error: unitsError } = await supabase
+          .from('pnp_units')
+          .select('id')
+
+        if (unitsError) {
+          throw new Error(`Failed to fetch units: ${unitsError.message}`)
+        }
+
+        unitsToUpdate = units?.map(unit => unit.id) || []
+      }
+
+      console.log(`🔄 Refreshing statistics for ${unitsToUpdate.length} units...`)
+
+      for (const id of unitsToUpdate) {
+        // Count active officers in this unit
+        const { data: officers, error: officersError } = await supabase
+          .from('pnp_officer_profiles')
+          .select('id, active_cases, resolved_cases')
+          .eq('unit_id', id)
+          .eq('status', 'active')
+
+        if (officersError) {
+          console.error(`Error counting officers for unit ${id}:`, officersError)
+          continue
+        }
+
+        const officerCount = officers?.length || 0
+        const totalActiveCases = officers?.reduce((sum, officer) => sum + (officer.active_cases || 0), 0) || 0
+        const totalResolvedCases = officers?.reduce((sum, officer) => sum + (officer.resolved_cases || 0), 0) || 0
+        const totalCases = totalActiveCases + totalResolvedCases
+        const successRate = totalCases > 0 ? Math.round((totalResolvedCases / totalCases) * 100) : 0
+
+        // Update unit statistics
+        const { error: updateError } = await supabase
+          .from('pnp_units')
+          .update({
+            current_officers: officerCount,
+            active_cases: totalActiveCases,
+            resolved_cases: totalResolvedCases,
+            success_rate: successRate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+
+        if (updateError) {
+          console.error(`Error updating unit ${id} statistics:`, updateError)
+        } else {
+          console.log(`✅ Updated unit ${id}: ${officerCount} officers, ${totalActiveCases} active cases, ${successRate}% success rate`)
+        }
+      }
+
+      return true
+    } catch (error: any) {
+      console.error('Error refreshing unit statistics:', error)
+      throw new Error(`Failed to refresh unit statistics: ${error.message}`)
     }
   }
 }
