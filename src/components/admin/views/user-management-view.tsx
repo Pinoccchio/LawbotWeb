@@ -357,9 +357,9 @@ export function UserManagementView() {
                     <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Contact & Unit</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Availability Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300" title="Current workload capacity for case assignments">Work Availability</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Cases & Performance</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300" title="Officer's employment standing with PNP">Employment Status</TableHead>
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
                     </TableRow>
                   </TableHeader>

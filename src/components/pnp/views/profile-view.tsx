@@ -240,22 +240,85 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         {/* Enhanced Profile Overview */}
-        <Card className="lg:col-span-1 card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+        <Card className={`lg:col-span-1 card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-2 ${
+          // Dynamic border color based on availability status
+          (officerProfile.availability_status || 'available') === 'available' 
+            ? 'border-lawbot-emerald-400 dark:border-lawbot-emerald-600 shadow-lawbot-emerald-100 dark:shadow-lawbot-emerald-900/20' 
+          : (officerProfile.availability_status || 'available') === 'busy' 
+            ? 'border-lawbot-amber-400 dark:border-lawbot-amber-600 shadow-lawbot-amber-100 dark:shadow-lawbot-amber-900/20'
+          : (officerProfile.availability_status || 'available') === 'overloaded' 
+            ? 'border-lawbot-red-400 dark:border-lawbot-red-600 shadow-lawbot-red-100 dark:shadow-lawbot-red-900/20'
+          : 'border-lawbot-slate-400 dark:border-lawbot-slate-600 shadow-lawbot-slate-100 dark:shadow-lawbot-slate-900/20'
+        } shadow-lg`}>
           <CardHeader className="text-center">
             <div className="relative mx-auto mb-4">
-              <Avatar className="h-32 w-32 mx-auto shadow-lg ring-4 ring-lawbot-blue-100 dark:ring-lawbot-blue-800">
+              <Avatar className={`h-32 w-32 mx-auto shadow-lg ring-4 ${
+                // Dynamic ring color based on availability status
+                (officerProfile.availability_status || 'available') === 'available' 
+                  ? 'ring-lawbot-emerald-200 dark:ring-lawbot-emerald-700' 
+                : (officerProfile.availability_status || 'available') === 'busy' 
+                  ? 'ring-lawbot-amber-200 dark:ring-lawbot-amber-700'
+                : (officerProfile.availability_status || 'available') === 'overloaded' 
+                  ? 'ring-lawbot-red-200 dark:ring-lawbot-red-700'
+                : 'ring-lawbot-slate-200 dark:ring-lawbot-slate-700'
+              }`}>
                 <AvatarImage src="/placeholder.svg?height=128&width=128" />
                 <AvatarFallback className="text-3xl bg-gradient-to-br from-lawbot-blue-500 to-lawbot-blue-600 text-white font-bold">
                   {officerData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-2 -right-2 p-2 bg-lawbot-emerald-500 rounded-full shadow-lg">
-                <User className="h-4 w-4 text-white" />
+              {/* Availability Status Indicator */}
+              <div className={`absolute -bottom-2 -right-2 p-2 rounded-full shadow-lg ${
+                (officerProfile.availability_status || 'available') === 'available' 
+                  ? 'bg-lawbot-emerald-500' 
+                : (officerProfile.availability_status || 'available') === 'busy' 
+                  ? 'bg-lawbot-amber-500'
+                : (officerProfile.availability_status || 'available') === 'overloaded' 
+                  ? 'bg-lawbot-red-500'
+                : 'bg-lawbot-slate-500'
+              }`}>
+                {(officerProfile.availability_status || 'available') === 'available' && (
+                  <div className="h-4 w-4 bg-white rounded-full flex items-center justify-center">
+                    <div className="h-2 w-2 bg-lawbot-emerald-500 rounded-full"></div>
+                  </div>
+                )}
+                {(officerProfile.availability_status || 'available') === 'busy' && (
+                  <div className="h-4 w-4 bg-white rounded-full flex items-center justify-center">
+                    <div className="h-2 w-2 bg-lawbot-amber-500 rounded-full"></div>
+                  </div>
+                )}
+                {(officerProfile.availability_status || 'available') === 'overloaded' && (
+                  <div className="h-4 w-4 bg-white rounded-full flex items-center justify-center">
+                    <div className="h-2 w-2 bg-lawbot-red-500 rounded-full"></div>
+                  </div>
+                )}
+                {(officerProfile.availability_status || 'available') === 'unavailable' && (
+                  <div className="h-4 w-4 bg-white rounded-full flex items-center justify-center">
+                    <div className="h-2 w-2 bg-lawbot-slate-500 rounded-full"></div>
+                  </div>
+                )}
               </div>
             </div>
             <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">{officerData.name}</CardTitle>
             <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{officerData.rank}</CardDescription>
-            <Badge className="mt-3 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white border-0 text-sm font-bold">
+            
+            {/* Availability Status Badge */}
+            <Badge className={`mt-2 border-0 text-xs font-bold ${
+              (officerProfile.availability_status || 'available') === 'available' 
+                ? 'bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-200' 
+              : (officerProfile.availability_status || 'available') === 'busy' 
+                ? 'bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-200'
+              : (officerProfile.availability_status || 'available') === 'overloaded' 
+                ? 'bg-lawbot-red-100 text-lawbot-red-800 dark:bg-lawbot-red-900/30 dark:text-lawbot-red-200'
+              : 'bg-lawbot-slate-100 text-lawbot-slate-800 dark:bg-lawbot-slate-900/30 dark:text-lawbot-slate-200'
+            }`}>
+              {(officerProfile.availability_status || 'available') === 'available' && '🟢 AVAILABLE'}
+              {(officerProfile.availability_status || 'available') === 'busy' && '🟡 BUSY'}
+              {(officerProfile.availability_status || 'available') === 'overloaded' && '🔴 OVERLOADED'}
+              {(officerProfile.availability_status || 'available') === 'unavailable' && '⚫ UNAVAILABLE'}
+            </Badge>
+            
+            <Badge className="mt-2 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white border-0 text-sm font-bold">
               🏷️ {officerData.badge}
             </Badge>
           </CardHeader>
@@ -342,7 +405,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
             👤 Personal
           </TabsTrigger>
           <TabsTrigger value="availability" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-green-600 font-medium text-xs">
-            ⚡ Availability
+            ⚡ Work Availability
           </TabsTrigger>
           <TabsTrigger value="unit" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-indigo-600 font-medium text-xs">
             🏢 Unit
@@ -373,18 +436,30 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                     disabled={!editMode}
                     className={editMode ? "border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500" : "bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600"} 
                   />
+                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400 font-medium">
+                    ✅ You can edit this field
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="badge" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">🏷️ Badge Number</Label>
                   <Input id="badge" value={officerData.badge} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ Official assignment - Contact admin to change
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="rank" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">⭐ Rank</Label>
                   <Input id="rank" value={officerData.rank} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ Official rank - Contact admin to change
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="unit" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">🛡️ Assigned Unit</Label>
                   <Input id="unit" value={officerData.unit} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ Unit assignment - Contact admin to change
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📧 Email Address</Label>
@@ -395,8 +470,8 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                     disabled
                     className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600"
                   />
-                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400 font-medium">
-                    🔒 Managed by Firebase - Cannot be changed here
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ System email - Contact admin to change
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -408,6 +483,9 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                     disabled={!editMode}
                     className={editMode ? "border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500" : "bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600"}
                   />
+                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400 font-medium">
+                    ✅ You can edit this field
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="region" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📍 Region</Label>
@@ -455,17 +533,25 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                       )}
                     </div>
                   ) : (
-                    <Input 
-                      id="region" 
-                      value={officerData.location} 
-                      disabled 
-                      className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" 
-                    />
+                    <>
+                      <Input 
+                        id="region" 
+                        value={officerData.location} 
+                        disabled 
+                        className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" 
+                      />
+                      <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400 font-medium">
+                        ✅ You can edit this field
+                      </p>
+                    </>
                   )}
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="joinDate" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📅 Join Date</Label>
                   <Input id="joinDate" value={officerData.joinDate} disabled className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" />
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ Historical record - Cannot be changed
+                  </p>
                 </div>
               </div>
               <div className="flex space-x-3">
@@ -502,8 +588,8 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                     <Activity className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Availability Status</CardTitle>
-                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Manage your availability for case assignments</CardDescription>
+                    <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">Work Availability</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Manage your work availability for case assignments</CardDescription>
                   </div>
                 </div>
                 <Button
@@ -531,7 +617,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                 <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Current Status</span>
+                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Employment Status</span>
                       {(() => {
                         const status = officerProfile.status || 'active'
                         return (
@@ -565,7 +651,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                 <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Availability</span>
+                      <span className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Work Availability</span>
                       {(() => {
                         const availability = officerProfile.availability_status || 'available'
                         return (
@@ -604,22 +690,22 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                   <CardHeader>
                     <CardTitle className="text-lg text-lawbot-slate-900 dark:text-white flex items-center">
                       <Edit className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                      Update Availability Status
+                      Update Work Availability
                     </CardTitle>
                     <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                      Update your availability status for case assignments
+                      Update your work availability for case assignments
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Availability Status */}
                     <div className="space-y-2">
-                      <Label htmlFor="availabilityStatus">Availability Status</Label>
+                      <Label htmlFor="availabilityStatus">Work Availability</Label>
                       <Select 
                         value={availabilityStatus}
                         onValueChange={(value: 'available' | 'busy' | 'overloaded' | 'unavailable') => setAvailabilityStatus(value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select availability status" />
+                          <SelectValue placeholder="Select work availability" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="available">
@@ -693,9 +779,9 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-lawbot-blue-700 dark:text-lawbot-blue-300">
                   <strong>Important Reminders:</strong><br/>
-                  • <strong>Current Status</strong> (Active/On Leave/Suspended/Retired) - Only admins can change this<br/>
-                  • <strong>Availability Status</strong> (Available/Busy/Overloaded/Unavailable) - You can update this yourself<br/>
-                  • Availability changes affect your eligibility for new case assignments
+                  • <strong>Employment Status</strong> (Active/On Leave/Suspended/Retired) - Only admins can change this<br/>
+                  • <strong>Work Availability</strong> (Available/Busy/Overloaded/Unavailable) - You can update this yourself<br/>
+                  • Work availability changes affect your eligibility for new case assignments
                 </AlertDescription>
               </Alert>
             </CardContent>

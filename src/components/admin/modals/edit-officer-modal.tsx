@@ -382,10 +382,10 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
   ]
 
   const availabilityStatusOptions = [
-    { value: 'available', label: 'Available', icon: '✅', description: 'Ready for new case assignments' },
-    { value: 'busy', label: 'Busy', icon: '⏰', description: 'At capacity but can take urgent cases' },
+    { value: 'available', label: 'Available', icon: '🟢', description: 'Ready for new case assignments' },
+    { value: 'busy', label: 'Busy', icon: '🟡', description: 'At capacity but can take urgent cases' },
     { value: 'overloaded', label: 'Overloaded', icon: '🔴', description: 'Cannot take new cases' },
-    { value: 'on_leave', label: 'On Leave', icon: '🏖️', description: 'Currently on leave' }
+    { value: 'unavailable', label: 'Unavailable', icon: '⚫', description: 'Temporarily unavailable for assignments' }
   ]
 
 
@@ -692,9 +692,9 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   )}
                 </div>
 
-                {/* Officer Status */}
+                {/* Employment Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="status">Officer Status *</Label>
+                  <Label htmlFor="status">Employment Status *</Label>
                   <div className="relative">
                     <Activity className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Select value={officerForm.status} onValueChange={(value) => {
@@ -723,7 +723,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                             </span>
                           </span>
                         ) : (
-                          <SelectValue placeholder="Select officer status" />
+                          <SelectValue placeholder="Select employment status" />
                         )}
                       </SelectTrigger>
                       <SelectContent>
@@ -745,7 +745,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                     <p className="text-red-600 text-xs mt-1">{errors.status}</p>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    💼 Current operational status of this officer
+                    💼 Officer's employment standing with PNP
                   </p>
                 </div>
 
@@ -754,12 +754,12 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   <div className="flex items-center space-x-2 mb-4">
                     <Clock className="h-5 w-5 text-blue-600" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      Availability Status
+                      Work Availability
                     </h3>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="availabilityStatus">Availability Status</Label>
+                    <Label htmlFor="availabilityStatus">Work Availability</Label>
                     <div className="relative">
                       <CheckCircle className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Select 
@@ -769,7 +769,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                         }}
                       >
                         <SelectTrigger className="pl-10">
-                          <SelectValue placeholder="Select availability" />
+                          <SelectValue placeholder="Select work availability" />
                         </SelectTrigger>
                         <SelectContent>
                           {availabilityStatusOptions.map((status) => (
@@ -787,7 +787,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                       </Select>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      ⚡ Real-time case assignment availability
+                      ⚡ Current workload capacity for case assignments
                     </p>
                   </div>
                 </div>
