@@ -103,13 +103,10 @@ export class PNPUnitsService {
     includeAvailabilityStats?: boolean
   } = {}) {
     try {
-      // Start building query
+      // First, try to get units with crime types (might fail with 400 if relationship is broken)
       let query = supabase
         .from('pnp_units')
-        .select(`
-          *,
-          pnp_unit_crime_types(crime_type)
-        `)
+        .select(`*`)
 
       // Add filters if provided
       if (status) {
@@ -134,19 +131,35 @@ export class PNPUnitsService {
         return []
       }
 
-      // Transform data to include crime types as string array
-      const unitsWithCrimeTypes = (data as any[])?.map(unit => {
-        // Extract crime types from the nested array
-        const crimeTypes = unit.pnp_unit_crime_types?.map((ct: any) => ct.crime_type) || []
-        
-        // Remove the nested array and add as a flat property
-        const { pnp_unit_crime_types, ...unitData } = unit
-        
-        return {
-          ...unitData,
-          crime_types: crimeTypes
-        }
-      }) || []
+      if (!data || data.length === 0) {
+        console.log('No PNP units found in database')
+        return []
+      }
+
+      console.log(`✅ Found ${data.length} PNP units in database`)
+
+      // Try to get crime types separately for each unit (safer approach)
+      const unitsWithCrimeTypes = await Promise.all(
+        data.map(async (unit) => {
+          try {
+            const { data: crimeTypesData, error: crimeTypesError } = await supabase
+              .from('pnp_unit_crime_types')
+              .select('crime_type')
+              .eq('unit_id', unit.id)
+
+            if (crimeTypesError) {
+              console.warn(`No crime types found for unit ${unit.unit_name}:`, crimeTypesError)
+              return { ...unit, crime_types: [] }
+            }
+
+            const crimeTypes = crimeTypesData?.map(ct => ct.crime_type) || []
+            return { ...unit, crime_types: crimeTypes }
+          } catch (err) {
+            console.warn(`Error getting crime types for unit ${unit.unit_name}:`, err)
+            return { ...unit, crime_types: [] }
+          }
+        })
+      )
 
       // Add availability statistics if requested
       if (includeAvailabilityStats) {
@@ -174,12 +187,10 @@ export class PNPUnitsService {
    */
   static async getUnitById(unitId: string, includeAvailabilityStats: boolean = false) {
     try {
+      // Get unit data without crime types join (safer approach)
       const { data, error } = await supabase
         .from('pnp_units')
-        .select(`
-          *,
-          pnp_unit_crime_types(crime_type)
-        `)
+        .select('*')
         .eq('id', unitId)
         .single()
 
@@ -188,14 +199,23 @@ export class PNPUnitsService {
         return null
       }
 
-      // Transform data to include crime types as string array
-      const crimeTypes = data.pnp_unit_crime_types?.map((ct: any) => ct.crime_type) || []
-      
-      // Remove the nested array and add as a flat property
-      const { pnp_unit_crime_types, ...unitData } = data
+      // Get crime types separately
+      let crimeTypes: string[] = []
+      try {
+        const { data: crimeTypesData, error: crimeTypesError } = await supabase
+          .from('pnp_unit_crime_types')
+          .select('crime_type')
+          .eq('unit_id', unitId)
+
+        if (!crimeTypesError && crimeTypesData) {
+          crimeTypes = crimeTypesData.map(ct => ct.crime_type)
+        }
+      } catch (err) {
+        console.warn(`Error getting crime types for unit ${unitId}:`, err)
+      }
       
       let unitWithCrimeTypes = {
-        ...unitData,
+        ...data,
         crime_types: crimeTypes
       }
 
