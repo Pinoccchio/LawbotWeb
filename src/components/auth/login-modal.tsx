@@ -188,7 +188,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         await signUp(signupForm.email, signupForm.password, fullName, userTypeForDB, {
           phoneNumber: signupForm.phone,
           badgeNumber: signupForm.badgeNumber,
-          unit: signupForm.unit,
+          unitId: signupForm.unit,  // FIX: Map form field to correct metadata field
           rank: signupForm.rank,
           region: signupForm.region
         })

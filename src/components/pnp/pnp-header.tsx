@@ -118,14 +118,14 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
                   {/* Availability Status Indicator Dot */}
                   {!loading && officerProfile && (
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 ${
-                      (officerProfile.availability_status || 'available') === 'available' 
+                      (officerProfile?.availability_status || 'available') === 'available' 
                         ? 'bg-lawbot-emerald-500' 
-                      : (officerProfile.availability_status || 'available') === 'busy' 
+                      : (officerProfile?.availability_status || 'available') === 'busy' 
                         ? 'bg-lawbot-amber-500'
-                      : (officerProfile.availability_status || 'available') === 'overloaded' 
+                      : (officerProfile?.availability_status || 'available') === 'overloaded' 
                         ? 'bg-lawbot-red-500'
                       : 'bg-lawbot-slate-500'
-                    }`} title={`Work Status: ${(officerProfile.availability_status || 'available').toUpperCase()}`}>
+                    }`} title={`Work Status: ${(officerProfile?.availability_status || 'available').toUpperCase()}`}>
                     </div>
                   )}
                 </div>
@@ -168,19 +168,19 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
                       )}
                       {/* Availability Status Badge */}
                       <Badge className={`text-xs font-bold border-0 ${
-                        (officerProfile.availability_status || 'available') === 'available' 
+                        (officerProfile?.availability_status || 'available') === 'available' 
                           ? 'bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-200' 
-                        : (officerProfile.availability_status || 'available') === 'busy' 
+                        : (officerProfile?.availability_status || 'available') === 'busy' 
                           ? 'bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-200'
-                        : (officerProfile.availability_status || 'available') === 'overloaded' 
+                        : (officerProfile?.availability_status || 'available') === 'overloaded' 
                           ? 'bg-lawbot-red-100 text-lawbot-red-800 dark:bg-lawbot-red-900/30 dark:text-lawbot-red-200'
                         : 'bg-lawbot-slate-100 text-lawbot-slate-800 dark:bg-lawbot-slate-900/30 dark:text-lawbot-slate-200'
                       }`}>
-                        {(officerProfile.availability_status || 'available') === 'available' && '🟢'}
-                        {(officerProfile.availability_status || 'available') === 'busy' && '🟡'}
-                        {(officerProfile.availability_status || 'available') === 'overloaded' && '🔴'}
-                        {(officerProfile.availability_status || 'available') === 'unavailable' && '⚫'}
-                        {' '}{(officerProfile.availability_status || 'available').toUpperCase()}
+                        {(officerProfile?.availability_status || 'available') === 'available' && '🟢'}
+                        {(officerProfile?.availability_status || 'available') === 'busy' && '🟡'}
+                        {(officerProfile?.availability_status || 'available') === 'overloaded' && '🔴'}
+                        {(officerProfile?.availability_status || 'available') === 'unavailable' && '⚫'}
+                        {' '}{(officerProfile?.availability_status || 'available').toUpperCase()}
                       </Badge>
                     </div>
                     <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">

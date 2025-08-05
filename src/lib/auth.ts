@@ -165,12 +165,17 @@ export class AuthService {
             firebase_uid: firebaseUid,
             email,
             full_name: fullName,
-            phone_number: metadata?.phoneNumber || '',
+            phone_number: metadata?.phoneNumber || null,
             badge_number: metadata?.badgeNumber || '',
             rank: metadata?.rank || '',
-            unit: metadata?.unit || '',
+            unit_id: metadata?.unitId || null,  // FIX: Changed from 'unit' to 'unit_id'
             region: metadata?.region || '',
             status: 'active',
+            availability_status: 'available',  // ADD: Required field
+            total_cases: 0,                    // ADD: Required field
+            active_cases: 0,                   // ADD: Required field
+            resolved_cases: 0,                 // ADD: Required field
+            success_rate: 0.00,               // ADD: Required field
             created_at: now,
             updated_at: now
           })

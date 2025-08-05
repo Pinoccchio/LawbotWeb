@@ -63,15 +63,17 @@ export class PNPOfficerService {
   static async getCurrentOfficerProfile(): Promise<PNPOfficerProfile | null> {
     try {
       if (!this.currentUserId) {
-        console.error('No authenticated user found')
+        console.error('🔍 No authenticated user found for profile lookup')
         return null
       }
+
+      console.log('🔍 Looking up officer profile for Firebase UID:', this.currentUserId)
 
       const { data, error } = await supabase
         .from('pnp_officer_profiles')
         .select(`
           *,
-          pnp_units!inner (
+          pnp_units (
             id,
             unit_name,
             unit_code,
@@ -83,8 +85,7 @@ export class PNPOfficerService {
             active_cases,
             resolved_cases,
             success_rate,
-            status,
-            pnp_unit_crime_types(crime_type)
+            status
           )
         `)
         .eq('firebase_uid', this.currentUserId)
@@ -92,32 +93,63 @@ export class PNPOfficerService {
         .single()
 
       if (error) {
-        console.error('Error getting officer profile:', error)
+        console.error('💥 Error getting officer profile:', {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return null
       }
 
       if (!data) {
-        console.error('No officer profile found for current user')
+        console.error('❌ No officer profile found for current user:', this.currentUserId)
         return null
       }
 
+      console.log('✅ Officer profile found:', {
+        officerId: data.id,
+        name: data.full_name,
+        badge: data.badge_number,
+        hasUnit: !!data.pnp_units,
+        unitName: data.pnp_units?.unit_name || 'No Unit Assigned'
+      })
+
       // Transform the data to match our interface
       const unitData = data.pnp_units
-      const unit = unitData ? {
-        id: unitData.id,
-        unit_name: unitData.unit_name,
-        unit_code: unitData.unit_code,
-        category: unitData.category,
-        description: unitData.description,
-        region: unitData.region,
-        max_officers: unitData.max_officers,
-        current_officers: unitData.current_officers,
-        active_cases: unitData.active_cases,
-        resolved_cases: unitData.resolved_cases,
-        success_rate: unitData.success_rate,
-        status: unitData.status,
-        crime_types: unitData.pnp_unit_crime_types?.map((ct: any) => ct.crime_type) || []
-      } : null
+      let unit = null
+      
+      if (unitData) {
+        // Get crime types separately for this unit
+        let crimeTypes: string[] = []
+        try {
+          const { data: crimeTypeData } = await supabase
+            .from('pnp_unit_crime_types')
+            .select('crime_type')
+            .eq('unit_id', unitData.id)
+          
+          crimeTypes = crimeTypeData?.map((ct: any) => ct.crime_type) || []
+        } catch (crimeTypeError) {
+          console.warn('⚠️ Could not fetch crime types for unit:', crimeTypeError)
+        }
+
+        unit = {
+          id: unitData.id,
+          unit_name: unitData.unit_name,
+          unit_code: unitData.unit_code,
+          category: unitData.category,
+          description: unitData.description,
+          region: unitData.region,
+          max_officers: unitData.max_officers,
+          current_officers: unitData.current_officers,
+          active_cases: unitData.active_cases,
+          resolved_cases: unitData.resolved_cases,
+          success_rate: unitData.success_rate,
+          status: unitData.status,
+          crime_types: crimeTypes
+        }
+      }
 
       // Remove the nested unit data and add as a flat property
       const { pnp_units, ...officerData } = data
@@ -127,7 +159,12 @@ export class PNPOfficerService {
         unit
       }
     } catch (error) {
-      console.error('Error getting current officer profile:', error)
+      console.error('💥 Exception in getCurrentOfficerProfile:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        currentUserId: this.currentUserId
+      })
       return null
     }
   }
@@ -141,7 +178,7 @@ export class PNPOfficerService {
         .from('pnp_officer_profiles')
         .select(`
           *,
-          pnp_units!inner (
+          pnp_units (
             id,
             unit_name,
             unit_code,
@@ -153,8 +190,7 @@ export class PNPOfficerService {
             active_cases,
             resolved_cases,
             success_rate,
-            status,
-            pnp_unit_crime_types(crime_type)
+            status
           )
         `)
         .eq('firebase_uid', firebaseUid)
@@ -171,21 +207,38 @@ export class PNPOfficerService {
 
       // Transform the data to match our interface
       const unitData = data.pnp_units
-      const unit = unitData ? {
-        id: unitData.id,
-        unit_name: unitData.unit_name,
-        unit_code: unitData.unit_code,
-        category: unitData.category,
-        description: unitData.description,
-        region: unitData.region,
-        max_officers: unitData.max_officers,
-        current_officers: unitData.current_officers,
-        active_cases: unitData.active_cases,
-        resolved_cases: unitData.resolved_cases,
-        success_rate: unitData.success_rate,
-        status: unitData.status,
-        crime_types: unitData.pnp_unit_crime_types?.map((ct: any) => ct.crime_type) || []
-      } : null
+      let unit = null
+      
+      if (unitData) {
+        // Get crime types separately for this unit
+        let crimeTypes: string[] = []
+        try {
+          const { data: crimeTypeData } = await supabase
+            .from('pnp_unit_crime_types')
+            .select('crime_type')
+            .eq('unit_id', unitData.id)
+          
+          crimeTypes = crimeTypeData?.map((ct: any) => ct.crime_type) || []
+        } catch (crimeTypeError) {
+          console.warn('⚠️ Could not fetch crime types for unit:', crimeTypeError)
+        }
+
+        unit = {
+          id: unitData.id,
+          unit_name: unitData.unit_name,
+          unit_code: unitData.unit_code,
+          category: unitData.category,
+          description: unitData.description,
+          region: unitData.region,
+          max_officers: unitData.max_officers,
+          current_officers: unitData.current_officers,
+          active_cases: unitData.active_cases,
+          resolved_cases: unitData.resolved_cases,
+          success_rate: unitData.success_rate,
+          status: unitData.status,
+          crime_types: crimeTypes
+        }
+      }
 
       // Remove the nested unit data and add as a flat property
       const { pnp_units, ...officerData } = data
