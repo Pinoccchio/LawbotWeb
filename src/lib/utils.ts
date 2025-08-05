@@ -5,7 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getPriorityColor(priority: string) {
+export function getPriorityColor(priority?: string) {
+  if (!priority) return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
+  
   switch (priority.toLowerCase()) {
     case "high":
       return "bg-gradient-to-r from-red-50 to-rose-50 text-red-800 border-red-200 dark:from-red-950/20 dark:to-rose-950/20 dark:text-red-200 dark:border-red-800"
@@ -18,7 +20,9 @@ export function getPriorityColor(priority: string) {
   }
 }
 
-export function getStatusColor(status: string) {
+export function getStatusColor(status?: string) {
+  if (!status) return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
+  
   switch (status.toLowerCase()) {
     case "pending":
       return "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-800 border-yellow-200 dark:from-yellow-950/20 dark:to-amber-950/20 dark:text-yellow-200 dark:border-yellow-800"

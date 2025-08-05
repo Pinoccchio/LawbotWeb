@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
+import { mockEvidenceFiles } from "@/lib/pnp-mock-data"
 
 export function EvidenceViewerView() {
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
@@ -27,74 +28,34 @@ export function EvidenceViewerView() {
     setIsModalOpen(false)
     setSelectedEvidence(null)
   }
-  const evidenceFiles = [
-    {
-      id: 1,
-      name: "Screenshot_Banking_Fraud.png",
-      type: "image",
-      size: "2.4 MB",
-      caseId: "CYB-2025-001",
-      uploadDate: "2025-01-20",
-      description: "Screenshot of fraudulent banking transaction",
-      icon: <ImageIcon className="h-5 w-5" />,
-      color: "text-blue-600",
-    },
-    {
-      id: 2,
-      name: "Email_Evidence.pdf",
-      type: "document",
-      size: "1.2 MB",
-      caseId: "CYB-2025-002",
-      uploadDate: "2025-01-19",
-      description: "Email correspondence with suspect",
-      icon: <FileText className="h-5 w-5" />,
-      color: "text-red-600",
-    },
-    {
-      id: 3,
-      name: "Phone_Recording.mp3",
-      type: "audio",
-      size: "5.8 MB",
-      caseId: "CYB-2025-003",
-      uploadDate: "2025-01-18",
-      description: "Audio recording of threatening phone call",
-      icon: <Video className="h-5 w-5" />,
-      color: "text-green-600",
-    },
-    {
-      id: 4,
-      name: "Network_Logs.txt",
-      type: "document",
-      size: "892 KB",
-      caseId: "CYB-2025-004",
-      uploadDate: "2025-01-17",
-      description: "Network access logs showing unauthorized access",
-      icon: <FileText className="h-5 w-5" />,
-      color: "text-purple-600",
-    },
-    {
-      id: 5,
-      name: "Malware_Sample.zip",
-      type: "archive",
-      size: "3.1 MB",
-      caseId: "CYB-2025-005",
-      uploadDate: "2025-01-16",
-      description: "Encrypted malware sample for analysis",
-      icon: <FileText className="h-5 w-5" />,
-      color: "text-orange-600",
-    },
-    {
-      id: 6,
-      name: "Social_Media_Posts.pdf",
-      type: "document",
-      size: "4.2 MB",
-      caseId: "CYB-2025-006",
-      uploadDate: "2025-01-15",
-      description: "Screenshots of harassing social media posts",
-      icon: <FileText className="h-5 w-5" />,
-      color: "text-indigo-600",
-    },
-  ]
+  // Use our comprehensive mock evidence data
+  const evidenceFiles = mockEvidenceFiles.map(file => ({
+    id: file.id,
+    name: file.fileName,
+    type: file.fileType.startsWith('image/') ? 'image' : 
+          file.fileType.startsWith('application/pdf') ? 'document' :
+          file.fileType.startsWith('video/') ? 'video' :
+          file.fileType.startsWith('audio/') ? 'audio' : 'document',
+    size: `${(file.fileSize / 1024 / 1024).toFixed(1)} MB`,
+    caseId: file.caseId,
+    caseName: file.caseName,
+    uploadDate: new Date(file.uploadedAt).toLocaleDateString(),
+    description: file.description,
+    category: file.category,
+    hash: file.hash,
+    status: file.status,
+    uploadedBy: file.uploadedBy,
+    icon: file.fileType.startsWith('image/') ? <ImageIcon className="h-5 w-5" /> :
+          file.fileType.startsWith('application/pdf') ? <FileText className="h-5 w-5" /> :
+          file.fileType.startsWith('video/') ? <Video className="h-5 w-5" /> :
+          file.fileType.startsWith('audio/') ? <Music className="h-5 w-5" /> :
+          <FileText className="h-5 w-5" />,
+    color: file.fileType.startsWith('image/') ? 'text-blue-600' :
+           file.fileType.startsWith('application/pdf') ? 'text-red-600' :
+           file.fileType.startsWith('video/') ? 'text-green-600' :
+           file.fileType.startsWith('audio/') ? 'text-purple-600' :
+           'text-gray-600'
+  }))
 
   return (
     <div className="space-y-8 animate-fade-in">

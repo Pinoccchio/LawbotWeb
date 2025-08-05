@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
-import { mockCases } from "@/lib/mock-data"
+import { mockAllCases } from "@/lib/pnp-mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function CaseSearchView() {
@@ -211,7 +211,7 @@ export function CaseSearchView() {
               </div>
               <div>
                 <CardTitle className="text-lawbot-slate-900 dark:text-white">Search Results</CardTitle>
-                <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Found {mockCases.length} cases matching your criteria</CardDescription>
+                <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Found {mockAllCases.length} cases matching your criteria</CardDescription>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -232,7 +232,7 @@ export function CaseSearchView() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockCases.map((case_, index) => (
+            {mockAllCases.map((case_, index) => (
               <Card key={case_.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -298,7 +298,7 @@ export function CaseSearchView() {
           {/* Enhanced Pagination */}
           <div className="flex items-center justify-between mt-8 p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-xl">
             <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">
-              📊 Showing 1-10 of {mockCases.length} results
+              📊 Showing 1-10 of {mockAllCases.length} results
             </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" disabled className="btn-modern">

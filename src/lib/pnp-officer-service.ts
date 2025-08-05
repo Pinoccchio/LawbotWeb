@@ -303,13 +303,31 @@ export class PNPOfficerService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error getting officer cases:', error)
+        console.error('💥 Database error getting officer cases:', {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          officerId: targetOfficerId
+        })
         return []
       }
 
+      if (!data || data.length === 0) {
+        console.log('📊 No cases found in database for officer:', targetOfficerId)
+        return []
+      }
+
+      console.log('✅ Found', data.length, 'cases for officer:', targetOfficerId)
       return data || []
     } catch (error) {
-      console.error('Error getting officer cases:', error)
+      console.error('💥 Exception getting officer cases:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        officerId: targetOfficerId
+      })
       return []
     }
   }

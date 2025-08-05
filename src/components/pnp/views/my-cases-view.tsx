@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Calendar, FileText, AlertTriangle, Eye, Edit, Search, Filter, Shield, Activity, Clock, CheckCircle, Download } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Calendar, FileText, AlertTriangle, Eye, Edit, Search, Filter, Shield, Activity, Clock, CheckCircle, Download, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
-import { mockCases } from "@/lib/mock-data"
+import { mockOfficerCases } from "@/lib/pnp-mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function MyCasesView() {
@@ -22,15 +22,46 @@ export function MyCasesView() {
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
+  const [officerCases, setOfficerCases] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const officerCases = mockCases
+  useEffect(() => {
+    loadMyCases()
+  }, [])
+
+  const loadMyCases = async () => {
+    try {
+      setLoading(true)
+      
+      // Use mock data for demonstration (database integration will be added later)
+      console.log('📊 Using PNP mock data for demonstration - database integration disabled')
+      
+      // Simulate loading delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      setOfficerCases(mockOfficerCases)
+    } catch (error) {
+      console.error('Error loading mock cases:', error)
+      // Even if mock data fails somehow, provide fallback
+      setOfficerCases(mockOfficerCases)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredCases = officerCases.filter((case_) => {
+    // Use the complaint data from mock structure
+    const caseData = case_.complaint || case_
+    const caseId = caseData?.complaint_number || caseData?.id || case_.id || ''
+    const title = caseData?.title || ''
+    const status = caseData?.status || ''
+    const priority = caseData?.priority || 'medium'
+    
     const matchesSearch =
-      case_.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      case_.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || case_.status.toLowerCase().includes(statusFilter.toLowerCase())
-    const matchesPriority = priorityFilter === "all" || case_.priority === priorityFilter
+      caseId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      title.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || status.toLowerCase().includes(statusFilter.toLowerCase())
+    const matchesPriority = priorityFilter === "all" || priority === priorityFilter
 
     return matchesSearch && matchesStatus && matchesPriority
   })
@@ -48,6 +79,17 @@ export function MyCasesView() {
   const handleViewEvidence = (caseData: any) => {
     setSelectedCase(caseData)
     setEvidenceModalOpen(true)
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-500" />
+          <span className="ml-2 text-lawbot-slate-600 dark:text-lawbot-slate-400">Loading your cases...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -139,8 +181,23 @@ export function MyCasesView() {
         <TabsContent value="active">
           <div className="space-y-4">
             {filteredCases
-              .filter((c) => c.status !== "Resolved" && c.status !== "Dismissed")
-              .map((case_) => (
+              .filter((c) => {
+                const caseData = c.complaint || c
+                const status = caseData?.status || ''
+                return status !== "Resolved" && status !== "Dismissed"
+              })
+              .map((case_) => {
+                const caseData = case_.complaint || case_
+                const caseId = caseData?.complaint_number || caseData?.id || case_.id || 'Unknown'
+                const title = caseData?.title || 'Untitled Case'
+                const priority = caseData?.priority || 'medium'
+                const status = caseData?.status || 'Pending'
+                const date = caseData?.created_at ? new Date(caseData.created_at).toLocaleDateString() : caseData?.date || 'N/A'
+                const evidence = caseData?.evidence || 0
+                const riskScore = caseData?.risk_score || caseData?.riskScore || 50
+                const unit = case_.unit || 'Unknown Unit'
+                
+                return (
                 <Card
                   key={case_.id}
                   className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up"
@@ -150,41 +207,41 @@ export function MyCasesView() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-4">
-                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.id}</h3>
-                          <Badge className={`${getPriorityColor(case_.priority)} text-xs font-medium`}>
-                            {case_.priority === 'high' ? '🔴' : case_.priority === 'medium' ? '🟡' : '🟢'} {case_.priority}
+                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
+                          <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
+                            {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
                           </Badge>
-                          <Badge className={`${getStatusColor(case_.status)} text-xs font-medium`}>
-                            {case_.status === 'Pending' ? '📋' : 
-                             case_.status === 'Under Investigation' ? '🔍' :
-                             case_.status === 'Resolved' ? '✅' :
-                             case_.status === 'Dismissed' ? '❌' : '❓'} 
-                            {case_.status}
+                          <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
+                            {status === 'Pending' ? '📋' : 
+                             status === 'Under Investigation' ? '🔍' :
+                             status === 'Resolved' ? '✅' :
+                             status === 'Dismissed' ? '❌' : '❓'} 
+                            {status}
                           </Badge>
                         </div>
-                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{case_.title}</h4>
+                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                           <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
                             <Calendar className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                            <span className="text-sm font-medium">📅 {case_.date}</span>
+                            <span className="text-sm font-medium">📅 {date}</span>
                           </div>
                           <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
                             <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
-                            <span className="text-sm font-medium">📎 {case_.evidence} files</span>
+                            <span className="text-sm font-medium">📎 {evidence} files</span>
                           </div>
                           <div className="flex items-center p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
                             <AlertTriangle className="h-4 w-4 mr-2 text-lawbot-amber-500" />
                             <span className={`text-sm font-bold ${
-                              case_.riskScore >= 80 ? 'text-lawbot-red-500' : 
-                              case_.riskScore >= 50 ? 'text-lawbot-amber-500' : 
+                              riskScore >= 80 ? 'text-lawbot-red-500' : 
+                              riskScore >= 50 ? 'text-lawbot-amber-500' : 
                               'text-lawbot-emerald-500'
                             }`}>
-                              ⚠️ {case_.riskScore}
+                              ⚠️ {riskScore}
                             </span>
                           </div>
                           <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
                             <Shield className="h-4 w-4 mr-2 text-lawbot-purple-500" />
-                            <span className="text-sm font-medium truncate">🏢 {case_.unit.split(' ')[0]}...</span>
+                            <span className="text-sm font-medium truncate">🏢 {unit.split(' ')[0]}...</span>
                           </div>
                         </div>
                         <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
@@ -193,21 +250,21 @@ export function MyCasesView() {
                             Case Summary:
                           </h5>
                           <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed">
-                            Investigation ongoing for {case_.title.toLowerCase()}. Evidence collected and being analyzed.
-                            {case_.priority === "high" && " 🚨 High priority case requiring immediate attention."}
+                            Investigation ongoing for {title.toLowerCase()}. Evidence collected and being analyzed.
+                            {priority === "high" && " 🚨 High priority case requiring immediate attention."}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-col space-y-3 ml-6">
-                        <Button size="sm" className="btn-gradient" onClick={() => handleViewDetails(case_)}>
+                        <Button size="sm" className="btn-gradient" onClick={() => handleViewDetails(caseData)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
-                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleUpdateStatus(case_)}>
+                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleUpdateStatus(caseData)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Update Status
                         </Button>
-                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50" onClick={() => handleViewEvidence(case_)}>
+                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50" onClick={() => handleViewEvidence(caseData)}>
                           <FileText className="h-4 w-4 mr-2" />
                           Evidence
                         </Button>
@@ -215,36 +272,48 @@ export function MyCasesView() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
           </div>
         </TabsContent>
 
         <TabsContent value="pending">
           <div className="space-y-4">
             {filteredCases
-              .filter((c) => c.status === "Pending" || c.status === "Requires More Info")
-              .map((case_) => (
+              .filter((c) => {
+                const caseData = c.complaint || c
+                const status = caseData?.status || ''
+                return status === "Pending" || status === "Requires More Info"
+              })
+              .map((case_) => {
+                const caseData = case_.complaint || case_
+                const caseId = caseData?.complaint_number || caseData?.id || case_.id || 'Unknown'
+                const title = caseData?.title || 'Untitled Case'
+                const priority = caseData?.priority || 'medium'
+                const status = caseData?.status || 'Pending'
+                
+                return (
                 <Card key={case_.id} className="card-modern bg-gradient-to-r from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-8">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-4">
-                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.id}</h3>
-                          <Badge className={`${getPriorityColor(case_.priority)} text-xs font-medium`}>
-                            {case_.priority === 'high' ? '🔴' : case_.priority === 'medium' ? '🟡' : '🟢'} {case_.priority}
+                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
+                          <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
+                            {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
                           </Badge>
-                          <Badge className={`${getStatusColor(case_.status)} text-xs font-medium`}>
-                            {case_.status === 'Pending' ? '📋' : '❓'} {case_.status}
+                          <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
+                            {status === 'Pending' ? '📋' : '❓'} {status}
                           </Badge>
                         </div>
-                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{case_.title}</h4>
+                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
                         <div className="bg-gradient-to-r from-lawbot-amber-100 to-lawbot-orange-100 dark:from-lawbot-amber-900/30 dark:to-lawbot-orange-900/30 p-4 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800">
                           <div className="flex items-center mb-2">
                             <Clock className="h-4 w-4 mr-2 text-lawbot-amber-600" />
                             <span className="text-sm font-semibold text-lawbot-amber-800 dark:text-lawbot-amber-200">Action Required</span>
                           </div>
                           <p className="text-sm text-lawbot-amber-800 dark:text-lawbot-amber-200 leading-relaxed">
-                            {case_.status === "Pending"
+                            {status === "Pending"
                               ? "⏳ This case is pending initial review and assignment. Take immediate action to begin investigation."
                               : "❓ Additional information has been requested from the complainant. Follow up on missing details."}
                           </p>
@@ -254,12 +323,12 @@ export function MyCasesView() {
                         <Button
                           size="sm"
                           className="btn-gradient bg-gradient-to-r from-lawbot-amber-600 to-lawbot-amber-700 hover:from-lawbot-amber-700 hover:to-lawbot-amber-800"
-                          onClick={() => handleUpdateStatus(case_)}
+                          onClick={() => handleUpdateStatus(caseData)}
                         >
                           <Activity className="h-4 w-4 mr-2" />
                           Take Action
                         </Button>
-                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-amber-300 text-lawbot-amber-600 hover:bg-lawbot-amber-50" onClick={() => handleViewDetails(case_)}>
+                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-amber-300 text-lawbot-amber-600 hover:bg-lawbot-amber-50" onClick={() => handleViewDetails(caseData)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
@@ -267,42 +336,55 @@ export function MyCasesView() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
           </div>
         </TabsContent>
 
         <TabsContent value="resolved">
           <div className="space-y-4">
             {filteredCases
-              .filter((c) => c.status === "Resolved" || c.status === "Dismissed")
-              .map((case_) => (
+              .filter((c) => {
+                const caseData = c.complaint || c
+                const status = caseData?.status || ''
+                return status === "Resolved" || status === "Dismissed"
+              })
+              .map((case_) => {
+                const caseData = case_.complaint || case_
+                const caseId = caseData?.complaint_number || caseData?.id || case_.id || 'Unknown'
+                const title = caseData?.title || 'Untitled Case'
+                const priority = caseData?.priority || 'medium'
+                const status = caseData?.status || 'Resolved'
+                const date = caseData?.created_at ? new Date(caseData.created_at).toLocaleDateString() : caseData?.date || 'N/A'
+                
+                return (
                 <Card key={case_.id} className="card-modern bg-gradient-to-r from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800 hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-8">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-4">
-                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.id}</h3>
-                          <Badge className={`${getPriorityColor(case_.priority)} text-xs font-medium`}>
-                            {case_.priority === 'high' ? '🔴' : case_.priority === 'medium' ? '🟡' : '🟢'} {case_.priority}
+                          <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
+                          <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
+                            {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
                           </Badge>
-                          <Badge className={`${getStatusColor(case_.status)} text-xs font-medium`}>
-                            {case_.status === 'Resolved' ? '✅' : '❌'} {case_.status}
+                          <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
+                            {status === 'Resolved' ? '✅' : '❌'} {status}
                           </Badge>
                         </div>
-                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{case_.title}</h4>
+                        <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
                         <div className="bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-green-100 dark:from-lawbot-emerald-900/30 dark:to-lawbot-green-900/30 p-4 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                           <div className="flex items-center mb-2">
                             <CheckCircle className="h-4 w-4 mr-2 text-lawbot-emerald-600" />
                             <span className="text-sm font-semibold text-lawbot-emerald-800 dark:text-lawbot-emerald-200">Case Completed</span>
                           </div>
                           <p className="text-sm text-lawbot-emerald-800 dark:text-lawbot-emerald-200 leading-relaxed">
-                            ✅ Case successfully {case_.status.toLowerCase()} on {case_.date}. Investigation completed with
+                            ✅ Case successfully {status.toLowerCase()} on {date}. Investigation completed with
                             sufficient evidence for prosecution. All documentation finalized.
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-col space-y-3 ml-6">
-                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleViewDetails(case_)}>
+                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleViewDetails(caseData)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Report
                         </Button>
@@ -314,7 +396,8 @@ export function MyCasesView() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
           </div>
         </TabsContent>
       </Tabs>

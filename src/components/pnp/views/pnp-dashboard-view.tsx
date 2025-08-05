@@ -10,6 +10,7 @@ import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { mockCases } from "@/lib/mock-data"
+import { mockOfficerStats, mockOfficerCases, mockDashboardMetrics } from "@/lib/pnp-mock-data"
 import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
@@ -39,15 +40,115 @@ export function PNPDashboardView() {
         
         // Load officer's cases
         const cases = await PNPOfficerService.getOfficerCases(profile.id)
-        setOfficerCases(cases || [])
+        
+        if (cases && cases.length > 0) {
+          // Use real database cases if available
+          setOfficerCases(cases)
+        } else {
+          // No cases in database - use mock data for better UX
+          console.log('📊 No database cases found, using mock data for demonstration')
+          setOfficerCases(mockOfficerCases)
+          
+          // Also enhance the profile with mock statistics for better display
+          const enhancedProfile = {
+            ...profile,
+            total_cases: mockOfficerStats.totalCases,
+            active_cases: mockOfficerStats.activeCases,
+            resolved_cases: mockOfficerStats.resolvedCases,
+            success_rate: mockOfficerStats.successRate
+          }
+          setOfficerProfile(enhancedProfile)
+        }
       } else {
-        setError('Unable to load officer profile. Please contact your administrator.')
+        // No profile found - this shouldn't happen after login, but handle gracefully
+        console.log('⚠️ No officer profile found, using mock data for development')
+        setError('Using demonstration data - no officer profile found in database.')
+        
+        // Create a mock profile for development/demo purposes
+        const mockProfile: PNPOfficerProfile = {
+          id: 'mock_officer_001',
+          firebase_uid: 'mock_firebase_uid',
+          email: 'demo@pnp.gov.ph',
+          full_name: 'Demo PNP Officer',
+          phone_number: '+63 917 123 4567',
+          badge_number: 'PNP-99999',
+          rank: 'Police Officer III',
+          unit_id: 'mock_unit_001',
+          region: 'National Capital Region (NCR)',
+          status: 'active',
+          availability_status: 'available',
+          total_cases: mockOfficerStats.totalCases,
+          active_cases: mockOfficerStats.activeCases,
+          resolved_cases: mockOfficerStats.resolvedCases,
+          success_rate: mockOfficerStats.successRate,
+          last_login_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          unit: {
+            id: 'mock_unit_001',
+            unit_name: 'Cyber Crime Investigation Cell',
+            unit_code: 'PCU-001',
+            category: 'Communication & Social Media Crimes',
+            description: 'Demo unit for development',
+            region: 'National Capital Region (NCR)',
+            max_officers: 20,
+            current_officers: 15,
+            active_cases: 34,
+            resolved_cases: 128,
+            success_rate: 87.5,
+            status: 'active',
+            crime_types: ['Phishing', 'Social Engineering', 'SMS Fraud']
+          }
+        }
+        
+        setOfficerProfile(mockProfile)
+        setOfficerCases(mockOfficerCases)
       }
     } catch (err) {
       console.error('Error loading dashboard data:', err)
-      setError('Failed to load dashboard data. Please try again.')
-      // Fallback to mock data for development
-      const mockOfficerCases = mockCases.filter((c) => c.officer === "Officer Smith" || c.officer === "Officer Martinez")
+      
+      // Complete fallback to mock data
+      console.log('🔄 Database error, falling back to mock data for development')
+      setError('Using demonstration data due to connection issues.')
+      
+      // Use comprehensive mock data
+      const mockProfile: PNPOfficerProfile = {
+        id: 'mock_officer_001',
+        firebase_uid: 'mock_firebase_uid',
+        email: 'demo@pnp.gov.ph',
+        full_name: 'Demo PNP Officer',
+        phone_number: '+63 917 123 4567',
+        badge_number: 'PNP-99999',
+        rank: 'Police Officer III',
+        unit_id: 'mock_unit_001',
+        region: 'National Capital Region (NCR)',
+        status: 'active',
+        availability_status: 'available',
+        total_cases: mockOfficerStats.totalCases,
+        active_cases: mockOfficerStats.activeCases,
+        resolved_cases: mockOfficerStats.resolvedCases,
+        success_rate: mockOfficerStats.successRate,
+        last_login_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        unit: {
+          id: 'mock_unit_001',
+          unit_name: 'Cyber Crime Investigation Cell',
+          unit_code: 'PCU-001',
+          category: 'Communication & Social Media Crimes',
+          description: 'Demo unit for development',
+          region: 'National Capital Region (NCR)',
+          max_officers: 20,
+          current_officers: 15,
+          active_cases: 34,
+          resolved_cases: 128,
+          success_rate: 87.5,
+          status: 'active',
+          crime_types: ['Phishing', 'Social Engineering', 'SMS Fraud']
+        }
+      }
+      
+      setOfficerProfile(mockProfile)
       setOfficerCases(mockOfficerCases)
     } finally {
       setLoading(false)
@@ -196,60 +297,72 @@ export function PNPDashboardView() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {officerCases.slice(0, 5).map((case_, index) => (
-              <Card key={case_.id} className="card-modern hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <h3 className="font-bold text-lg text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.id}</h3>
-                        <Badge className={`${getPriorityColor(case_.priority)} text-xs font-medium`}>
-                          {case_.priority === 'high' ? '🔴' : case_.priority === 'medium' ? '🟡' : '🟢'} {case_.priority}
-                        </Badge>
-                        <Badge className={`${getStatusColor(case_.status)} text-xs font-medium`}>
-                          {case_.status === 'Pending' ? '📋' : 
-                           case_.status === 'Under Investigation' ? '🔍' :
-                           case_.status === 'Resolved' ? '✅' :
-                           case_.status === 'Dismissed' ? '❌' : '❓'} 
-                          {case_.status}
-                        </Badge>
+            {officerCases.slice(0, 5).map((case_, index) => {
+              // Handle both database structure (case_.complaints) and mock structure (case_.complaint)
+              const caseData = case_.complaint || case_.complaints || case_
+              const caseId = caseData.complaint_number || caseData.id || case_.id
+              const title = caseData.title || 'Untitled Case'
+              const priority = caseData.priority || 'medium'
+              const status = caseData.status || 'Pending'
+              const date = caseData.created_at ? new Date(caseData.created_at).toLocaleDateString() : caseData.date || 'N/A'
+              const riskScore = caseData.risk_score || caseData.riskScore || 50
+              const evidenceCount = caseData.evidence || 0
+              
+              return (
+                <Card key={caseId} className="card-modern hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <h3 className="font-bold text-lg text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
+                          <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
+                            {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
+                          </Badge>
+                          <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
+                            {status === 'Pending' ? '📋' : 
+                             status === 'Under Investigation' ? '🔍' :
+                             status === 'Resolved' ? '✅' :
+                             status === 'Dismissed' ? '❌' : '❓'} 
+                            {status}
+                          </Badge>
+                        </div>
+                        <h4 className="font-semibold text-lawbot-slate-900 dark:text-white mb-3 text-lg">{title}</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                            <Calendar className="h-4 w-4 mr-2 text-lawbot-blue-500" />
+                            📅 {date}
+                          </div>
+                          <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                            <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
+                            📎 {evidenceCount} evidence files
+                          </div>
+                          <div className="flex items-center">
+                            <AlertTriangle className="h-4 w-4 mr-2 text-lawbot-amber-500" />
+                            <span className={`font-bold ${
+                              riskScore >= 80 ? 'text-lawbot-red-500' : 
+                              riskScore >= 50 ? 'text-lawbot-amber-500' : 
+                              'text-lawbot-emerald-500'
+                            }`}>
+                              ⚠️ Risk: {riskScore}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <h4 className="font-semibold text-lawbot-slate-900 dark:text-white mb-3 text-lg">{case_.title}</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                          <Calendar className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                          📅 {case_.date}
-                        </div>
-                        <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                          <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
-                          📎 {case_.evidence} evidence files
-                        </div>
-                        <div className="flex items-center">
-                          <AlertTriangle className="h-4 w-4 mr-2 text-lawbot-amber-500" />
-                          <span className={`font-bold ${
-                            case_.riskScore >= 80 ? 'text-lawbot-red-500' : 
-                            case_.riskScore >= 50 ? 'text-lawbot-amber-500' : 
-                            'text-lawbot-emerald-500'
-                          }`}>
-                            ⚠️ Risk: {case_.riskScore}
-                          </span>
-                        </div>
+                      <div className="flex items-center space-x-3">
+                        <Button size="sm" variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50" onClick={() => handleViewDetails(caseData)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                        <Button size="sm" className="btn-gradient" onClick={() => handleUpdateStatus(caseData)}>
+                          <Activity className="h-4 w-4 mr-2" />
+                          Update Status
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Button size="sm" variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50" onClick={() => handleViewDetails(case_)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                      <Button size="sm" className="btn-gradient" onClick={() => handleUpdateStatus(case_)}>
-                        <Activity className="h-4 w-4 mr-2" />
-                        Update Status
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
