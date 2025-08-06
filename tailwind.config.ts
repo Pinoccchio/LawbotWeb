@@ -162,9 +162,9 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["JetBrains Mono", "Monaco", "Cascadia Code", "Roboto Mono", "monospace"],
-        display: ["Inter", "system-ui", "sans-serif"],
+        sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        mono: ["Monaco", "Cascadia Code", "Consolas", "Courier New", "monospace"],
+        display: ["system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],
