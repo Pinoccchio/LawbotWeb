@@ -12,6 +12,19 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  // Disable font optimization to avoid Google Fonts loading issues
+  optimizeFonts: false,
+  // Add fallback for font loading
+  webpack: (config, { isServer }) => {
+    // Handle font loading errors gracefully
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    }
+    return config
+  },
 }
 
 export default nextConfig
