@@ -3,12 +3,12 @@
 
 // Mock Officer Dashboard Statistics
 export const mockOfficerStats = {
-  totalCases: 45,
-  activeCases: 8,
-  resolvedCases: 37,
-  successRate: 82.2,
-  avgResolutionTime: 5.3,
-  weeklyActivity: [
+  total_cases: 45,
+  active_cases: 8,
+  resolved_cases: 37,
+  success_rate: 82.2,
+  avg_resolution_time: 5.3,
+  weekly_activity: [
     { day: 'Mon', cases: 2 },
     { day: 'Tue', cases: 3 },
     { day: 'Wed', cases: 1 },
@@ -17,17 +17,17 @@ export const mockOfficerStats = {
     { day: 'Sat', cases: 0 },
     { day: 'Sun', cases: 1 }
   ],
-  monthlyProgress: {
+  monthly_progress: {
     resolved: 12,
     target: 15,
     percentage: 80
   },
-  casesByPriority: {
+  cases_by_priority: {
     high: 3,
     medium: 4,
     low: 1
   },
-  casesByStatus: {
+  cases_by_status: {
     pending: 2,
     investigating: 5,
     needsInfo: 1,
@@ -40,7 +40,7 @@ export const mockOfficerStats = {
 export const mockOfficerCases = [
   {
     id: "case_001",
-    complaintId: "complaint_001",
+    complaint_id: "complaint_001",
     complaint: {
       id: "CYB-2025-048",
       complaint_number: "CYB-2025-048",
@@ -53,6 +53,17 @@ export const mockOfficerCases = [
       estimated_loss: 85000,
       incident_date_time: "2025-01-28T15:30:00+08:00",
       incident_location: "Online - Facebook Messenger",
+      // Missing database fields
+      assigned_officer: "Officer John Smith",
+      assigned_officer_id: "officer_001",
+      assigned_unit: "Economic Offenses Wing",
+      unit_id: "unit_002",
+      platform_website: "Facebook",
+      account_reference: "FB_MSG_THREAD_001, CRYPTO_PLATFORM_XYZ",
+      ai_priority: "high",
+      ai_risk_score: 94,
+      ai_confidence_score: 96,
+      last_ai_assessment: "2025-01-29T09:30:00+08:00",
       created_at: "2025-01-29T09:15:00+08:00",
       updated_at: "2025-01-30T14:22:00+08:00",
       user_profiles: {
@@ -68,7 +79,7 @@ export const mockOfficerCases = [
   },
   {
     id: "case_002", 
-    complaintId: "complaint_002",
+    complaint_id: "complaint_002",
     complaint: {
       id: "CYB-2025-045",
       complaint_number: "CYB-2025-045",
@@ -81,6 +92,17 @@ export const mockOfficerCases = [
       estimated_loss: 25000,
       incident_date_time: "2025-01-26T11:45:00+08:00",
       incident_location: "Corporate Email Systems",
+      // Missing database fields
+      assigned_officer: "Officer Maria Santos",
+      assigned_officer_id: "officer_002",
+      assigned_unit: "Cyber Crime Investigation Cell",
+      unit_id: "unit_001",
+      platform_website: "Corporate Email Server",
+      account_reference: "EMAIL_CAMPAIGN_001, PHISH_DOMAIN_techcorp-fake.com",
+      ai_priority: "high",
+      ai_risk_score: 90,
+      ai_confidence_score: 93,
+      last_ai_assessment: "2025-01-27T08:30:00+08:00",
       created_at: "2025-01-27T08:00:00+08:00",
       updated_at: "2025-01-30T16:15:00+08:00",
       user_profiles: {
@@ -96,7 +118,7 @@ export const mockOfficerCases = [
   },
   {
     id: "case_003",
-    complaintId: "complaint_003", 
+    complaint_id: "complaint_003", 
     complaint: {
       id: "CYB-2025-042",
       complaint_number: "CYB-2025-042",
@@ -109,6 +131,17 @@ export const mockOfficerCases = [
       estimated_loss: 15500,
       incident_date_time: "2025-01-24T19:20:00+08:00",
       incident_location: "Online Shopping Platform",
+      // Missing database fields
+      assigned_officer: "Officer Carlos Reyes",
+      assigned_officer_id: "officer_003",
+      assigned_unit: "Economic Offenses Wing",
+      unit_id: "unit_002",
+      platform_website: "fake-gadgets-store.com",
+      account_reference: "ORDER_REF_ABC123, PAYMENT_TXN_XYZ789",
+      ai_priority: "medium",
+      ai_risk_score: 68,
+      ai_confidence_score: 82,
+      last_ai_assessment: "2025-01-25T11:00:00+08:00",
       created_at: "2025-01-25T10:30:00+08:00",
       updated_at: "2025-01-30T11:45:00+08:00",
       user_profiles: {
@@ -124,7 +157,7 @@ export const mockOfficerCases = [
   },
   {
     id: "case_004",
-    complaintId: "complaint_004",
+    complaint_id: "complaint_004",
     complaint: {
       id: "CYB-2025-040",
       complaint_number: "CYB-2025-040", 
@@ -152,7 +185,7 @@ export const mockOfficerCases = [
   },
   {
     id: "case_005",
-    complaintId: "complaint_005",
+    complaint_id: "complaint_005",
     complaint: {
       id: "CYB-2025-038",
       complaint_number: "CYB-2025-038",
@@ -188,7 +221,7 @@ export const mockRecentActivity = [
     title: "Case Status Updated",
     description: "CYB-2025-048 moved to Under Investigation",
     timestamp: "2025-01-30T14:22:00+08:00",
-    caseId: "CYB-2025-048",
+    case_id: "CYB-2025-048",
     icon: "🔍"
   },
   {
@@ -197,7 +230,7 @@ export const mockRecentActivity = [
     title: "New Evidence Added",
     description: "3 files uploaded to CYB-2025-045",
     timestamp: "2025-01-30T13:45:00+08:00",
-    caseId: "CYB-2025-045",
+    case_id: "CYB-2025-045",
     icon: "📎"
   },
   {
@@ -206,7 +239,7 @@ export const mockRecentActivity = [
     title: "New Case Assigned", 
     description: "CYB-2025-038 assigned to you",
     timestamp: "2025-01-30T09:15:00+08:00",
-    caseId: "CYB-2025-038",
+    case_id: "CYB-2025-038",
     icon: "📋"
   },
   {
@@ -215,7 +248,7 @@ export const mockRecentActivity = [
     title: "Case Resolved",
     description: "CYB-2025-035 successfully closed",
     timestamp: "2025-01-29T16:30:00+08:00", 
-    caseId: "CYB-2025-035",
+    case_id: "CYB-2025-035",
     icon: "✅"
   },
   {
@@ -224,7 +257,7 @@ export const mockRecentActivity = [
     title: "Case Note Added",
     description: "Investigation notes updated for CYB-2025-042",
     timestamp: "2025-01-29T11:20:00+08:00",
-    caseId: "CYB-2025-042", 
+    case_id: "CYB-2025-042", 
     icon: "📝"
   }
 ]
@@ -244,6 +277,17 @@ export const mockAllCases = [
     estimated_loss: 500000,
     incident_date_time: "2025-01-28T10:00:00+08:00",
     incident_location: "Online Cryptocurrency Platform",
+    // Missing database fields
+    assigned_officer: "Officer Diana Lopez",
+    assigned_officer_id: "officer_004",
+    assigned_unit: "Economic Offenses Wing",
+    unit_id: "unit_002",
+    platform_website: "fake-crypto-exchange.com",
+    account_reference: "CRYPTO_WALLET_ABC123, FRAUD_REPORT_001",
+    ai_priority: "high",
+    ai_risk_score: 97,
+    ai_confidence_score: 98,
+    last_ai_assessment: "2025-01-28T15:00:00+08:00",
     created_at: "2025-01-28T14:30:00+08:00",
     updated_at: "2025-01-30T15:45:00+08:00",
     user_profiles: {
@@ -264,6 +308,17 @@ export const mockAllCases = [
     estimated_loss: 0,
     incident_date_time: "2025-01-27T02:30:00+08:00",
     incident_location: "E-commerce Database Server",
+    // Missing database fields
+    assigned_officer: "Officer Sofia Reyes",
+    assigned_officer_id: "officer_005",
+    assigned_unit: "Cyber Security Division",
+    unit_id: "unit_003",
+    platform_website: "shopnow.ph",
+    account_reference: "DB_BREACH_27012025, AFFECTED_USERS_10K",
+    ai_priority: "high",
+    ai_risk_score: 92,
+    ai_confidence_score: 95,
+    last_ai_assessment: "2025-01-27T08:45:00+08:00",
     created_at: "2025-01-27T08:15:00+08:00",
     updated_at: "2025-01-30T12:00:00+08:00",
     user_profiles: {
@@ -284,6 +339,17 @@ export const mockAllCases = [
     estimated_loss: 75000,
     incident_date_time: "2025-01-25T20:15:00+08:00",
     incident_location: "Online Banking Portal",
+    // Missing database fields
+    assigned_officer: "Officer Roberto Cruz",
+    assigned_officer_id: "officer_006",
+    assigned_unit: "Economic Offenses Wing",
+    unit_id: "unit_002",
+    platform_website: "online-banking.com",
+    account_reference: "BANK_ACC_****1234, TXN_FRAUD_001",
+    ai_priority: "high",
+    ai_risk_score: 87,
+    ai_confidence_score: 91,
+    last_ai_assessment: "2025-01-26T08:00:00+08:00",
     created_at: "2025-01-26T07:45:00+08:00",
     updated_at: "2025-01-29T17:30:00+08:00",
     user_profiles: {
@@ -298,13 +364,17 @@ export const mockAllCases = [
 export const mockEvidenceFiles = [
   {
     id: "evidence_001",
-    caseId: "CYB-2025-048",
-    caseName: "Investment Scam via Social Media",
-    fileName: "facebook_messages.png",
-    fileType: "image/png",
-    fileSize: 2048576,
-    uploadedAt: "2025-01-29T09:30:00+08:00",
-    uploadedBy: "Roberto Mendoza",
+    complaint_id: "complaint_001", // UUID reference to complaints table
+    case_id: "CYB-2025-048", // Keep for compatibility
+    case_name: "Investment Scam via Social Media", // Keep for compatibility
+    file_name: "facebook_messages.png",
+    file_path: "/evidence/complaint_001/facebook_messages.png",
+    file_type: "image/png",
+    file_size: 2048576,
+    download_url: "https://storage.supabase.co/evidence/complaint_001/facebook_messages.png",
+    uploaded_at: "2025-01-29T09:30:00+08:00",
+    created_at: "2025-01-29T09:30:00+08:00",
+    uploaded_by: "Roberto Mendoza",
     description: "Screenshots of Facebook messenger conversation with scammer",
     category: "Communication Records",
     hash: "sha256:a1b2c3d4e5f6...",
@@ -312,13 +382,17 @@ export const mockEvidenceFiles = [
   },
   {
     id: "evidence_002",
-    caseId: "CYB-2025-048", 
-    caseName: "Investment Scam via Social Media",
-    fileName: "bank_statement.pdf",
-    fileType: "application/pdf",
-    fileSize: 1536000,
-    uploadedAt: "2025-01-29T10:15:00+08:00",
-    uploadedBy: "Roberto Mendoza",
+    complaint_id: "complaint_001", // UUID reference to complaints table
+    case_id: "CYB-2025-048", // Keep for compatibility
+    case_name: "Investment Scam via Social Media", // Keep for compatibility
+    file_name: "bank_statement.pdf",
+    file_path: "/evidence/complaint_001/bank_statement.pdf",
+    file_type: "application/pdf",
+    file_size: 1536000,
+    download_url: "https://storage.supabase.co/evidence/complaint_001/bank_statement.pdf",
+    uploaded_at: "2025-01-29T10:15:00+08:00",
+    created_at: "2025-01-29T10:15:00+08:00",
+    uploaded_by: "Roberto Mendoza",
     description: "Bank statement showing fraudulent transactions",
     category: "Financial Records",
     hash: "sha256:b2c3d4e5f6g7...",
@@ -326,13 +400,17 @@ export const mockEvidenceFiles = [
   },
   {
     id: "evidence_003",
-    caseId: "CYB-2025-045",
-    caseName: "Phishing Email Attack",
-    fileName: "phishing_email.eml",
-    fileType: "message/rfc822",
-    fileSize: 45000,
-    uploadedAt: "2025-01-27T08:30:00+08:00",
-    uploadedBy: "TechCorp Philippines Inc.",
+    complaint_id: "complaint_002", // UUID reference to complaints table
+    case_id: "CYB-2025-045", // Keep for compatibility
+    case_name: "Phishing Email Attack", // Keep for compatibility
+    file_name: "phishing_email.eml",
+    file_path: "/evidence/complaint_002/phishing_email.eml",
+    file_type: "message/rfc822",
+    file_size: 45000,
+    download_url: "https://storage.supabase.co/evidence/complaint_002/phishing_email.eml",
+    uploaded_at: "2025-01-27T08:30:00+08:00",
+    created_at: "2025-01-27T08:30:00+08:00",
+    uploaded_by: "TechCorp Philippines Inc.",
     description: "Original phishing email with headers",
     category: "Digital Evidence",
     hash: "sha256:c3d4e5f6g7h8...",
@@ -340,13 +418,17 @@ export const mockEvidenceFiles = [
   },
   {
     id: "evidence_004",
-    caseId: "CYB-2025-045",
-    caseName: "Phishing Email Attack", 
-    fileName: "employee_accounts.xlsx",
-    fileType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    fileSize: 128000,
-    uploadedAt: "2025-01-27T09:00:00+08:00",
-    uploadedBy: "TechCorp Philippines Inc.",
+    complaint_id: "complaint_002", // UUID reference to complaints table
+    case_id: "CYB-2025-045", // Keep for compatibility
+    case_name: "Phishing Email Attack", // Keep for compatibility
+    file_name: "employee_accounts.xlsx",
+    file_path: "/evidence/complaint_002/employee_accounts.xlsx",
+    file_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    file_size: 128000,
+    download_url: "https://storage.supabase.co/evidence/complaint_002/employee_accounts.xlsx",
+    uploaded_at: "2025-01-27T09:00:00+08:00",
+    created_at: "2025-01-27T09:00:00+08:00",
+    uploaded_by: "TechCorp Philippines Inc.",
     description: "List of compromised employee accounts",
     category: "System Logs",
     hash: "sha256:d4e5f6g7h8i9...",
@@ -354,13 +436,17 @@ export const mockEvidenceFiles = [
   },
   {
     id: "evidence_005",
-    caseId: "CYB-2025-042",
-    caseName: "Fake Online Shopping Site",
-    fileName: "payment_receipt.jpg",
-    fileType: "image/jpeg",
-    fileSize: 892000,
-    uploadedAt: "2025-01-25T10:45:00+08:00",
-    uploadedBy: "Ana Marie Cruz",
+    complaint_id: "complaint_003", // UUID reference to complaints table
+    case_id: "CYB-2025-042", // Keep for compatibility
+    case_name: "Fake Online Shopping Site", // Keep for compatibility
+    file_name: "payment_receipt.jpg",
+    file_path: "/evidence/complaint_003/payment_receipt.jpg",
+    file_type: "image/jpeg",
+    file_size: 892000,
+    download_url: "https://storage.supabase.co/evidence/complaint_003/payment_receipt.jpg",
+    uploaded_at: "2025-01-25T10:45:00+08:00",
+    created_at: "2025-01-25T10:45:00+08:00",
+    uploaded_by: "Ana Marie Cruz",
     description: "Payment receipt from fraudulent website",
     category: "Financial Records",
     hash: "sha256:e5f6g7h8i9j0...",

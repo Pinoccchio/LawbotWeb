@@ -199,7 +199,7 @@ export function CaseManagementView() {
                         {case_.title}
                       </div>
                       <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
-                        {case_.crimeType}
+                        {case_.crime_type}
                       </div>
                     </TableCell>
                     <TableCell>

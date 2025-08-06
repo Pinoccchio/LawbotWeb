@@ -1,17 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, Clock, CheckCircle, BarChart3, Calendar, AlertTriangle, Eye, UserPlus, AlertCircle, Shield, Target, Activity, Award, TrendingUp, Building2, Users, Loader2 } from "lucide-react"
+import { FileText, Clock, CheckCircle, BarChart3, Calendar, AlertTriangle, Eye, UserPlus, AlertCircle, Shield, Target, Activity, Award, TrendingUp, Building2, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
-import { StatusUpdateModal } from "@/components/modals/status-update-modal"
+import { StatusUpdateModal } from "@/components/modals/status-update-modal" 
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
-import { mockCases } from "@/lib/mock-data"
-import { mockOfficerStats, mockOfficerCases, mockDashboardMetrics } from "@/lib/pnp-mock-data"
-import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
+import PNPOfficerService, { PNPOfficerProfile, PNPOfficerStats, OfficerCase } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function PNPDashboardView() {
@@ -19,141 +17,59 @@ export function PNPDashboardView() {
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
+  
+  // Real database state
   const [officerProfile, setOfficerProfile] = useState<PNPOfficerProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [officerCases, setOfficerCases] = useState<OfficerCase[]>([])
+  const [officerStats, setOfficerStats] = useState<PNPOfficerStats | null>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [officerCases, setOfficerCases] = useState<any[]>([])
 
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
-
-  const loadDashboardData = async () => {
+  // Fetch real officer data
+  const fetchOfficerData = async () => {
+    setIsLoading(true)
+    setError(null)
+    
     try {
-      setLoading(true)
-      setError(null)
+      console.log('🔄 Fetching officer dashboard data...')
       
-      // Load officer profile
+      // Fetch officer profile
       const profile = await PNPOfficerService.getCurrentOfficerProfile()
-      if (profile) {
-        setOfficerProfile(profile)
-        
-        // Load officer's cases
-        const cases = await PNPOfficerService.getOfficerCases(profile.id)
-        
-        if (cases && cases.length > 0) {
-          // Use real database cases if available
-          setOfficerCases(cases)
-        } else {
-          // No cases in database - use mock data for better UX
-          console.log('📊 No database cases found, using mock data for demonstration')
-          setOfficerCases(mockOfficerCases)
-          
-          // Also enhance the profile with mock statistics for better display
-          const enhancedProfile = {
-            ...profile,
-            total_cases: mockOfficerStats.totalCases,
-            active_cases: mockOfficerStats.activeCases,
-            resolved_cases: mockOfficerStats.resolvedCases,
-            success_rate: mockOfficerStats.successRate
-          }
-          setOfficerProfile(enhancedProfile)
-        }
-      } else {
-        // No profile found - this shouldn't happen after login, but handle gracefully
-        console.log('⚠️ No officer profile found, using mock data for development')
-        setError('Using demonstration data - no officer profile found in database.')
-        
-        // Create a mock profile for development/demo purposes
-        const mockProfile: PNPOfficerProfile = {
-          id: 'mock_officer_001',
-          firebase_uid: 'mock_firebase_uid',
-          email: 'demo@pnp.gov.ph',
-          full_name: 'Demo PNP Officer',
-          phone_number: '+63 917 123 4567',
-          badge_number: 'PNP-99999',
-          rank: 'Police Officer III',
-          unit_id: 'mock_unit_001',
-          region: 'National Capital Region (NCR)',
-          status: 'active',
-          availability_status: 'available',
-          total_cases: mockOfficerStats.totalCases,
-          active_cases: mockOfficerStats.activeCases,
-          resolved_cases: mockOfficerStats.resolvedCases,
-          success_rate: mockOfficerStats.successRate,
-          last_login_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          unit: {
-            id: 'mock_unit_001',
-            unit_name: 'Cyber Crime Investigation Cell',
-            unit_code: 'PCU-001',
-            category: 'Communication & Social Media Crimes',
-            description: 'Demo unit for development',
-            region: 'National Capital Region (NCR)',
-            max_officers: 20,
-            current_officers: 15,
-            active_cases: 34,
-            resolved_cases: 128,
-            success_rate: 87.5,
-            status: 'active',
-            crime_types: ['Phishing', 'Social Engineering', 'SMS Fraud']
-          }
-        }
-        
-        setOfficerProfile(mockProfile)
-        setOfficerCases(mockOfficerCases)
-      }
-    } catch (err) {
-      console.error('Error loading dashboard data:', err)
-      
-      // Complete fallback to mock data
-      console.log('🔄 Database error, falling back to mock data for development')
-      setError('Using demonstration data due to connection issues.')
-      
-      // Use comprehensive mock data
-      const mockProfile: PNPOfficerProfile = {
-        id: 'mock_officer_001',
-        firebase_uid: 'mock_firebase_uid',
-        email: 'demo@pnp.gov.ph',
-        full_name: 'Demo PNP Officer',
-        phone_number: '+63 917 123 4567',
-        badge_number: 'PNP-99999',
-        rank: 'Police Officer III',
-        unit_id: 'mock_unit_001',
-        region: 'National Capital Region (NCR)',
-        status: 'active',
-        availability_status: 'available',
-        total_cases: mockOfficerStats.totalCases,
-        active_cases: mockOfficerStats.activeCases,
-        resolved_cases: mockOfficerStats.resolvedCases,
-        success_rate: mockOfficerStats.successRate,
-        last_login_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        unit: {
-          id: 'mock_unit_001',
-          unit_name: 'Cyber Crime Investigation Cell',
-          unit_code: 'PCU-001',
-          category: 'Communication & Social Media Crimes',
-          description: 'Demo unit for development',
-          region: 'National Capital Region (NCR)',
-          max_officers: 20,
-          current_officers: 15,
-          active_cases: 34,
-          resolved_cases: 128,
-          success_rate: 87.5,
-          status: 'active',
-          crime_types: ['Phishing', 'Social Engineering', 'SMS Fraud']
-        }
+      if (!profile) {
+        throw new Error('No officer profile found. Please ensure you are logged in as a PNP officer.')
       }
       
-      setOfficerProfile(mockProfile)
-      setOfficerCases(mockOfficerCases)
+      setOfficerProfile(profile)
+      console.log('✅ Officer profile loaded:', profile.full_name)
+      
+      // Fetch officer cases
+      const cases = await PNPOfficerService.getOfficerCases(profile.id)
+      setOfficerCases(cases)
+      console.log('✅ Officer cases loaded:', cases.length)
+      
+      // Fetch officer statistics
+      const stats = await PNPOfficerService.getOfficerStats(profile.id)
+      setOfficerStats(stats)
+      console.log('✅ Officer stats loaded')
+      
+      // Fetch recent activity
+      const activity = await PNPOfficerService.getRecentActivity(profile.id)
+      setRecentActivity(activity)
+      console.log('✅ Recent activity loaded:', activity.length)
+      
+    } catch (error) {
+      console.error('❌ Error fetching officer data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load officer data')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchOfficerData()
+  }, [])
 
   const handleViewDetails = (caseData: any) => {
     setSelectedCase(caseData)
@@ -174,30 +90,72 @@ export function PNPDashboardView() {
     alert(`${action} functionality will be implemented here`)
   }
 
-  if (loading) {
+  const handleStatusUpdate = async (newStatus: string, updateData: any) => {
+    try {
+      console.log('🔄 Updating case status:', { newStatus, updateData })
+      
+      if (selectedCase) {
+        // Update case status in database
+        await PNPOfficerService.updateCaseStatus(
+          selectedCase.complaint?.id || selectedCase.complaint_id, 
+          newStatus, 
+          updateData.notes
+        )
+        
+        console.log('✅ Case status updated successfully')
+        
+        // Refresh officer data to show updated information
+        await fetchOfficerData()
+      }
+      
+      setStatusModalOpen(false)
+    } catch (error) {
+      console.error('❌ Error updating case status:', error)
+      // TODO: Show error toast to user
+    }
+  }
+
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="space-y-8 animate-fade-in">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-500" />
-          <span className="ml-2 text-lawbot-slate-600 dark:text-lawbot-slate-400">Loading dashboard...</span>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lawbot-blue-600 mx-auto"></div>
+          <p className="mt-4 text-lawbot-slate-600 dark:text-lawbot-slate-400">Loading officer dashboard...</p>
         </div>
       </div>
     )
   }
 
-  if (error && !officerProfile) {
+  // Show error state
+  if (error) {
     return (
       <div className="space-y-8 animate-fade-in">
-        <Alert className="border-lawbot-red-200 dark:border-lawbot-red-800">
-          <AlertCircle className="h-4 w-4" />
+        <Alert className="border-lawbot-red-200 bg-lawbot-red-50 dark:border-lawbot-red-800 dark:bg-lawbot-red-900/20">
+          <AlertCircle className="h-4 w-4 text-lawbot-red-600" />
           <AlertDescription className="text-lawbot-red-700 dark:text-lawbot-red-300">
             {error}
           </AlertDescription>
         </Alert>
-        <Button onClick={loadDashboardData} className="btn-gradient">
-          <Loader2 className="h-4 w-4 mr-2" />
-          Retry Loading Dashboard
-        </Button>
+        <div className="text-center">
+          <Button onClick={fetchOfficerData} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show no data state
+  if (!officerProfile) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <Alert className="border-lawbot-amber-200 bg-lawbot-amber-50 dark:border-lawbot-amber-800 dark:bg-lawbot-amber-900/20">
+          <AlertTriangle className="h-4 w-4 text-lawbot-amber-600" />
+          <AlertDescription className="text-lawbot-amber-700 dark:text-lawbot-amber-300">
+            No officer profile found. Please contact your administrator to set up your profile.
+          </AlertDescription>
+        </Alert>
       </div>
     )
   }
@@ -211,8 +169,8 @@ export function PNPDashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">My Cases</p>
-                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerProfile?.total_cases || 0}</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📋 Active investigations</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.total_cases || 0}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📋 Total investigations</p>
               </div>
               <div className="p-3 bg-lawbot-blue-500 rounded-lg">
                 <FileText className="h-6 w-6 text-white" />
@@ -226,7 +184,7 @@ export function PNPDashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active</p>
-                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">{officerProfile?.active_cases || 0}</p>
+                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">{officerStats?.active_cases || 0}</p>
                 <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">⚡ Active investigations</p>
               </div>
               <div className="p-3 bg-lawbot-amber-500 rounded-lg">
@@ -241,7 +199,7 @@ export function PNPDashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Resolved</p>
-                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerProfile?.resolved_cases || 0}</p>
+                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerStats?.resolved_cases || 0}</p>
                 <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">✅ Total resolved</p>
               </div>
               <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
@@ -256,8 +214,8 @@ export function PNPDashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Success Rate</p>
-                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{officerProfile?.success_rate || 0}%</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📈 Above average</p>
+                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{officerStats?.success_rate || 0}%</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📈 Performance rate</p>
               </div>
               <div className="p-3 bg-lawbot-purple-500 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-white" />
@@ -297,18 +255,29 @@ export function PNPDashboardView() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {officerCases.slice(0, 5).map((case_, index) => {
-              // Handle both database structure (case_.complaints) and mock structure (case_.complaint)
-              const caseData = case_.complaint || case_.complaints || case_
-              const caseId = caseData.complaint_number || caseData.id || case_.id
-              const title = caseData.title || 'Untitled Case'
-              const priority = caseData.priority || 'medium'
-              const status = caseData.status || 'Pending'
-              const date = caseData.created_at ? new Date(caseData.created_at).toLocaleDateString() : caseData.date || 'N/A'
-              const riskScore = caseData.risk_score || caseData.riskScore || 50
-              const evidenceCount = caseData.evidence || 0
+            {officerCases.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-lawbot-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">No Active Cases</h3>
+                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-2">
+                  You currently have no active cases assigned to you.
+                </p>
+              </div>
+            ) : (
+              <>
+                {officerCases.slice(0, 5).map((case_, index) => {
+                // Handle real database structure
+                const caseData = case_.complaint
+                const caseId = caseData.complaint_number
+                const title = caseData.title
+                const priority = caseData.priority
+                const status = caseData.status
+                const date = new Date(caseData.created_at).toLocaleDateString()
+                const riskScore = caseData.risk_score || 50
+                // TODO: Get evidence count from evidence_files table
+                const evidenceCount = 0
               
-              return (
+                return (
                 <Card key={caseId} className="card-modern hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -361,8 +330,10 @@ export function PNPDashboardView() {
                     </div>
                   </CardContent>
                 </Card>
-              )
-            })}
+                )
+              })}
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -457,13 +428,13 @@ export function PNPDashboardView() {
           <CardContent>
             <div className="space-y-3">
               {officerCases
-                .filter((c) => c.priority === "high")
+                .filter((c) => c.complaint?.priority === "high")
                 .slice(0, 3)
                 .map((case_, index) => (
                   <div key={case_.id} className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-red-200 dark:border-lawbot-red-800 rounded-xl hover:shadow-md transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${(index + 10) * 100}ms` }}>
                     <div>
-                      <p className="font-bold text-sm text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.id}</p>
-                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate max-w-32">{case_.title}</p>
+                      <p className="font-bold text-sm text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.complaint?.complaint_number || case_.id}</p>
+                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate max-w-32">{case_.complaint?.title || 'Untitled Case'}</p>
                     </div>
                     <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800 text-xs font-bold">
                       🚨 Urgent
@@ -543,7 +514,12 @@ export function PNPDashboardView() {
 
       {/* Modals */}
       <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
-      <StatusUpdateModal isOpen={statusModalOpen} onClose={() => setStatusModalOpen(false)} caseData={selectedCase} />
+      <StatusUpdateModal 
+        isOpen={statusModalOpen} 
+        onClose={() => setStatusModalOpen(false)} 
+        caseData={selectedCase}
+        onStatusUpdate={handleStatusUpdate}
+      />
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}

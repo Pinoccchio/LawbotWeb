@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PNPSidebar } from "./pnp-sidebar"
 import { PNPHeader } from "./pnp-header"
+import PNPOfficerService, { PNPOfficerProfile } from "@/lib/pnp-officer-service"
 import { PNPDashboardView } from "./views/pnp-dashboard-view"
 import { MyCasesView } from "./views/my-cases-view"
 import { CaseSearchView } from "./views/case-search-view"
@@ -21,11 +22,27 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
   const [currentView, setCurrentView] = useState<PNPView>("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [headerRefreshTrigger, setHeaderRefreshTrigger] = useState(0)
+  const [officerProfile, setOfficerProfile] = useState<PNPOfficerProfile | null>(null)
 
   // Function to refresh header data
   const refreshHeader = () => {
     setHeaderRefreshTrigger(prev => prev + 1)
+    fetchOfficerProfile()
   }
+
+  // Fetch officer profile on mount and when header refreshes
+  const fetchOfficerProfile = async () => {
+    try {
+      const profile = await PNPOfficerService.getCurrentOfficerProfile()
+      setOfficerProfile(profile)
+    } catch (error) {
+      console.error('Error fetching officer profile:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchOfficerProfile()
+  }, [headerRefreshTrigger])
 
   const renderView = () => {
     switch (currentView) {
@@ -61,6 +78,7 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           refreshTrigger={headerRefreshTrigger}
+          officerProfile={officerProfile}
         />
         <main className="flex-1 overflow-y-auto p-6">{renderView()}</main>
       </div>

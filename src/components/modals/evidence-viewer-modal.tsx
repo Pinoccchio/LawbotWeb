@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   X,
   Download,
@@ -20,6 +20,7 @@ import {
   Upload,
   Search,
   Filter,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,8 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import PNPOfficerService, { EvidenceFile } from "@/lib/pnp-officer-service"
 
 interface EvidenceViewerModalProps {
   isOpen: boolean
@@ -39,14 +42,52 @@ interface EvidenceViewerModalProps {
 }
 
 export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewerModalProps) {
-  const [selectedFile, setSelectedFile] = useState<any>(null)
+  const [selectedFile, setSelectedFile] = useState<EvidenceFile | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [newEvidenceNote, setNewEvidenceNote] = useState("")
+  const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+
+  // Fetch evidence files when modal opens
+  useEffect(() => {
+    if (isOpen && caseData) {
+      fetchEvidenceFiles()
+    }
+  }, [isOpen, caseData])
+
+  const fetchEvidenceFiles = async () => {
+    if (!caseData?.id && !caseData?.complaint_id) return
+    
+    setIsLoading(true)
+    try {
+      const complaintId = caseData.id || caseData.complaint_id
+      console.log('🔄 Fetching evidence files for complaint:', complaintId)
+      
+      const files = await PNPOfficerService.getEvidenceFiles(complaintId)
+      setEvidenceFiles(files)
+      console.log('✅ Evidence files loaded:', files.length)
+    } catch (error) {
+      console.error('❌ Error fetching evidence files:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   if (!isOpen || !caseData) return null
 
-  const evidenceFiles = [
+  // Filter evidence files based on search and filter
+  const filteredFiles = evidenceFiles.filter(file => {
+    const matchesSearch = file.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesFilter = filterType === "all" || file.category === filterType
+    return matchesSearch && matchesFilter
+  })
+
+  // Mock evidence files for demonstration when no real data
+  const mockEvidenceFiles = [
     {
       id: "EV001",
       name: "screenshot_scam_message.png",
@@ -127,8 +168,10 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     switch (type) {
       case "image":
         return <ImageIcon className="h-5 w-5 text-blue-600" />
-      case "document":
+      case "pdf":
         return <FileText className="h-5 w-5 text-red-600" />
+      case "document":
+        return <FileText className="h-5 w-5 text-gray-600" />
       case "audio":
         return <Music className="h-5 w-5 text-green-600" />
       case "video":
@@ -155,18 +198,57 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     }
   }
 
-  const filteredFiles = evidenceFiles.filter((file) => {
-    const matchesSearch =
-      file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      file.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = filterType === "all" || file.type === filterType
-    return matchesSearch && matchesFilter
-  })
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  }
 
-  const handleFileUpload = (e: React.FormEvent) => {
+  const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle file upload logic here
-    console.log("Uploading new evidence...")
+    const fileInput = document.getElementById('evidence-file') as HTMLInputElement
+    if (!fileInput?.files?.length) return
+    
+    const file = fileInput.files[0]
+    const complaintId = caseData.id || caseData.complaint_id
+    
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90))
+      }, 200)
+      
+      const success = await PNPOfficerService.uploadEvidenceFile(
+        complaintId,
+        file,
+        newEvidenceNote
+      )
+      
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+      
+      if (success) {
+        console.log('✅ Evidence uploaded successfully')
+        await fetchEvidenceFiles()
+        setNewEvidenceNote('')
+        fileInput.value = ''
+      }
+    } catch (error) {
+      console.error('❌ Upload failed:', error)
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+  
+  const handleDownload = (file: EvidenceFile) => {
+    window.open(file.file_url, '_blank')
   }
 
   return (
@@ -181,7 +263,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
               🗂️ Evidence Management
             </CardTitle>
             <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-2 font-medium">
-              Case #{caseData.id} - Digital Evidence Repository
+              Case #{caseData?.complaint_number || caseData?.id} - Digital Evidence Repository
             </CardDescription>
           </div>
         </CardHeader>
@@ -247,37 +329,57 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                         📁 Evidence Files ({filteredFiles.length})
                       </h3>
                     </div>
-                    <div className="space-y-3">
-                      {filteredFiles.map((file) => (
-                        <Card
-                          key={file.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedFile?.id === file.id ? "ring-2 ring-blue-500" : ""
-                          }`}
-                          onClick={() => setSelectedFile(file)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start space-x-3">
-                                <div className="p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm">
-                                  {getFileIcon(file.type)}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-bold text-sm text-lawbot-slate-900 dark:text-white">{file.name}</p>
-                                  <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1 leading-relaxed">{file.description}</p>
-                                  <div className="flex items-center space-x-4 mt-2 text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                                    <span>{file.size}</span>
-                                    <span>ID: {file.id}</span>
-                                    <span>{file.uploadDate}</span>
+                    
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600" />
+                      </div>
+                    ) : filteredFiles.length === 0 ? (
+                      <Alert className="border-lawbot-amber-200 bg-lawbot-amber-50 dark:border-lawbot-amber-800 dark:bg-lawbot-amber-900/20">
+                        <AlertTriangle className="h-4 w-4 text-lawbot-amber-600" />
+                        <AlertDescription className="text-lawbot-amber-700 dark:text-lawbot-amber-300">
+                          No evidence files found for this case.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredFiles.map((file) => (
+                          <Card
+                            key={file.id}
+                            className={`cursor-pointer transition-all hover:shadow-md ${
+                              selectedFile?.id === file.id ? "ring-2 ring-blue-500" : ""
+                            }`}
+                            onClick={() => setSelectedFile(file)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start space-x-3">
+                                  <div className="p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm">
+                                    {getFileIcon(file.category)}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-bold text-sm text-lawbot-slate-900 dark:text-white">{file.file_name}</p>
+                                    <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1 leading-relaxed">
+                                      {file.description || 'No description provided'}
+                                    </p>
+                                    <div className="flex items-center space-x-4 mt-2 text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
+                                      <span>{formatFileSize(file.file_size)}</span>
+                                      <span>Type: {file.file_type}</span>
+                                      <span>{new Date(file.uploaded_at).toLocaleDateString()}</span>
+                                    </div>
                                   </div>
                                 </div>
+                                <Badge className={file.is_verified ? 
+                                  "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : 
+                                  "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"}>
+                                  {file.is_verified ? 'Verified' : 'Pending'}
+                                </Badge>
                               </div>
-                              <Badge className={getStatusColor(file.status)}>{file.status}</Badge>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* File Details Panel */}
@@ -295,27 +397,31 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                         <Card className="card-modern bg-gradient-to-r from-lawbot-emerald-50/50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                           <CardHeader>
                             <div className="flex items-center justify-between">
-                              <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">{selectedFile.name}</CardTitle>
-                              <Badge className={`${getStatusColor(selectedFile.status)} px-4 py-2 font-medium`}>{selectedFile.status}</Badge>
+                              <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">{selectedFile.file_name}</CardTitle>
+                              <Badge className={`${selectedFile.is_verified ? 
+                                "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : 
+                                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"} px-4 py-2 font-medium`}>
+                                {selectedFile.is_verified ? 'Verified' : 'Pending'}
+                              </Badge>
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             <div className="grid grid-cols-2 gap-6">
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
-                                <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">🏷️ File ID</Label>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.id}</p>
+                                <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">🏷️ File Type</Label>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.file_type}</p>
                               </div>
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                                 <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">💾 File Size</Label>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.size}</p>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{formatFileSize(selectedFile.file_size)}</p>
                               </div>
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                                 <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">👮 Uploaded By</Label>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploadedBy}</p>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploaded_by}</p>
                               </div>
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                                 <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">📅 Upload Date</Label>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploadDate}</p>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{new Date(selectedFile.uploaded_at).toLocaleString()}</p>
                               </div>
                             </div>
 
@@ -323,7 +429,9 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
 
                             <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
                               <Label className="text-lawbot-slate-700 dark:text-lawbot-slate-300 font-bold mb-2 block">📝 Description</Label>
-                              <p className="text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">{selectedFile.description}</p>
+                              <p className="text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
+                                {selectedFile.description || 'No description provided'}
+                              </p>
                             </div>
 
                             <div className="p-4 bg-gradient-to-r from-lawbot-purple-50 to-lawbot-blue-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
@@ -352,34 +460,37 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           </CardContent>
                         </Card>
 
-                        {/* Enhanced Chain of Custody */}
-                        <Card className="card-modern bg-gradient-to-r from-lawbot-amber-50/50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-                          <CardHeader>
-                            <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
-                              <div className="p-2 bg-lawbot-amber-500 rounded-lg">
-                                <Shield className="h-5 w-5 text-white" />
-                              </div>
-                              <span>🔗 Chain of Custody</span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {selectedFile.chainOfCustody.map((entry, index) => (
-                                <div key={index} className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800">
-                                  <div className="p-2 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 rounded-full">
-                                    <div className="w-3 h-3 bg-lawbot-amber-600 rounded-full"></div>
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-bold text-lawbot-slate-900 dark:text-white mb-1">{entry.action}</p>
-                                    <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                                      👮 {entry.officer} • 📅 {entry.date}
+                        {/* File Metadata */}
+                        {selectedFile.is_verified && (
+                          <Card className="card-modern bg-gradient-to-r from-lawbot-amber-50/50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+                            <CardHeader>
+                              <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
+                                <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                                  <Shield className="h-5 w-5 text-white" />
+                                </div>
+                                <span>🔍 Verification Details</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg">
+                                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Verified By</p>
+                                  <p className="font-bold text-lawbot-slate-900 dark:text-white">
+                                    {selectedFile.verified_by || 'System'}
+                                  </p>
+                                </div>
+                                {selectedFile.verification_date && (
+                                  <div className="p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg">
+                                    <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Verification Date</p>
+                                    <p className="font-bold text-lawbot-slate-900 dark:text-white">
+                                      {new Date(selectedFile.verification_date).toLocaleString()}
                                     </p>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                       </>
                     ) : (
                       <div className="text-center py-16 animate-fade-in">
@@ -599,27 +710,29 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-4">
                               <div className="p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm">
-                                {getFileIcon(file.type)}
+                                {getFileIcon(file.category)}
                               </div>
-                              <span className="font-bold text-lawbot-slate-900 dark:text-white text-lg">{file.name}</span>
+                              <span className="font-bold text-lawbot-slate-900 dark:text-white text-lg">{file.file_name}</span>
                             </div>
-                            <Badge className={`${getStatusColor(file.status)} px-4 py-2 font-semibold`}>{file.status}</Badge>
+                            <Badge className={`${file.is_verified ? 
+                              "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : 
+                              "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"} px-4 py-2 font-semibold`}>
+                              {file.is_verified ? 'Verified' : 'Pending'}
+                            </Badge>
                           </div>
                           <div className="space-y-3">
-                            {file.chainOfCustody.map((entry, entryIndex) => (
-                              <div key={entryIndex} className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800">
-                                <div className="p-2 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 rounded-full">
-                                  <div className="w-3 h-3 bg-lawbot-amber-600 rounded-full"></div>
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-bold text-lawbot-slate-900 dark:text-white mb-1">📋 {entry.action}</p>
-                                  <div className="flex items-center space-x-4 text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                                    <span className="flex items-center">👮 <strong className="ml-1">{entry.officer}</strong></span>
-                                    <span className="flex items-center">📅 {entry.date}</span>
-                                  </div>
+                            <div className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800">
+                              <div className="p-2 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 rounded-full">
+                                <div className="w-3 h-3 bg-lawbot-amber-600 rounded-full"></div>
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mb-1">📋 Uploaded</p>
+                                <div className="flex items-center space-x-4 text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                  <span className="flex items-center">👮 <strong className="ml-1">{file.uploaded_by}</strong></span>
+                                  <span className="flex items-center">📅 {new Date(file.uploaded_at).toLocaleString()}</span>
                                 </div>
                               </div>
-                            ))}
+                            </div>
                           </div>
                         </div>
                       ))}

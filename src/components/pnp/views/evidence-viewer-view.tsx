@@ -31,29 +31,29 @@ export function EvidenceViewerView() {
   // Use our comprehensive mock evidence data
   const evidenceFiles = mockEvidenceFiles.map(file => ({
     id: file.id,
-    name: file.fileName,
-    type: file.fileType.startsWith('image/') ? 'image' : 
-          file.fileType.startsWith('application/pdf') ? 'document' :
-          file.fileType.startsWith('video/') ? 'video' :
-          file.fileType.startsWith('audio/') ? 'audio' : 'document',
-    size: `${(file.fileSize / 1024 / 1024).toFixed(1)} MB`,
-    caseId: file.caseId,
-    caseName: file.caseName,
-    uploadDate: new Date(file.uploadedAt).toLocaleDateString(),
+    name: file.file_name,
+    type: file.file_type.startsWith('image/') ? 'image' : 
+          file.file_type.startsWith('application/pdf') ? 'document' :
+          file.file_type.startsWith('video/') ? 'video' :
+          file.file_type.startsWith('audio/') ? 'audio' : 'document',
+    size: `${(file.file_size / 1024 / 1024).toFixed(1)} MB`,
+    caseId: file.case_id,
+    caseName: file.case_name,
+    uploadDate: new Date(file.uploaded_at).toLocaleDateString(),
     description: file.description,
     category: file.category,
     hash: file.hash,
     status: file.status,
-    uploadedBy: file.uploadedBy,
-    icon: file.fileType.startsWith('image/') ? <ImageIcon className="h-5 w-5" /> :
-          file.fileType.startsWith('application/pdf') ? <FileText className="h-5 w-5" /> :
-          file.fileType.startsWith('video/') ? <Video className="h-5 w-5" /> :
-          file.fileType.startsWith('audio/') ? <Music className="h-5 w-5" /> :
+    uploadedBy: file.uploaded_by,
+    icon: file.file_type.startsWith('image/') ? <ImageIcon className="h-5 w-5" /> :
+          file.file_type.startsWith('application/pdf') ? <FileText className="h-5 w-5" /> :
+          file.file_type.startsWith('video/') ? <Video className="h-5 w-5" /> :
+          file.file_type.startsWith('audio/') ? <Music className="h-5 w-5" /> :
           <FileText className="h-5 w-5" />,
-    color: file.fileType.startsWith('image/') ? 'text-blue-600' :
-           file.fileType.startsWith('application/pdf') ? 'text-red-600' :
-           file.fileType.startsWith('video/') ? 'text-green-600' :
-           file.fileType.startsWith('audio/') ? 'text-purple-600' :
+    color: file.file_type.startsWith('image/') ? 'text-blue-600' :
+           file.file_type.startsWith('application/pdf') ? 'text-red-600' :
+           file.file_type.startsWith('video/') ? 'text-green-600' :
+           file.file_type.startsWith('audio/') ? 'text-purple-600' :
            'text-gray-600'
   }))
 

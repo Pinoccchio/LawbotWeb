@@ -77,58 +77,58 @@ export const mockPNPUnits = [
 // Mock PNP Officer Data
 export const mockOfficerProfile = {
   id: "officer_001",
-  firebaseUid: "firebase_officer_001",
+  firebase_uid: "firebase_officer_001",
   email: "j.smith@pnp.gov.ph",
-  fullName: "John Reynaldo Smith",
-  phoneNumber: "+63 912 345 6789",
-  badgeNumber: "PNP-12345",
+  full_name: "John Reynaldo Smith",
+  phone_number: "+63 912 345 6789",
+  badge_number: "PNP-12345",
   rank: "Police Officer III",
-  unitId: "unit_001",
+  unit_id: "unit_001",
   unit: mockPNPUnits[0], // Cyber Crime Investigation Cell
   region: "National Capital Region (NCR)",
   status: "active",
   // Performance metrics
-  totalCases: 156,
-  activeCases: 12,
-  resolvedCases: 134,
-  successRate: 86,
-  avgResolutionTime: 4.2,
+  total_cases: 156,
+  active_cases: 12,
+  resolved_cases: 134,
+  success_rate: 86,
+  avg_resolution_time: 4.2,
   // Additional profile info
-  joinDate: "2020-03-15",
-  yearsOfService: 5,
+  join_date: "2020-03-15",
+  years_of_service: 5,
   specializations: ["Phishing Investigation", "Social Engineering", "Digital Forensics"],
   certifications: [
     {
       name: "Certified Cyber Crime Investigator",
       issuer: "PNP Cybercrime Division",
-      validUntil: "2025-12-31",
+      valid_until: "2025-12-31",
       status: "active"
     },
     {
       name: "Digital Evidence Specialist", 
       issuer: "International Association of Computer Investigative Specialists",
-      validUntil: "2025-06-30",
+      valid_until: "2025-06-30",
       status: "active"
     }
   ],
-  upcomingTraining: [
+  upcoming_training: [
     {
       name: "Advanced Malware Analysis",
-      scheduledDate: "2025-02-15",
+      scheduled_date: "2025-02-15",
       status: "enrolled"
     },
     {
       name: "Cryptocurrency Investigation",
-      scheduledDate: "2025-03-10", 
+      scheduled_date: "2025-03-10", 
       status: "pending"
     }
   ],
-  profilePictureUrl: null,
+  profile_picture_url: null,
   bio: "Experienced cybercrime investigator specializing in phishing and social engineering cases. 5+ years with PNP Cybercrime Division.",
-  lastLogin: "2025-01-30T08:15:00+08:00",
-  loginCount: 847,
-  createdAt: "2020-03-15T09:00:00+08:00",
-  updatedAt: "2025-01-30T08:15:00+08:00"
+  last_login: "2025-01-30T08:15:00+08:00",
+  login_count: 847,
+  created_at: "2020-03-15T09:00:00+08:00",
+  updated_at: "2025-01-30T08:15:00+08:00"
 };
 
 export const mockCases = [
@@ -143,42 +143,53 @@ export const mockCases = [
     date: "2025-01-20",
     riskScore: 85,
     evidence: 3,
-    crimeType: "Online Banking Fraud",
+    crime_type: "Online Banking Fraud",
     complainant: "Juan Dela Cruz",
-    estimatedLoss: 50000,
+    estimated_loss: 50000,
     // Database schema fields
-    userId: "user_123456789",
-    fullName: "Juan Dela Cruz",
+    user_id: "user_123456789",
+    full_name: "Juan Dela Cruz",
     email: "juan.delacruz@email.com",
-    phoneNumber: "+63 917 123 4567",
-    incidentDateTime: "2025-01-19T14:30:00+08:00",
-    incidentLocation: "BPI Branch, Makati City",
-    complaintNumber: "CYB-2025-001",
-    assignedOfficer: "Maria Santos",
+    phone_number: "+63 917 123 4567",
+    incident_date_time: "2025-01-19T14:30:00+08:00",
+    incident_location: "BPI Branch, Makati City",
+    complaint_number: "CYB-2025-001",
+    assigned_officer: "Maria Santos",
+    assigned_officer_id: "officer_002",
+    assigned_unit: "Economic Offenses Wing",
+    unit_id: "unit_002",
+    // Dynamic fields (category-specific)
+    platform_website: "BPI Online",
+    account_reference: "ACC-789012345",
+    // AI Enhancement fields
+    ai_priority: "high",
+    ai_risk_score: 88,
+    ai_confidence_score: 92,
+    last_ai_assessment: "2025-01-20T09:30:00+08:00",
     remarks: "Case assigned to Economic Offenses Wing for financial fraud investigation",
-    createdAt: "2025-01-20T09:15:00+08:00",
-    updatedAt: "2025-01-20T16:45:00+08:00",
-    evidenceFiles: [
+    created_at: "2025-01-20T09:15:00+08:00",
+    updated_at: "2025-01-20T16:45:00+08:00",
+    evidence_files: [
       {
         id: "ev_001",
-        fileName: "banking_screenshot.png",
-        fileType: "image/png",
-        fileSize: 2048576,
-        uploadedAt: "2025-01-20T09:20:00+08:00"
+        file_name: "banking_screenshot.png",
+        file_type: "image/png",
+        file_size: 2048576,
+        uploaded_at: "2025-01-20T09:20:00+08:00"
       },
       {
         id: "ev_002",
-        fileName: "transaction_receipt.pdf",
-        fileType: "application/pdf",
-        fileSize: 1024000,
-        uploadedAt: "2025-01-20T09:22:00+08:00"
+        file_name: "transaction_receipt.pdf",
+        file_type: "application/pdf",
+        file_size: 1024000,
+        uploaded_at: "2025-01-20T09:22:00+08:00"
       },
       {
         id: "ev_003",
-        fileName: "email_notification.png",
-        fileType: "image/png",
-        fileSize: 856432,
-        uploadedAt: "2025-01-20T09:25:00+08:00"
+        file_name: "email_notification.png",
+        file_type: "image/png",
+        file_size: 856432,
+        uploaded_at: "2025-01-20T09:25:00+08:00"
       }
     ]
   },
@@ -193,56 +204,67 @@ export const mockCases = [
     date: "2025-01-19",
     riskScore: 65,
     evidence: 5,
-    crimeType: "Online Harassment",
+    crime_type: "Online Harassment",
     complainant: "Maria Santos",
-    estimatedLoss: 0,
+    estimated_loss: 0,
     // Database schema fields
-    userId: "user_987654321",
-    fullName: "Maria Santos",
+    user_id: "user_987654321",
+    full_name: "Maria Santos",
     email: "maria.santos@email.com",
-    phoneNumber: "+63 916 987 6543",
-    incidentDateTime: "2025-01-18T20:15:00+08:00",
-    incidentLocation: "Online - Social Media Platforms",
-    complaintNumber: "CYB-2025-002",
-    assignedOfficer: "Diana Lopez",
+    phone_number: "+63 916 987 6543",
+    incident_date_time: "2025-01-18T20:15:00+08:00",
+    incident_location: "Online - Social Media Platforms",
+    complaint_number: "CYB-2025-002",
+    assigned_officer: "Diana Lopez",
+    assigned_officer_id: "officer_004",
+    assigned_unit: "Cyber Crime Against Women and Children",
+    unit_id: "unit_003",
+    // Dynamic fields (category-specific)
+    platform_website: "Facebook, Instagram, Twitter",
+    account_reference: "@mariasantos123, harassment_thread_001",
+    // AI Enhancement fields
+    ai_priority: "medium",
+    ai_risk_score: 68,
+    ai_confidence_score: 85,
+    last_ai_assessment: "2025-01-19T08:45:00+08:00",
     remarks: "Case assigned to Cyber Crime Against Women and Children unit",
-    createdAt: "2025-01-19T08:30:00+08:00",
-    updatedAt: "2025-01-19T08:30:00+08:00",
-    evidenceFiles: [
+    created_at: "2025-01-19T08:30:00+08:00",
+    updated_at: "2025-01-19T08:30:00+08:00",
+    evidence_files: [
       {
         id: "ev_004",
-        fileName: "facebook_threats.png",
-        fileType: "image/png",
-        fileSize: 1234567,
-        uploadedAt: "2025-01-19T08:35:00+08:00"
+        file_name: "facebook_threats.png",
+        file_type: "image/png",
+        file_size: 1234567,
+        uploaded_at: "2025-01-19T08:35:00+08:00"
       },
       {
         id: "ev_005",
-        fileName: "instagram_messages.png",
-        fileType: "image/png",
-        fileSize: 987654,
-        uploadedAt: "2025-01-19T08:37:00+08:00"
+        file_name: "instagram_messages.png",
+        file_type: "image/png",
+        file_size: 987654,
+        uploaded_at: "2025-01-19T08:37:00+08:00"
       },
       {
         id: "ev_006",
-        fileName: "twitter_screenshots.png",
-        fileType: "image/png",
-        fileSize: 1567890,
-        uploadedAt: "2025-01-19T08:40:00+08:00"
+        file_name: "twitter_screenshots.png",
+        file_type: "image/png",
+        file_size: 1567890,
+        uploaded_at: "2025-01-19T08:40:00+08:00"
       },
       {
         id: "ev_007",
-        fileName: "messenger_conversation.pdf",
-        fileType: "application/pdf",
-        fileSize: 2100000,
-        uploadedAt: "2025-01-19T08:42:00+08:00"
+        file_name: "messenger_conversation.pdf",
+        file_type: "application/pdf",
+        file_size: 2100000,
+        uploaded_at: "2025-01-19T08:42:00+08:00"
       },
       {
         id: "ev_008",
-        fileName: "profile_screenshots.png",
-        fileType: "image/png",
-        fileSize: 789456,
-        uploadedAt: "2025-01-19T08:45:00+08:00"
+        file_name: "profile_screenshots.png",
+        file_type: "image/png",
+        file_size: 789456,
+        uploaded_at: "2025-01-19T08:45:00+08:00"
       }
     ]
   },
@@ -257,35 +279,46 @@ export const mockCases = [
     date: "2025-01-18",
     riskScore: 92,
     evidence: 2,
-    crimeType: "Phishing",
+    crime_type: "Phishing",
     complainant: "BPI Bank",
-    estimatedLoss: 250000,
+    estimated_loss: 250000,
     // Database schema fields
-    userId: "user_bpi_security",
-    fullName: "BPI Security Team",
+    user_id: "user_bpi_security",
+    full_name: "BPI Security Team",
     email: "security@bpi.com.ph",
-    phoneNumber: "+63 2 8840 4000",
-    incidentDateTime: "2025-01-17T10:00:00+08:00",
-    incidentLocation: "Online - Email and Website",
-    complaintNumber: "CYB-2025-003",
-    assignedOfficer: "Carlos Mendoza",
+    phone_number: "+63 2 8840 4000",
+    incident_date_time: "2025-01-17T10:00:00+08:00",
+    incident_location: "Online - Email and Website",
+    complaint_number: "CYB-2025-003",
+    assigned_officer: "Carlos Mendoza",
+    assigned_officer_id: "officer_003",
+    assigned_unit: "Cyber Crime Investigation Cell",
+    unit_id: "unit_001",
+    // Dynamic fields (category-specific)
+    platform_website: "fake-bpi-login.com",
+    account_reference: "PHISH-CAM-001, affected_customers_batch_17",
+    // AI Enhancement fields
+    ai_priority: "high",
+    ai_risk_score: 94,
+    ai_confidence_score: 96,
+    last_ai_assessment: "2025-01-18T14:35:00+08:00",
     remarks: "Requires additional server logs and affected customer list",
-    createdAt: "2025-01-18T14:20:00+08:00",
-    updatedAt: "2025-01-18T18:30:00+08:00",
-    evidenceFiles: [
+    created_at: "2025-01-18T14:20:00+08:00",
+    updated_at: "2025-01-18T18:30:00+08:00",
+    evidence_files: [
       {
         id: "ev_009",
-        fileName: "phishing_email_sample.eml",
-        fileType: "message/rfc822",
-        fileSize: 45632,
-        uploadedAt: "2025-01-18T14:25:00+08:00"
+        file_name: "phishing_email_sample.eml",
+        file_type: "message/rfc822",
+        file_size: 45632,
+        uploaded_at: "2025-01-18T14:25:00+08:00"
       },
       {
         id: "ev_010",
-        fileName: "fake_website_screenshot.png",
-        fileType: "image/png",
-        fileSize: 3456789,
-        uploadedAt: "2025-01-18T14:28:00+08:00"
+        file_name: "fake_website_screenshot.png",
+        file_type: "image/png",
+        file_size: 3456789,
+        uploaded_at: "2025-01-18T14:28:00+08:00"
       }
     ]
   },
@@ -300,9 +333,19 @@ export const mockCases = [
     date: "2025-01-17",
     riskScore: 73,
     evidence: 4,
-    crimeType: "Identity Theft",
+    crime_type: "Identity Theft",
     complainant: "Ana Reyes",
-    estimatedLoss: 75000,
+    estimated_loss: 75000,
+    // Database schema fields
+    assigned_officer_id: "officer_005",
+    assigned_unit: "Cyber Security Division",
+    unit_id: "unit_003",
+    platform_website: "Various online services",
+    account_reference: "SSS-123456789, PHILHEALTH-987654",
+    ai_priority: "medium",
+    ai_risk_score: 76,
+    ai_confidence_score: 88,
+    last_ai_assessment: "2025-01-17T14:20:00+08:00",
   },
   {
     id: "CYB-2025-005",
@@ -315,9 +358,19 @@ export const mockCases = [
     date: "2025-01-16",
     riskScore: 95,
     evidence: 7,
-    crimeType: "Ransomware",
+    crime_type: "Ransomware",
     complainant: "TechCorp Philippines",
-    estimatedLoss: 500000,
+    estimated_loss: 500000,
+    // Database schema fields
+    assigned_officer_id: "officer_006",
+    assigned_unit: "Cyber Crime Technical Unit",
+    unit_id: "unit_004",
+    platform_website: "Corporate Network",
+    account_reference: "RANSOM-DEMAND-XYZ789, SERVER-CLUSTER-01",
+    ai_priority: "high",
+    ai_risk_score: 98,
+    ai_confidence_score: 99,
+    last_ai_assessment: "2025-01-16T15:30:00+08:00",
   },
   {
     id: "CYB-2025-006",
@@ -330,9 +383,19 @@ export const mockCases = [
     date: "2025-01-15",
     riskScore: 68,
     evidence: 3,
-    crimeType: "Credit Card Fraud",
+    crime_type: "Credit Card Fraud",
     complainant: "Pedro Garcia",
-    estimatedLoss: 25000,
+    estimated_loss: 25000,
+    // Database schema fields
+    assigned_officer_id: "officer_002",
+    assigned_unit: "Economic Offenses Wing",
+    unit_id: "unit_002",
+    platform_website: "Shopee, Lazada",
+    account_reference: "CC-1234-****-5678, TXN-REF-998877",
+    ai_priority: "medium",
+    ai_risk_score: 71,
+    ai_confidence_score: 84,
+    last_ai_assessment: "2025-01-15T16:45:00+08:00",
   },
   {
     id: "CYB-2025-007",
@@ -345,9 +408,19 @@ export const mockCases = [
     date: "2025-01-14",
     riskScore: 45,
     evidence: 2,
-    crimeType: "Cyberbullying",
+    crime_type: "Cyberbullying",
     complainant: "Rosa Mendoza",
-    estimatedLoss: 0,
+    estimated_loss: 0,
+    // Database schema fields
+    assigned_officer_id: "officer_004",
+    assigned_unit: "Cyber Crime Against Women and Children",
+    unit_id: "unit_003",
+    platform_website: "TikTok, Discord",
+    account_reference: "@rosam_student, bullying_group_chat_445",
+    ai_priority: "low",
+    ai_risk_score: 48,
+    ai_confidence_score: 78,
+    last_ai_assessment: "2025-01-14T11:20:00+08:00",
   },
   {
     id: "CYB-2025-008",
@@ -360,9 +433,19 @@ export const mockCases = [
     date: "2025-01-13",
     riskScore: 88,
     evidence: 6,
-    crimeType: "Data Breach",
+    crime_type: "Data Breach",
     complainant: "DataSecure Inc",
-    estimatedLoss: 100000,
+    estimated_loss: 100000,
+    // Database schema fields
+    assigned_officer_id: "officer_005",
+    assigned_unit: "Cyber Security Division",
+    unit_id: "unit_003",
+    platform_website: "Company Database Server",
+    account_reference: "DB-SERVER-001, BREACH-LOG-13012025",
+    ai_priority: "high",
+    ai_risk_score: 91,
+    ai_confidence_score: 94,
+    last_ai_assessment: "2025-01-13T16:30:00+08:00",
   },
   {
     id: "CYB-2025-009",
@@ -375,9 +458,19 @@ export const mockCases = [
     date: "2025-01-12",
     riskScore: 90,
     evidence: 3,
-    crimeType: "Sextortion",
+    crime_type: "Sextortion",
     complainant: "Confidential",
-    estimatedLoss: 0,
+    estimated_loss: 0,
+    // Database schema fields
+    assigned_officer_id: "officer_004",
+    assigned_unit: "Cyber Crime Against Women and Children",
+    unit_id: "unit_003",
+    platform_website: "Instagram, Telegram",
+    account_reference: "CONFIDENTIAL_CASE_009",
+    ai_priority: "high",
+    ai_risk_score: 93,
+    ai_confidence_score: 91,
+    last_ai_assessment: "2025-01-12T10:45:00+08:00",
   },
   {
     id: "CYB-2025-010",
@@ -390,9 +483,19 @@ export const mockCases = [
     date: "2025-01-11",
     riskScore: 95,
     evidence: 4,
-    crimeType: "Government System Hacking",
+    crime_type: "Government System Hacking",
     complainant: "City Government of Manila",
-    estimatedLoss: 0,
+    estimated_loss: 0,
+    // Database schema fields
+    assigned_officer_id: "officer_007",
+    assigned_unit: "National Security Cyber Division",
+    unit_id: "unit_008",
+    platform_website: "manila.gov.ph",
+    account_reference: "GOV-SYS-BREACH-001, FIREWALL-LOG-110125",
+    ai_priority: "high",
+    ai_risk_score: 97,
+    ai_confidence_score: 98,
+    last_ai_assessment: "2025-01-11T13:15:00+08:00",
   },
 ]
 

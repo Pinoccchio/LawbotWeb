@@ -321,7 +321,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                     <Checkbox
                       id="notifyStakeholders"
                       checked={notifyStakeholders}
-                      onCheckedChange={setNotifyStakeholders}
+                      onCheckedChange={(checked) => setNotifyStakeholders(checked === true)}
                       className="border-lawbot-blue-300 text-lawbot-blue-600"
                     />
                     <Label htmlFor="notifyStakeholders" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">

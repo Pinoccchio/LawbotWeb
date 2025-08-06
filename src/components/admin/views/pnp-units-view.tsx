@@ -32,22 +32,33 @@ export function PNPUnitsView() {
   const fetchPNPUnits = async () => {
     setIsLoading(true)
     try {
-      // First refresh unit statistics to ensure they're accurate
-      console.log('🔄 Refreshing unit statistics...')
-      await PNPUnitsService.refreshUnitStatistics()
+      console.log('🔄 Fetching PNP units from database...')
       
       // Get all units from database regardless of status
       const units = await PNPUnitsService.getAllUnits({})
+      console.log('✅ Fetched units:', units.length)
       
-      // Get officers for each unit to show real names
+      // Fetch officers for each unit to get real officer data and names
       const unitsWithOfficers = await Promise.all(units.map(async (unit) => {
+        console.log(`🔄 Fetching officers for unit: ${unit.unit_name}`)
         const officers = await PNPUnitsService.getUnitOfficers(unit.id)
-        return { ...unit, officers: officers || [] }
+        console.log(`✅ Found ${officers.length} officers for unit: ${unit.unit_name}`)
+        
+        return {
+          ...unit,
+          officers: officers || [],
+          current_officers: officers.length, // Update with actual count
+          // Calculate real statistics from officers
+          active_cases: officers.reduce((sum, officer) => sum + (officer.active_cases || 0), 0),
+          resolved_cases: officers.reduce((sum, officer) => sum + (officer.resolved_cases || 0), 0),
+          success_rate: officers.length > 0 ? 
+            Math.round(officers.reduce((sum, officer) => sum + (officer.success_rate || 0), 0) / officers.length) : 0
+        }
       }))
       
       setPnpUnits(unitsWithOfficers)
       
-      // Calculate statistics
+      // Calculate statistics from the actual officer data
       let totalOfficers = 0
       let totalActiveCases = 0
       let totalResolvedCases = 0
@@ -67,8 +78,23 @@ export function PNPUnitsView() {
         activeCases: totalActiveCases,
         resolutionRate
       })
+      
+      console.log('✅ Statistics calculated with officer data:', {
+        totalUnits: units.length,
+        totalOfficers,
+        activeCases: totalActiveCases,
+        resolutionRate
+      })
     } catch (error) {
-      console.error('Error fetching PNP units:', error)
+      console.error('❌ Error fetching PNP units:', error)
+      // Set empty state on error
+      setPnpUnits([])
+      setStats({
+        totalUnits: 0,
+        totalOfficers: 0,
+        activeCases: 0,
+        resolutionRate: 0
+      })
     } finally {
       setIsLoading(false)
     }
