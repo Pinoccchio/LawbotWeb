@@ -327,15 +327,12 @@ export function EvidenceViewerView() {
       </Card>
 
       <Tabs defaultValue="grid" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-3">
+        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-2">
           <TabsTrigger value="grid" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
             📊 Grid View
           </TabsTrigger>
           <TabsTrigger value="list" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
             📄 List View
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
-            🕰️ Timeline
           </TabsTrigger>
         </TabsList>
 
@@ -499,85 +496,17 @@ export function EvidenceViewerView() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="timeline">
-          <Card className="card-modern">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-purple-500 rounded-lg">
-                  <Clock className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-lawbot-slate-900 dark:text-white">Evidence Timeline</CardTitle>
-                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Chronological view of evidence submissions</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {evidenceFiles.length === 0 ? (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No evidence files found. Files will appear here when uploaded to your assigned cases.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-6">
-                  {evidenceFiles
-                    .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
-                    .map((file, index) => {
-                      const display = getFileDisplay(file)
-                      return (
-                        <div key={file.id} className="flex items-start space-x-4">
-                          <div className="flex flex-col items-center">
-                            <div className={`${display.color} p-2 bg-gray-100 dark:bg-slate-800 rounded-lg`}>{display.icon}</div>
-                            {index < evidenceFiles.length - 1 && (
-                              <div className="w-px h-16 bg-gray-200 dark:bg-slate-700 mt-2"></div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-medium">{file.file_name}</h3>
-                              {file.complaint && (
-                                <Badge variant="outline">{file.complaint.complaint_number}</Badge>
-                              )}
-                              <span className="text-sm text-gray-500">{formatDate(file.uploaded_at)}</span>
-                            </div>
-                            {file.complaint && (
-                              <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">
-                                {file.complaint.title || file.complaint.crime_type}
-                              </p>
-                            )}
-                            <div className="flex items-center space-x-2">
-                              <Button size="sm" variant="outline" onClick={() => handleViewEvidence(file)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <span className="text-xs text-gray-500">{formatFileSize(file.file_size)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
-      {/* Enhanced Evidence Statistics */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+      {/* Simple Evidence Statistics */}
+      {evidenceFiles.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
           <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Files</p>
-                  <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{stats.totalFiles}</p>
+                  <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{evidenceFiles.length}</p>
                   <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📎 Evidence files</p>
                 </div>
                 <div className="p-3 bg-lawbot-blue-500 rounded-lg">
@@ -591,31 +520,14 @@ export function EvidenceViewerView() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Images</p>
+                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Valid Files</p>
                   <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                    {stats.filesByType.images}
+                    {evidenceFiles.filter(f => f.is_valid === true).length}
                   </p>
-                  <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">🖼️ Image files</p>
+                  <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">✅ Validated</p>
                 </div>
                 <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
-                  <ImageIcon className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Documents</p>
-                  <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">
-                    {stats.filesByType.documents}
-                  </p>
-                  <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📄 Document files</p>
-                </div>
-                <div className="p-3 bg-lawbot-purple-500 rounded-lg">
-                  <FileText className="h-6 w-6 text-white" />
+                  <CheckCircle className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -627,7 +539,7 @@ export function EvidenceViewerView() {
                 <div>
                   <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Size</p>
                   <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                    {formatFileSize(stats.totalSize)}
+                    {formatFileSize(evidenceFiles.reduce((sum, file) => sum + file.file_size, 0))}
                   </p>
                   <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">💾 Storage used</p>
                 </div>

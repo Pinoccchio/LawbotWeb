@@ -197,33 +197,47 @@ export class EvidenceService {
     try {
       console.log('🔄 Fetching evidence file details:', fileId)
       
+      // First, fetch just the evidence file without join
       const { data, error } = await supabase
         .from('evidence_files')
-        .select(`
-          *,
-          complaints (
-            complaint_number,
-            title,
-            crime_type,
-            status,
-            priority,
-            assigned_officer,
-            assigned_unit
-          )
-        `)
+        .select('*')
         .eq('id', fileId)
         .single()
       
       if (error) {
-        console.error('❌ Error fetching evidence file details:', error)
+        console.error('❌ Error fetching evidence file details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return null
       }
       
       if (!data) {
+        console.log('⚠️ No evidence file found with ID:', fileId)
         return null
       }
       
-      console.log('✅ Evidence file details fetched')
+      console.log('✅ Evidence file details fetched:', data.file_name)
+      
+      // Try to fetch complaint data separately if complaint_id exists
+      let complaintData = undefined
+      if (data.complaint_id) {
+        try {
+          const { data: complaint } = await supabase
+            .from('complaints')
+            .select('complaint_number, title, crime_type, status, priority, assigned_officer, assigned_unit')
+            .eq('id', data.complaint_id)
+            .single()
+          
+          if (complaint) {
+            complaintData = complaint
+          }
+        } catch (err) {
+          console.log('⚠️ Could not fetch complaint data for evidence file')
+        }
+      }
       
       return {
         id: data.id,
@@ -238,18 +252,13 @@ export class EvidenceService {
         uploaded_by: data.uploaded_by,
         is_valid: data.is_valid,
         validation_notes: data.validation_notes,
-        complaint: data.complaints ? {
-          complaint_number: data.complaints.complaint_number,
-          title: data.complaints.title,
-          crime_type: data.complaints.crime_type,
-          status: data.complaints.status,
-          priority: data.complaints.priority,
-          assigned_officer: data.complaints.assigned_officer,
-          assigned_unit: data.complaints.assigned_unit
-        } : undefined
+        complaint: complaintData
       }
     } catch (error) {
-      console.error('❌ Error in getEvidenceFileDetails:', error)
+      console.error('❌ Error in getEvidenceFileDetails:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return null
     }
   }

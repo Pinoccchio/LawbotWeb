@@ -526,7 +526,11 @@ export function MyCasesView() {
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}
-        caseData={selectedCase}
+        caseData={selectedCase ? {
+          id: selectedCase.id,
+          complaint_id: selectedCase.id,
+          title: selectedCase.title || `${selectedCase.crime_type} Case`
+        } : null}
       />
     </div>
   )
