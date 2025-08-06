@@ -9,6 +9,7 @@ import { MyCasesView } from "./views/my-cases-view"
 import { CaseSearchView } from "./views/case-search-view"
 import { EvidenceViewerView } from "./views/evidence-viewer-view"
 import { ProfileView } from "./views/profile-view"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface PNPDashboardProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
@@ -19,6 +20,7 @@ interface PNPDashboardProps {
 export type PNPView = "dashboard" | "cases" | "search" | "evidence" | "profile"
 
 export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboardProps) {
+  const { user } = useAuth()
   const [currentView, setCurrentView] = useState<PNPView>("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [headerRefreshTrigger, setHeaderRefreshTrigger] = useState(0)
@@ -39,6 +41,14 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
       console.error('Error fetching officer profile:', error)
     }
   }
+
+  // Set current user ID when component mounts or user changes
+  useEffect(() => {
+    if (user?.uid) {
+      console.log('🔐 Setting current user ID in PNP Dashboard:', user.uid)
+      PNPOfficerService.setCurrentUserId(user.uid)
+    }
+  }, [user])
 
   useEffect(() => {
     fetchOfficerProfile()

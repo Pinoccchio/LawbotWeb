@@ -294,7 +294,8 @@ export class EvidenceService {
       }
       
       console.log('✅ Download URL generated')
-      return data?.signedUrl || null
+      // Add ?download parameter to force browser download
+      return data?.signedUrl ? `${data.signedUrl}&download` : null
     } catch (error) {
       console.error('❌ Error in downloadEvidence:', error)
       return null

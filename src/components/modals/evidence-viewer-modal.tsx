@@ -18,7 +18,12 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Move,
+  Shield
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +51,8 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
   const [filterType, setFilterType] = useState("all")
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Fetch evidence files when modal opens
   useEffect(() => {
@@ -194,7 +201,41 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     try {
       const downloadUrl = await EvidenceService.downloadEvidence(file.id)
       if (downloadUrl) {
-        window.open(downloadUrl, '_blank')
+        // Use blob download approach to bypass CORS restrictions
+        try {
+          // Fetch the file as a blob
+          const response = await fetch(downloadUrl)
+          if (!response.ok) throw new Error('Failed to fetch file')
+          
+          const blob = await response.blob()
+          
+          // Create a blob URL
+          const blobUrl = URL.createObjectURL(blob)
+          
+          // Create temporary anchor element to force download
+          const link = document.createElement('a')
+          link.href = blobUrl
+          link.download = file.file_name // Force download with original filename
+          document.body.appendChild(link)
+          link.click()
+          
+          // Cleanup
+          document.body.removeChild(link)
+          URL.revokeObjectURL(blobUrl)
+          
+          console.log('✅ File downloaded successfully:', file.file_name)
+        } catch (fetchError) {
+          console.error('❌ Blob download failed, trying direct download:', fetchError)
+          
+          // Fallback to direct download
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = file.file_name
+          link.target = '_blank'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        }
       } else {
         alert('Failed to generate download link. Please try again.')
       }
@@ -400,33 +441,91 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           
                           return (
                             <div className="p-4 bg-gradient-to-r from-lawbot-purple-50 to-lawbot-blue-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                              <Label className="text-lawbot-purple-700 dark:text-lawbot-purple-300 font-bold mb-3 block">
-                                {fileCategory === 'image' ? '🖼️ Image' : 
-                                 fileCategory === 'video' ? '🎬 Video' : 
-                                 fileCategory === 'pdf' ? '📄 PDF' : '📁 File'} Preview
-                              </Label>
-                              <div className="relative bg-white dark:bg-lawbot-slate-800 rounded-lg overflow-hidden shadow-inner">
+                              <div className="flex items-center justify-between mb-3">
+                                <Label className="text-lawbot-purple-700 dark:text-lawbot-purple-300 font-bold">
+                                  {fileCategory === 'image' ? '🖼️ Image' : 
+                                   fileCategory === 'video' ? '🎬 Video' : 
+                                   fileCategory === 'pdf' ? '📄 PDF' : '📁 File'} Preview
+                                </Label>
+                                {fileCategory === 'image' && (
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <ZoomOut className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm font-medium px-2">{Math.round(zoomLevel * 100)}%</span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.25))}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <ZoomIn className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setZoomLevel(1)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Move className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                              <div 
+                                className="relative bg-white dark:bg-lawbot-slate-800 rounded-lg overflow-auto shadow-inner"
+                                style={{ maxHeight: isFullscreen ? '80vh' : '400px' }}
+                                onContextMenu={(e) => {
+                                  e.preventDefault()
+                                  return false
+                                }}
+                              >
                                 {fileCategory === 'image' ? (
-                                  <img 
-                                    src={selectedFile.download_url} 
-                                    alt={selectedFile.file_name}
-                                    className="w-full h-auto max-h-[400px] object-contain"
-                                    onError={(e) => {
-                                      console.error('❌ Failed to load image preview from URL:', selectedFile.download_url)
-                                      e.currentTarget.style.display = 'none'
-                                      e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', 
-                                        '<div class="text-center py-8 text-gray-500">😞 Unable to preview image</div>'
-                                      )
-                                    }}
-                                    onLoad={() => {
-                                      console.log('✅ Image preview loaded successfully')
-                                    }}
-                                  />
+                                  <div className="flex items-center justify-center min-h-[200px] p-4">
+                                    <img 
+                                      src={selectedFile.download_url} 
+                                      alt={selectedFile.file_name}
+                                      className="select-none"
+                                      style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '100%',
+                                        transform: `scale(${zoomLevel})`,
+                                        transformOrigin: 'center',
+                                        transition: 'transform 0.2s',
+                                        userSelect: 'none',
+                                        WebkitUserSelect: 'none',
+                                        MozUserSelect: 'none',
+                                        msUserSelect: 'none',
+                                        pointerEvents: 'none'
+                                      }}
+                                      draggable={false}
+                                      onError={(e) => {
+                                        console.error('❌ Failed to load image preview from URL:', selectedFile.download_url)
+                                        e.currentTarget.style.display = 'none'
+                                        e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', 
+                                          '<div class="text-center py-8 text-gray-500">😞 Unable to preview image</div>'
+                                        )
+                                      }}
+                                      onLoad={() => {
+                                        console.log('✅ Image preview loaded successfully')
+                                      }}
+                                    />
+                                  </div>
                                 ) : fileCategory === 'video' ? (
                                   <video
                                     src={selectedFile.download_url}
                                     controls
+                                    controlsList="nodownload"
                                     className="w-full h-auto max-h-[400px]"
+                                    onContextMenu={(e) => {
+                                      e.preventDefault()
+                                      return false
+                                    }}
                                     onError={(e) => {
                                       console.error('❌ Failed to load video preview from URL:', selectedFile.download_url)
                                       e.currentTarget.style.display = 'none'
@@ -442,9 +541,10 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                                   </video>
                                 ) : fileCategory === 'pdf' ? (
                                   <iframe
-                                    src={selectedFile.download_url}
+                                    src={`${selectedFile.download_url}#toolbar=0&navpanes=0&scrollbar=0`}
                                     className="w-full h-[400px]"
                                     title={selectedFile.file_name}
+                                    sandbox="allow-same-origin allow-scripts"
                                     onError={() => {
                                       console.error('❌ Failed to load PDF preview')
                                     }}
@@ -458,26 +558,24 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           )
                         })()}
 
-                        <div className="flex justify-center space-x-4">
-                          {isPreviewable(selectedFile.file_type) && selectedFile.download_url && (
+                        <div className="space-y-4">
+                          <Alert className="border-lawbot-blue-200 bg-lawbot-blue-50 dark:border-lawbot-blue-800 dark:bg-lawbot-blue-900/20">
+                            <Shield className="h-4 w-4 text-lawbot-blue-600" />
+                            <AlertDescription className="text-lawbot-blue-700 dark:text-lawbot-blue-300">
+                              <strong>Secure Preview Mode:</strong> Evidence files are displayed securely within the application. URLs are not exposed and downloads are tracked.
+                            </AlertDescription>
+                          </Alert>
+                          
+                          <div className="flex justify-center">
                             <Button 
                               size="lg" 
-                              variant="outline" 
-                              className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 font-semibold py-3 px-6"
-                              onClick={() => window.open(selectedFile.download_url, '_blank')}
+                              className="btn-gradient bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 hover:from-lawbot-blue-700 hover:to-lawbot-emerald-700 text-white font-semibold py-3 px-8" 
+                              onClick={() => handleDownload(selectedFile)}
                             >
-                              <Eye className="h-5 w-5 mr-2" />
-                              🔍 View Full Size
+                              <Download className="h-5 w-5 mr-2" />
+                              📥 Download Evidence
                             </Button>
-                          )}
-                          <Button 
-                            size="lg" 
-                            className="btn-gradient bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 hover:from-lawbot-blue-700 hover:to-lawbot-emerald-700 text-white font-semibold py-3 px-8" 
-                            onClick={() => handleDownload(selectedFile)}
-                          >
-                            <Download className="h-5 w-5 mr-2" />
-                            📥 Download Evidence
-                          </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

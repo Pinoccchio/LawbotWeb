@@ -119,6 +119,12 @@ export class PNPOfficerService {
     console.log('🔐 Current user ID set:', userId)
   }
   
+  // Clear all cached data when switching users
+  static clearCache() {
+    console.log('🧹 Clearing PNP Officer Service cache')
+    this._currentUserId = null
+  }
+  
   // Get current user ID from Firebase auth or stored value
   static get currentUserId(): string | null {
     // If we have a stored user ID, use it

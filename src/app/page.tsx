@@ -141,9 +141,11 @@ export default function LawBotSystem() {
   if (currentView === "landing") {
     return <LandingPage onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />
   } else if (currentView === "admin") {
-    return <AdminDashboard onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />
+    // Use user ID as key to force remount when user changes
+    return <AdminDashboard key={user?.uid || 'no-user-admin'} onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />
   } else if (currentView === "pnp") {
-    return <PNPDashboard onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />
+    // Use user ID as key to force remount when user changes
+    return <PNPDashboard key={user?.uid || 'no-user-pnp'} onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />
   }
 
   return <LandingPage onViewChange={handleViewChange} isDark={isDark} toggleTheme={toggleTheme} />

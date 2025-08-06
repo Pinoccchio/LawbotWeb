@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
 import { AuthService } from '@/lib/auth'
+import { PNPOfficerService } from '@/lib/pnp-officer-service'
 
 interface AuthContextType {
   user: User | null
@@ -95,6 +96,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           } else {
             console.log('👋 User signed out or no user')
+            // Clear all cached data when user logs out
+            PNPOfficerService.clearCache()
             setUserProfile(null)
             setUserRole(null)
             localStorage.removeItem('userRole')
@@ -152,6 +155,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true)
     try {
       console.log('🚪 Signing out user...')
+      // Clear service caches before signing out
+      PNPOfficerService.clearCache()
       await AuthService.signOut()
       console.log('✅ User signed out successfully')
       // Loading will be set to false in the onAuthStateChanged listener

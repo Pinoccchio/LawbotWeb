@@ -170,8 +170,41 @@ export function EvidenceViewerView() {
       const downloadUrl = await EvidenceService.downloadEvidence(file.id)
       
       if (downloadUrl) {
-        // Open download URL in new tab
-        window.open(downloadUrl, '_blank')
+        // Use blob download approach to bypass CORS restrictions
+        try {
+          // Fetch the file as a blob
+          const response = await fetch(downloadUrl)
+          if (!response.ok) throw new Error('Failed to fetch file')
+          
+          const blob = await response.blob()
+          
+          // Create a blob URL
+          const blobUrl = URL.createObjectURL(blob)
+          
+          // Create temporary anchor element to force download
+          const link = document.createElement('a')
+          link.href = blobUrl
+          link.download = file.file_name // Force download with original filename
+          document.body.appendChild(link)
+          link.click()
+          
+          // Cleanup
+          document.body.removeChild(link)
+          URL.revokeObjectURL(blobUrl)
+          
+          console.log('✅ File downloaded successfully:', file.file_name)
+        } catch (fetchError) {
+          console.error('❌ Blob download failed, trying direct download:', fetchError)
+          
+          // Fallback to direct download
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = file.file_name
+          link.target = '_blank'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        }
       } else {
         alert('Failed to generate download link. Please try again.')
       }
