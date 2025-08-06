@@ -33,12 +33,18 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import PNPOfficerService, { EvidenceFile } from "@/lib/pnp-officer-service"
+import PNPOfficerService from "@/lib/pnp-officer-service"
+import EvidenceService, { EvidenceFile } from "@/lib/evidence-service"
 
 interface EvidenceViewerModalProps {
   isOpen: boolean
   onClose: () => void
-  caseData: any
+  caseData: {
+    id: string
+    title: string
+    evidenceFile?: EvidenceFile | null
+    complaint_id?: string
+  }
 }
 
 export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewerModalProps) {
@@ -59,16 +65,29 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
   }, [isOpen, caseData])
 
   const fetchEvidenceFiles = async () => {
+    // If we have a specific evidence file, use it
+    if (caseData?.evidenceFile) {
+      setEvidenceFiles([caseData.evidenceFile])
+      setSelectedFile(caseData.evidenceFile)
+      return
+    }
+    
+    // Otherwise fetch all evidence for the complaint
     if (!caseData?.id && !caseData?.complaint_id) return
     
     setIsLoading(true)
     try {
-      const complaintId = caseData.id || caseData.complaint_id
+      const complaintId = caseData.complaint_id || caseData.id
       console.log('🔄 Fetching evidence files for complaint:', complaintId)
       
-      const files = await PNPOfficerService.getEvidenceFiles(complaintId)
+      const files = await EvidenceService.getEvidenceFiles({ caseId: complaintId })
       setEvidenceFiles(files)
       console.log('✅ Evidence files loaded:', files.length)
+      
+      // Select first file by default
+      if (files.length > 0) {
+        setSelectedFile(files[0])
+      }
     } catch (error) {
       console.error('❌ Error fetching evidence files:', error)
     } finally {
@@ -81,8 +100,16 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
   // Filter evidence files based on search and filter
   const filteredFiles = evidenceFiles.filter(file => {
     const matchesSearch = file.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesFilter = filterType === "all" || file.category === filterType
+                          (file.validation_notes && file.validation_notes.toLowerCase().includes(searchTerm.toLowerCase()))
+    
+    // Determine file type category
+    let fileCategory = 'document'
+    if (file.file_type?.startsWith('image/')) fileCategory = 'image'
+    else if (file.file_type?.startsWith('video/')) fileCategory = 'video'
+    else if (file.file_type?.startsWith('audio/')) fileCategory = 'audio'
+    else if (file.file_type?.includes('pdf')) fileCategory = 'document'
+    
+    const matchesFilter = filterType === "all" || fileCategory === filterType
     return matchesSearch && matchesFilter
   })
 
@@ -164,22 +191,19 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     },
   ]
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "image":
-        return <ImageIcon className="h-5 w-5 text-blue-600" />
-      case "pdf":
-        return <FileText className="h-5 w-5 text-red-600" />
-      case "document":
-        return <FileText className="h-5 w-5 text-gray-600" />
-      case "audio":
-        return <Music className="h-5 w-5 text-green-600" />
-      case "video":
-        return <Video className="h-5 w-5 text-purple-600" />
-      case "archive":
-        return <Archive className="h-5 w-5 text-orange-600" />
-      default:
-        return <FileText className="h-5 w-5 text-gray-600" />
+  const getFileIcon = (fileType: string) => {
+    if (fileType?.startsWith('image/')) {
+      return <ImageIcon className="h-5 w-5 text-blue-600" />
+    } else if (fileType?.includes('pdf')) {
+      return <FileText className="h-5 w-5 text-red-600" />
+    } else if (fileType?.startsWith('audio/')) {
+      return <Music className="h-5 w-5 text-green-600" />
+    } else if (fileType?.startsWith('video/')) {
+      return <Video className="h-5 w-5 text-purple-600" />
+    } else if (fileType?.includes('zip') || fileType?.includes('rar') || fileType?.includes('7z')) {
+      return <Archive className="h-5 w-5 text-orange-600" />
+    } else {
+      return <FileText className="h-5 w-5 text-gray-600" />
     }
   }
 
@@ -247,8 +271,18 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     }
   }
   
-  const handleDownload = (file: EvidenceFile) => {
-    window.open(file.file_url, '_blank')
+  const handleDownload = async (file: EvidenceFile) => {
+    try {
+      const downloadUrl = await EvidenceService.downloadEvidence(file.id)
+      if (downloadUrl) {
+        window.open(downloadUrl, '_blank')
+      } else {
+        alert('Failed to generate download link. Please try again.')
+      }
+    } catch (error) {
+      console.error('❌ Error downloading evidence:', error)
+      alert('Error downloading evidence file. Please try again.')
+    }
   }
 
   return (
@@ -355,12 +389,12 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                               <div className="flex items-start justify-between">
                                 <div className="flex items-start space-x-3">
                                   <div className="p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm">
-                                    {getFileIcon(file.category)}
+                                    {getFileIcon(file.file_type)}
                                   </div>
                                   <div className="flex-1">
                                     <p className="font-bold text-sm text-lawbot-slate-900 dark:text-white">{file.file_name}</p>
                                     <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1 leading-relaxed">
-                                      {file.description || 'No description provided'}
+                                      {file.validation_notes || 'No description provided'}
                                     </p>
                                     <div className="flex items-center space-x-4 mt-2 text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
                                       <span>{formatFileSize(file.file_size)}</span>
@@ -369,10 +403,10 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                                     </div>
                                   </div>
                                 </div>
-                                <Badge className={file.is_verified ? 
+                                <Badge className={file.is_valid ? 
                                   "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : 
                                   "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"}>
-                                  {file.is_verified ? 'Verified' : 'Pending'}
+                                  {file.is_valid ? 'Valid' : 'Invalid'}
                                 </Badge>
                               </div>
                             </CardContent>
@@ -398,10 +432,10 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">{selectedFile.file_name}</CardTitle>
-                              <Badge className={`${selectedFile.is_verified ? 
+                              <Badge className={`${selectedFile.is_valid ? 
                                 "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : 
                                 "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"} px-4 py-2 font-medium`}>
-                                {selectedFile.is_verified ? 'Verified' : 'Pending'}
+                                {selectedFile.is_valid ? 'Valid' : 'Invalid'}
                               </Badge>
                             </div>
                           </CardHeader>
@@ -417,7 +451,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                               </div>
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                                 <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">👮 Uploaded By</Label>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploaded_by}</p>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploaded_by || 'System'}</p>
                               </div>
                               <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                                 <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">📅 Upload Date</Label>
@@ -430,7 +464,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                             <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
                               <Label className="text-lawbot-slate-700 dark:text-lawbot-slate-300 font-bold mb-2 block">📝 Description</Label>
                               <p className="text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
-                                {selectedFile.description || 'No description provided'}
+                                {selectedFile.validation_notes || 'No description provided'}
                               </p>
                             </div>
 
@@ -438,7 +472,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                               <Label className="text-lawbot-purple-700 dark:text-lawbot-purple-300 font-bold mb-3 block">🔐 File Hash (SHA-256)</Label>
                               <div className="flex items-center space-x-3">
                                 <code className="flex-1 text-xs bg-white dark:bg-lawbot-slate-700 p-3 rounded-lg font-mono border border-lawbot-slate-200 dark:border-lawbot-slate-600">
-                                  {selectedFile.hash}
+                                  {selectedFile.file_path || 'Hash not available'}
                                 </code>
                                 <Button size="sm" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50" variant="outline">
                                   <Hash className="h-4 w-4 mr-2" />
@@ -452,7 +486,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                                 <Eye className="h-5 w-5 mr-2" />
                                 👁️ Preview
                               </Button>
-                              <Button size="lg" variant="outline" className="flex-1 btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 font-semibold py-3">
+                              <Button size="lg" variant="outline" className="flex-1 btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 font-semibold py-3" onClick={() => handleDownload(selectedFile)}>
                                 <Download className="h-5 w-5 mr-2" />
                                 📥 Download
                               </Button>
@@ -461,7 +495,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                         </Card>
 
                         {/* File Metadata */}
-                        {selectedFile.is_verified && (
+                        {selectedFile.is_valid && (
                           <Card className="card-modern bg-gradient-to-r from-lawbot-amber-50/50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
                             <CardHeader>
                               <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-3">

@@ -11,6 +11,7 @@ import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import PNPOfficerService, { PNPOfficerProfile, PNPOfficerStats, OfficerCase } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
 
 export function PNPDashboardView() {
   const [selectedCase, setSelectedCase] = useState<any>(null)
@@ -23,8 +24,29 @@ export function PNPDashboardView() {
   const [officerCases, setOfficerCases] = useState<OfficerCase[]>([])
   const [officerStats, setOfficerStats] = useState<PNPOfficerStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [evidenceCounts, setEvidenceCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch evidence count for a complaint
+  const fetchEvidenceCount = async (complaintId: string): Promise<number> => {
+    try {
+      const { count, error } = await supabase
+        .from('evidence_files')
+        .select('*', { count: 'exact', head: true })
+        .eq('complaint_id', complaintId)
+      
+      if (error) {
+        console.error('❌ Error fetching evidence count:', error)
+        return 0
+      }
+      
+      return count || 0
+    } catch (error) {
+      console.error('❌ Error fetching evidence count:', error)
+      return 0
+    }
+  }
 
   // Fetch real officer data
   const fetchOfficerData = async () => {
@@ -47,6 +69,15 @@ export function PNPDashboardView() {
       const cases = await PNPOfficerService.getOfficerCases(profile.id)
       setOfficerCases(cases)
       console.log('✅ Officer cases loaded:', cases.length)
+      
+      // Fetch evidence counts for all cases
+      const counts: Record<string, number> = {}
+      for (const case_ of cases) {
+        const count = await fetchEvidenceCount(case_.complaint.id)
+        counts[case_.complaint.id] = count
+      }
+      setEvidenceCounts(counts)
+      console.log('📎 Evidence counts fetched:', counts)
       
       // Fetch officer statistics
       const stats = await PNPOfficerService.getOfficerStats(profile.id)
@@ -274,8 +305,7 @@ export function PNPDashboardView() {
                 const status = caseData.status
                 const date = new Date(caseData.created_at).toLocaleDateString()
                 const riskScore = caseData.risk_score || 50
-                // TODO: Get evidence count from evidence_files table
-                const evidenceCount = 0
+                const evidenceCount = evidenceCounts[caseData.id] || 0
               
                 return (
                 <Card key={caseId} className="card-modern hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>

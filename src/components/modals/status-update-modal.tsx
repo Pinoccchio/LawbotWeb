@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, CheckCircle, Clock, AlertTriangle, FileText, Send, Calendar, Edit, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import PNPOfficerService from "@/lib/pnp-officer-service"
+import { supabase } from "@/lib/supabase"
 
 interface StatusUpdateModalProps {
   isOpen: boolean
@@ -28,6 +30,56 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   const [urgencyLevel, setUrgencyLevel] = useState("normal")
   const [followUpDate, setFollowUpDate] = useState("")
   const [assignedOfficer, setAssignedOfficer] = useState("")
+  const [officers, setOfficers] = useState<{ id: string; name: string; unit: string; badge: string }[]>([])
+  const [isLoadingOfficers, setIsLoadingOfficers] = useState(true)
+
+  // Fetch real officers from database
+  useEffect(() => {
+    const fetchOfficers = async () => {
+      try {
+        setIsLoadingOfficers(true)
+        console.log('🔄 Fetching PNP officers for status update modal...')
+        
+        const { data, error } = await supabase
+          .from('pnp_officer_profiles')
+          .select(`
+            id, 
+            firebase_uid, 
+            full_name, 
+            badge_number,
+            unit_id,
+            pnp_units (
+              id,
+              unit_name
+            )
+          `)
+          .order('full_name')
+        
+        if (error) {
+          console.error('❌ Error fetching officers:', error)
+          return
+        }
+        
+        const formattedOfficers = data?.map(officer => ({
+          id: officer.firebase_uid,
+          name: officer.full_name,
+          unit: officer.pnp_units?.unit_name || 'No Unit Assigned',
+          badge: officer.badge_number
+        })) || []
+        
+        setOfficers(formattedOfficers)
+        console.log('✅ Officers loaded:', formattedOfficers.length)
+      } catch (error) {
+        console.error('❌ Error fetching officers:', error)
+      } finally {
+        setIsLoadingOfficers(false)
+      }
+    }
+    
+    if (isOpen) {
+      fetchOfficers()
+    }
+  }, [isOpen])
 
   if (!isOpen || !caseData) return null
 
@@ -69,18 +121,9 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     },
   ]
 
-  const officers = [
-    "Maria Santos - Cyber Crime Investigation Cell",
-    "John Rodriguez - Economic Offenses Wing",
-    "Ana Reyes - Special Investigation Team",
-    "Carlos Mendoza - Cyber Security Division",
-    "Lisa Garcia - Advanced Cyber Forensics Unit",
-    "Roberto Cruz - Cyber Crime Technical Unit",
-    "Diana Lopez - Cyber Crime Against Women and Children",
-    "Miguel Torres - Critical Infrastructure Protection Unit",
-    "Sofia Reyes - National Security Cyber Division",
-    "Eduardo Santos - Special Cyber Operations Unit",
-  ]
+  // Use real case data
+  const complaintNumber = caseData?.complaint_number || caseData?.id || 'Unknown'
+  const caseTitle = caseData?.title || `${caseData?.crime_type || 'Unknown'} Case`
 
   const updateTemplates = [
     {
@@ -105,19 +148,32 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     },
   ]
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const updateData = {
-      status: selectedStatus,
-      notes: updateNotes,
-      notifyStakeholders,
-      urgencyLevel,
-      followUpDate,
-      assignedOfficer,
-      timestamp: new Date().toISOString(),
+    
+    try {
+      console.log('🔄 Submitting status update...')
+      
+      // Create update data object
+      const updateData = {
+        status: selectedStatus,
+        notes: updateNotes,
+        notifyStakeholders,
+        urgencyLevel,
+        followUpDate,
+        assignedOfficer,
+        timestamp: new Date().toISOString(),
+      }
+      
+      // Call the parent's status update handler
+      await onStatusUpdate(selectedStatus, updateData)
+      
+      console.log('✅ Status update submitted successfully')
+      onClose()
+    } catch (error) {
+      console.error('❌ Error submitting status update:', error)
+      // TODO: Show error toast to user
     }
-    onStatusUpdate(selectedStatus, updateData)
-    onClose()
   }
 
   const getStatusIcon = (status: string) => {
@@ -142,7 +198,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
               📝 Update Case Status
             </CardTitle>
             <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1 font-medium">
-              Case #{caseData.id} - {caseData.title}
+              Case #{complaintNumber} - {caseTitle}
             </CardDescription>
           </div>
         </CardHeader>
@@ -275,11 +331,21 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                     <SelectValue placeholder="Select officer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {officers.map((officer) => (
-                      <SelectItem key={officer} value={officer}>
-                        {officer}
+                    {isLoadingOfficers ? (
+                      <SelectItem value="loading" disabled>
+                        Loading officers...
                       </SelectItem>
-                    ))}
+                    ) : officers.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No officers available
+                      </SelectItem>
+                    ) : (
+                      officers.map((officer) => (
+                        <SelectItem key={officer.id} value={officer.id}>
+                          {officer.name} - {officer.unit}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

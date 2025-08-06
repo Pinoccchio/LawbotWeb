@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import {
   X,
   Calendar,
@@ -17,6 +18,7 @@ import {
   Brain,
   Target,
   TrendingUp,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import PNPOfficerService from "@/lib/pnp-officer-service"
+import { supabase } from "@/lib/supabase"
 
 interface CaseDetailModalProps {
   isOpen: boolean
@@ -33,7 +38,80 @@ interface CaseDetailModalProps {
 }
 
 export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [statusHistory, setStatusHistory] = useState<any[]>([])
+  const [evidenceFiles, setEvidenceFiles] = useState<any[]>([])
+  const [complaintDetails, setComplaintDetails] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
+
+  useEffect(() => {
+    if (isOpen && caseData) {
+      fetchCaseDetails()
+    }
+  }, [isOpen, caseData])
+
+  const fetchCaseDetails = async () => {
+    setIsLoading(true)
+    try {
+      // Get complaint details if we have complaint data
+      const complaint = caseData.complaint || caseData
+      const complaintId = complaint.complaint_id || complaint.id
+      
+      // Fetch full complaint details if needed
+      if (complaintId && !complaint.description) {
+        const { data: fullComplaint } = await supabase
+          .from('complaints')
+          .select('*')
+          .eq('id', complaintId)
+          .single()
+        
+        if (fullComplaint) {
+          setComplaintDetails(fullComplaint)
+        }
+      } else {
+        setComplaintDetails(complaint)
+      }
+      
+      // Fetch user profile
+      if (complaint.user_id) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', complaint.user_id)
+          .single()
+        
+        if (profile) {
+          setUserProfile(profile)
+        }
+      }
+      
+      // Fetch status history
+      const { data: history } = await supabase
+        .from('status_history')
+        .select('*')
+        .eq('complaint_id', complaintId)
+        .order('timestamp', { ascending: false })
+        .limit(10)
+      
+      if (history) {
+        setStatusHistory(history)
+      }
+      
+      // Fetch evidence files
+      const files = await PNPOfficerService.getEvidenceFiles(complaintId)
+      setEvidenceFiles(files)
+      
+    } catch (error) {
+      console.error('Error fetching case details:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (!isOpen || !caseData) return null
+  
+  // Use complaint data from props or fetched details
+  const complaint = complaintDetails || caseData.complaint || caseData
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -65,39 +143,66 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     }
   }
 
+  // Use AI data from complaint or generate default
   const aiAnalysis = {
-    confidence: 92,
-    riskLevel: "High",
-    predictedOutcome: "Successful Resolution",
-    estimatedTime: "3-5 days",
-    recommendations: [
-      "Immediate contact with victim required",
-      "Preserve digital evidence from social media platforms",
-      "Coordinate with cybercrime unit for technical analysis",
-      "Document all communication attempts",
+    confidence: complaint.ai_confidence_score || 75,
+    riskLevel: complaint.ai_priority || complaint.priority || "Medium",
+    predictedOutcome: "Under Analysis",
+    estimatedTime: "3-7 days",
+    recommendations: complaint.ai_recommendations ? JSON.parse(complaint.ai_recommendations) : [
+      "Contact complainant for additional information",
+      "Collect and preserve digital evidence",
+      "Coordinate with specialized unit",
+      "Document all investigative steps",
     ],
     keyIndicators: [
-      { label: "Urgency Score", value: 85, color: "red" },
-      { label: "Evidence Quality", value: 78, color: "blue" },
-      { label: "Resolution Probability", value: 92, color: "green" },
+      { label: "Risk Score", value: complaint.ai_risk_score || complaint.risk_score || 50, color: "red" },
+      { label: "Evidence Count", value: evidenceFiles.length > 0 ? Math.min(evidenceFiles.length * 20, 100) : 0, color: "blue" },
+      { label: "AI Confidence", value: complaint.ai_confidence_score || 75, color: "green" },
     ],
   }
 
+  // Generate timeline from status history and complaint data
   const timeline = [
-    { date: "2025-01-25 09:15", event: "Case reported by victim", type: "report" },
-    { date: "2025-01-25 09:30", event: "Predictive analysis completed - High priority assigned", type: "ai" },
-    { date: "2025-01-25 10:00", event: "Assigned to Officer Maria Santos", type: "assignment" },
-    { date: "2025-01-25 14:30", event: "Initial contact with victim established", type: "contact" },
-    { date: "2025-01-25 16:45", event: "Evidence collection initiated", type: "evidence" },
-    { date: "2025-01-26 08:00", event: "Technical analysis in progress", type: "analysis" },
-  ]
+    {
+      date: complaint.created_at,
+      event: `Case reported - ${complaint.crime_type}`,
+      type: "report"
+    },
+    ...(complaint.last_ai_assessment ? [{
+      date: complaint.last_ai_assessment,
+      event: `AI Analysis - ${complaint.ai_priority || complaint.priority} priority assigned`,
+      type: "ai"
+    }] : []),
+    ...(complaint.assigned_officer ? [{
+      date: complaint.created_at,
+      event: `Assigned to ${complaint.assigned_officer}`,
+      type: "assignment"
+    }] : []),
+    ...statusHistory.map(history => ({
+      date: history.timestamp,
+      event: `Status changed to ${history.status}${history.remarks ? ` - ${history.remarks}` : ''}`,
+      type: history.status === 'Resolved' ? 'evidence' : history.status === 'Under Investigation' ? 'analysis' : 'contact'
+    }))
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  const evidenceFiles = [
-    { name: "screenshot_scam_message.png", type: "image", size: "2.4 MB", hash: "a1b2c3d4e5f6" },
-    { name: "bank_transaction_log.pdf", type: "document", size: "1.2 MB", hash: "f6e5d4c3b2a1" },
-    { name: "phone_call_recording.mp3", type: "audio", size: "5.8 MB", hash: "1a2b3c4d5e6f" },
-    { name: "email_headers.txt", type: "text", size: "0.3 MB", hash: "6f5e4d3c2b1a" },
-  ]
+  // Helper function to format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  }
+  
+  // Helper to get file type category
+  const getFileTypeCategory = (fileType: string) => {
+    if (fileType?.startsWith('image/')) return 'image'
+    if (fileType?.startsWith('audio/')) return 'audio'
+    if (fileType?.startsWith('video/')) return 'video'
+    if (fileType?.includes('pdf') || fileType?.includes('document')) return 'document'
+    return 'text'
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -109,28 +214,33 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
           <div className="flex items-start justify-between pr-12">
             <div className="animate-fade-in-up">
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
-                📁 Case #{caseData.id}
+                📁 Case #{complaint.complaint_number || complaint.id}
               </CardTitle>
               <CardDescription className="text-lg mt-2 text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">
-                {caseData.title}
+                {complaint.title || complaint.crime_type}
               </CardDescription>
             </div>
             <div className="flex flex-col items-end space-y-3 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-              <Badge className={`${getPriorityColor(caseData.priority)} text-sm font-semibold px-3 py-1 shadow-sm`}>
-                {caseData.priority === 'high' ? '🔴' : caseData.priority === 'medium' ? '🟡' : '🟢'} {caseData.priority} Priority
+              <Badge className={`${getPriorityColor(complaint.priority)} text-sm font-semibold px-3 py-1 shadow-sm`}>
+                {complaint.priority === 'high' ? '🔴' : complaint.priority === 'medium' ? '🟡' : '🟢'} {complaint.priority} Priority
               </Badge>
-              <Badge className={`${getStatusColor(caseData.status)} text-sm font-semibold px-3 py-1 shadow-sm`}>
-                {caseData.status === 'Pending' ? '📋' : 
-                 caseData.status === 'Under Investigation' ? '🔍' :
-                 caseData.status === 'Resolved' ? '✅' :
-                 caseData.status === 'Dismissed' ? '❌' : '❓'} 
-                {caseData.status}
+              <Badge className={`${getStatusColor(complaint.status)} text-sm font-semibold px-3 py-1 shadow-sm`}>
+                {complaint.status === 'Pending' ? '📋' : 
+                 complaint.status === 'Under Investigation' ? '🔍' :
+                 complaint.status === 'Resolved' ? '✅' :
+                 complaint.status === 'Dismissed' ? '❌' : '❓'} 
+                {complaint.status}
               </Badge>
             </div>
           </div>
         </CardHeader>
 
         <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600" />
+            </div>
+          ) : (
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl">
               <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
@@ -167,26 +277,26 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">🏷️ Case Type</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.type || 'Online Banking Fraud'}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.crime_type}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📅 Reported Date</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.date}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{new Date(complaint.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📍 Location</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.location || 'Manila, NCR'}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.incident_location || 'Not specified'}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">👮 Assigned Officer</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{caseData.officer}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.assigned_officer || 'Unassigned'}</p>
                         </div>
                       </div>
                       <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
                       <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
                         <label className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2">📝 Description</label>
                         <p className="text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
-                          {caseData.description || 'Unauthorized access to online banking account resulting in fraudulent transactions totaling ₱50,000'}
+                          {complaint.description || 'No description provided'}
                         </p>
                       </div>
                     </CardContent>
@@ -206,10 +316,14 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       <div className="flex items-center space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                         <Avatar className="h-14 w-14 ring-4 ring-lawbot-emerald-100 dark:ring-lawbot-emerald-800">
                           <AvatarImage src="/placeholder.svg?height=56&width=56" />
-                          <AvatarFallback className="bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600 text-white font-bold text-lg">JD</AvatarFallback>
+                          <AvatarFallback className="bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600 text-white font-bold text-lg">
+                            {userProfile?.full_name ? userProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-bold text-lg text-lawbot-slate-900 dark:text-white">Juan Dela Cruz</p>
+                          <p className="font-bold text-lg text-lawbot-slate-900 dark:text-white">
+                            {userProfile?.full_name || complaint.user_profiles?.full_name || 'Anonymous'}
+                          </p>
                           <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800 mt-1">
                             🏅 Primary Complainant
                           </Badge>
@@ -220,19 +334,25 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <div className="p-2 bg-lawbot-blue-500 rounded-lg">
                             <Phone className="h-4 w-4 text-white" />
                           </div>
-                          <span className="font-medium text-lawbot-slate-900 dark:text-white">+63 917 123 4567</span>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">
+                            {userProfile?.phone_number || complaint.user_profiles?.phone_number || complaint.phone_number || 'Not provided'}
+                          </span>
                         </div>
                         <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <div className="p-2 bg-lawbot-purple-500 rounded-lg">
                             <Mail className="h-4 w-4 text-white" />
                           </div>
-                          <span className="font-medium text-lawbot-slate-900 dark:text-white">juan.delacruz@email.com</span>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">
+                            {userProfile?.email || complaint.user_profiles?.email || complaint.email || 'Not provided'}
+                          </span>
                         </div>
                         <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <div className="p-2 bg-lawbot-amber-500 rounded-lg">
                             <MapPin className="h-4 w-4 text-white" />
                           </div>
-                          <span className="font-medium text-lawbot-slate-900 dark:text-white">Quezon City, Metro Manila</span>
+                          <span className="font-medium text-lawbot-slate-900 dark:text-white">
+                            {userProfile?.address || complaint.incident_location || 'Not specified'}
+                          </span>
                         </div>
                       </div>
                       <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
@@ -242,8 +362,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           📝 Additional Notes
                         </label>
                         <p className="text-sm text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
-                          Victim is cooperative and has provided all requested documentation. Available for follow-up
-                          interviews.
+                          {complaint.additional_info || 'Contact information verified. Available for follow-up.'}
                         </p>
                       </div>
                     </CardContent>
@@ -280,19 +399,25 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                         <div className="space-y-3">
                           <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                             <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">💰 Financial loss estimated at ₱{caseData.estimatedLoss || '50,000'}</span>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                              💰 {complaint.estimated_loss ? `Financial loss: ₱${complaint.estimated_loss.toLocaleString()}` : 'Financial impact to be assessed'}
+                            </span>
                           </div>
                           <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                             <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🏷️ Crime type: {caseData.crimeType || caseData.title}</span>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🏷️ Crime type: {complaint.crime_type}</span>
                           </div>
                           <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                             <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">👥 Multiple victims potentially affected</span>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                              👥 {complaint.victim_count > 1 ? `${complaint.victim_count} victims affected` : 'Single victim case'}
+                            </span>
                           </div>
                           <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                             <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📎 Evidence includes digital communications and transaction records</span>
+                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                              📎 {evidenceFiles.length > 0 ? `${evidenceFiles.length} evidence files submitted` : 'Evidence collection in progress'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -304,9 +429,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                         </h4>
                         <div className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-violet-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-violet-900/20 p-5 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                           <p className="text-sm text-lawbot-purple-800 dark:text-lawbot-purple-200 leading-relaxed">
-                            This case involves a sophisticated {caseData.crimeType?.toLowerCase() || 'cybercrime'} operation targeting victims through 
-                            digital channels. The perpetrator(s) used social engineering tactics to gain trust before executing the fraudulent scheme. 
-                            Initial evidence suggests this may be part of a larger organized campaign with multiple victims across the region.
+                            {complaint.ai_summary || 
+                             `This case involves ${complaint.crime_type} ${complaint.incident_location ? `reported in ${complaint.incident_location}` : ''}. 
+                             ${complaint.description ? complaint.description.substring(0, 200) + '...' : 'Investigation is ongoing to gather more details about the incident.'}`
+                            }
                           </p>
                         </div>
                       </div>
@@ -515,47 +641,56 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {evidenceFiles.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-5 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="p-3 bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 rounded-lg">
-                              {file.type === 'image' && <Eye className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
-                              {file.type === 'document' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
-                              {file.type === 'audio' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
-                              {file.type === 'text' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
-                            </div>
-                            <div>
-                              <p className="font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-2">
-                                {file.type === 'image' && '🖼️'}
-                                {file.type === 'document' && '📄'}
-                                {file.type === 'audio' && '🎧'}
-                                {file.type === 'text' && '📝'}
-                                <span>{file.name}</span>
-                              </p>
-                              <div className="flex items-center space-x-3 mt-1">
-                                <Badge className="bg-lawbot-slate-100 text-lawbot-slate-700 dark:bg-lawbot-slate-700 dark:text-lawbot-slate-300 text-xs">
-                                  {file.type.toUpperCase()}
-                                </Badge>
-                                <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">💾 {file.size}</span>
-                                <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">🔐 Hash: {file.hash}</span>
+                      {evidenceFiles.length === 0 ? (
+                        <Alert className="border-lawbot-amber-200 bg-lawbot-amber-50 dark:border-lawbot-amber-800 dark:bg-lawbot-amber-900/20">
+                          <AlertTriangle className="h-4 w-4 text-lawbot-amber-600" />
+                          <AlertDescription className="text-lawbot-amber-700 dark:text-lawbot-amber-300">
+                            No evidence files have been uploaded for this case yet.
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        evidenceFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-5 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="p-3 bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 rounded-lg">
+                                {getFileTypeCategory(file.file_type) === 'image' && <Eye className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                                {getFileTypeCategory(file.file_type) === 'document' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                                {getFileTypeCategory(file.file_type) === 'audio' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                                {getFileTypeCategory(file.file_type) === 'text' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-2">
+                                  {getFileTypeCategory(file.file_type) === 'image' && '🖼️'}
+                                  {getFileTypeCategory(file.file_type) === 'document' && '📄'}
+                                  {getFileTypeCategory(file.file_type) === 'audio' && '🎧'}
+                                  {getFileTypeCategory(file.file_type) === 'text' && '📝'}
+                                  <span>{file.file_name}</span>
+                                </p>
+                                <div className="flex items-center space-x-3 mt-1">
+                                  <Badge className="bg-lawbot-slate-100 text-lawbot-slate-700 dark:bg-lawbot-slate-700 dark:text-lawbot-slate-300 text-xs">
+                                    {file.file_type.toUpperCase()}
+                                  </Badge>
+                                  <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">💾 {formatFileSize(file.file_size)}</span>
+                                  <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">🔐 ID: {file.id.substring(0, 8)}...</span>
+                                </div>
                               </div>
                             </div>
+                            <div className="flex space-x-3">
+                              <Button size="sm" className="btn-gradient">
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50">
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex space-x-3">
-                            <Button size="sm" className="btn-gradient">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Button>
-                            <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50">
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -609,7 +744,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                             </div>
                             <div className="flex items-center space-x-2">
                               <Clock className="h-3 w-3 text-lawbot-slate-500" />
-                              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{event.date}</p>
+                              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{new Date(event.date).toLocaleString()}</p>
                             </div>
                           </div>
                           {index < timeline.length - 1 && (
@@ -701,6 +836,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
               </TabsContent>
             </div>
           </Tabs>
+          )}
         </div>
       </Card>
     </div>
