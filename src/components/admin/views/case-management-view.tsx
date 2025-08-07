@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,26 +13,70 @@ import { Progress } from "@/components/ui/progress"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
-import { mockCases } from "@/lib/mock-data"
+import ComplaintService, { ComplaintData } from "@/lib/complaint-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 
 export function CaseManagementView() {
-  const [selectedCase, setSelectedCase] = useState<any>(null)
+  const [selectedCase, setSelectedCase] = useState<ComplaintData | null>(null)
+  const [cases, setCases] = useState<ComplaintData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState({
+    totalComplaints: 0,
+    activeCases: 0,
+    resolvedCases: 0,
+    highPriority: 0,
+    avgRiskScore: 0,
+    recentCases: 0
+  })
+  const [statusDistribution, setStatusDistribution] = useState<Array<{label: string, value: number, color: string}>>([])
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
 
-  const handleViewDetails = (caseData: any) => {
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchComplaintsData()
+  }, [])
+
+  const fetchComplaintsData = async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      // Fetch complaints and stats in parallel
+      const [complaintsResult, statsResult, statusDistResult] = await Promise.all([
+        ComplaintService.getAllComplaints({ limit: 100 }),
+        ComplaintService.getComplaintStats(),
+        ComplaintService.getStatusDistribution()
+      ])
+
+      if (complaintsResult.error) {
+        throw new Error(complaintsResult.error.message)
+      }
+
+      setCases(complaintsResult.data)
+      setStats(statsResult)
+      setStatusDistribution(statusDistResult)
+    } catch (err: any) {
+      console.error('Error fetching complaints data:', err)
+      setError(err.message || 'Failed to load complaint data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleViewDetails = (caseData: ComplaintData) => {
     setSelectedCase(caseData)
     setDetailModalOpen(true)
   }
 
-  const handleUpdateStatus = (caseData: any) => {
+  const handleUpdateStatus = (caseData: ComplaintData) => {
     setSelectedCase(caseData)
     setStatusModalOpen(true)
   }
 
-  const handleViewEvidence = (caseData: any) => {
+  const handleViewEvidence = (caseData: ComplaintData) => {
     setSelectedCase(caseData)
     setEvidenceModalOpen(true)
   }
@@ -119,25 +163,25 @@ export function CaseManagementView() {
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <div className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                {mockCases.length}
+                {stats.totalComplaints}
               </div>
               <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Cases</p>
             </div>
             <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <div className="text-xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
-                {mockCases.filter(c => c.priority === 'high').length}
+                {stats.highPriority}
               </div>
               <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">High Priority</p>
             </div>
             <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <div className="text-xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                {mockCases.filter(c => c.status === 'Under Investigation').length}
+                {stats.activeCases}
               </div>
               <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">In Progress</p>
             </div>
             <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <div className="text-xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                {Math.round(mockCases.reduce((acc, c) => acc + c.riskScore, 0) / mockCases.length)}
+                {stats.avgRiskScore}
               </div>
               <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Avg Risk Score</p>
             </div>
@@ -185,18 +229,51 @@ export function CaseManagementView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockCases.map((case_, index) => (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-lawbot-blue-500"></div>
+                        <span className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Loading cases...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">
+                      <div className="text-lawbot-red-600 dark:text-lawbot-red-400">
+                        Error loading cases: {error}
+                      </div>
+                      <Button 
+                        onClick={fetchComplaintsData} 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                      >
+                        Retry
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ) : cases.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8">
+                      <div className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                        No cases found
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : cases.map((case_, index) => (
                   <TableRow 
                     key={case_.id} 
                     className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <TableCell className="font-semibold text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                      {case_.id}
+                      {case_.complaint_number || case_.id}
                     </TableCell>
                     <TableCell className="max-w-xs">
                       <div className="truncate font-medium text-lawbot-slate-900 dark:text-white">
-                        {case_.title}
+                        {case_.title || case_.description?.substring(0, 50) + '...'}
                       </div>
                       <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
                         {case_.crime_type}
@@ -218,39 +295,39 @@ export function CaseManagementView() {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium text-lawbot-slate-900 dark:text-white">
-                        {case_.officer}
+                        {case_.assigned_officer || 'Unassigned'}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-xs truncate">
-                        {case_.unit}
+                        {case_.assigned_unit || 'Unassigned'}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span
                           className={`font-bold text-sm ${
-                            case_.riskScore >= 80 ? "text-lawbot-red-500" : 
-                            case_.riskScore >= 50 ? "text-lawbot-amber-500" : 
+                            (case_.risk_score || 0) >= 80 ? "text-lawbot-red-500" : 
+                            (case_.risk_score || 0) >= 50 ? "text-lawbot-amber-500" : 
                             "text-lawbot-emerald-500"
                           }`}
                         >
-                          {case_.riskScore}
+                          {case_.risk_score || 0}
                         </span>
                         <div className={`w-2 h-2 rounded-full ${
-                          case_.riskScore >= 80 ? "bg-lawbot-red-500" : 
-                          case_.riskScore >= 50 ? "bg-lawbot-amber-500" : 
+                          (case_.risk_score || 0) >= 80 ? "bg-lawbot-red-500" : 
+                          (case_.risk_score || 0) >= 50 ? "bg-lawbot-amber-500" : 
                           "bg-lawbot-emerald-500"
                         }`} />
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                      {case_.date}
+                      {new Date(case_.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <span className="font-medium text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                          {case_.evidence}
+                          {case_.evidence_files?.length || 0}
                         </span>
                         <span className="text-xs text-lawbot-slate-500">files</span>
                       </div>
@@ -312,13 +389,7 @@ export function CaseManagementView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { label: "📋 Pending", value: mockCases.filter(c => c.status === 'Pending').length, color: "amber" },
-                { label: "🔍 Under Investigation", value: mockCases.filter(c => c.status === 'Under Investigation').length, color: "blue" },
-                { label: "❓ Requires More Info", value: mockCases.filter(c => c.status === 'Requires More Info').length, color: "orange" },
-                { label: "✅ Resolved", value: mockCases.filter(c => c.status === 'Resolved').length, color: "emerald" },
-                { label: "❌ Dismissed", value: mockCases.filter(c => c.status === 'Dismissed').length, color: "slate" }
-              ].map((item, index) => (
+              {statusDistribution.map((item, index) => (
                 <div key={item.label} className="flex justify-between items-center animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
                   <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
                     {item.label}
@@ -353,11 +424,11 @@ export function CaseManagementView() {
           <CardContent>
             <div className="space-y-4">
               {[
-                { label: "High Priority", value: mockCases.filter(c => c.priority === 'high').length, color: "red", icon: "🔴" },
-                { label: "Medium Priority", value: mockCases.filter(c => c.priority === 'medium').length, color: "amber", icon: "🟡" },
-                { label: "Low Priority", value: mockCases.filter(c => c.priority === 'low').length, color: "emerald", icon: "🟢" }
+                { label: "High Priority", value: cases.filter(c => c.priority === 'high').length, color: "red", icon: "🔴" },
+                { label: "Medium Priority", value: cases.filter(c => c.priority === 'medium').length, color: "amber", icon: "🟡" },
+                { label: "Low Priority", value: cases.filter(c => c.priority === 'low').length, color: "emerald", icon: "🟢" }
               ].map((item, index) => {
-                const percentage = Math.round((item.value / mockCases.length) * 100)
+                const percentage = cases.length > 0 ? Math.round((item.value / cases.length) * 100) : 0
                 return (
                   <div key={item.label} className="space-y-2 animate-fade-in-up" style={{ animationDelay: `${(index + 3) * 100}ms` }}>
                     <div className="flex justify-between items-center">

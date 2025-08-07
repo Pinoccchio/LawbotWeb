@@ -19,6 +19,7 @@ import {
   Target,
   TrendingUp,
   Loader2,
+  Shield,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -499,6 +500,12 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">👮 Assigned Officer</label>
                           <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.assigned_officer || 'Unassigned'}</p>
                         </div>
+                        {complaint.platform_website && (
+                          <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 col-span-2">
+                            <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📱 Platform Involved</label>
+                            <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.platform_website}</p>
+                          </div>
+                        )}
                       </div>
                       <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
                       <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
@@ -563,19 +570,621 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           </span>
                         </div>
                       </div>
-                      <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
-                      <div className="p-4 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-green-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-green-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-                        <label className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2 flex items-center">
-                          <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
-                          📝 Additional Notes
-                        </label>
-                        <p className="text-sm text-lawbot-slate-800 dark:text-lawbot-slate-200 leading-relaxed">
-                          {complaint.additional_info || 'Contact information verified. Available for follow-up.'}
-                        </p>
-                      </div>
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Crime Details Section */}
+                <Card className="card-modern bg-gradient-to-br from-lawbot-amber-50/30 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+                  <CardHeader>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-lawbot-amber-500 rounded-lg">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
+                      <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">🔍 Crime Details</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {(() => {
+                      // Crime type to category mapping
+                      const crimeTypeToCategory = {
+                        // 📱 Communication & Social Media Crimes
+                        'phishing': 'Communication & Social Media Crimes',
+                        'socialEngineering': 'Communication & Social Media Crimes',
+                        'spamMessages': 'Communication & Social Media Crimes',
+                        'fakeSocialMediaProfiles': 'Communication & Social Media Crimes',
+                        'onlineImpersonation': 'Communication & Social Media Crimes',
+                        'businessEmailCompromise': 'Communication & Social Media Crimes',
+                        'smsFraud': 'Communication & Social Media Crimes',
+                        
+                        // 💰 Financial & Economic Crimes
+                        'onlineBankingFraud': 'Financial & Economic Crimes',
+                        'creditCardFraud': 'Financial & Economic Crimes',
+                        'investmentScams': 'Financial & Economic Crimes',
+                        'cryptocurrencyFraud': 'Financial & Economic Crimes',
+                        'onlineShoppingScams': 'Financial & Economic Crimes',
+                        'paymentGatewayFraud': 'Financial & Economic Crimes',
+                        'insuranceFraud': 'Financial & Economic Crimes',
+                        'taxFraud': 'Financial & Economic Crimes',
+                        'moneyLaundering': 'Financial & Economic Crimes',
+                        
+                        // 🔒 Data & Privacy Crimes
+                        'identityTheft': 'Data & Privacy Crimes',
+                        'dataBreach': 'Data & Privacy Crimes',
+                        'unauthorizedSystemAccess': 'Data & Privacy Crimes',
+                        'corporateEspionage': 'Data & Privacy Crimes',
+                        'governmentDataTheft': 'Data & Privacy Crimes',
+                        'medicalRecordsTheft': 'Data & Privacy Crimes',
+                        'personalInformationTheft': 'Data & Privacy Crimes',
+                        'accountTakeover': 'Data & Privacy Crimes',
+                        
+                        // 💻 Malware & System Attacks
+                        'ransomware': 'Malware & System Attacks',
+                        'virusAttacks': 'Malware & System Attacks',
+                        'trojanHorses': 'Malware & System Attacks',
+                        'spyware': 'Malware & System Attacks',
+                        'adware': 'Malware & System Attacks',
+                        'worms': 'Malware & System Attacks',
+                        'keyloggers': 'Malware & System Attacks',
+                        'rootkits': 'Malware & System Attacks',
+                        'cryptojacking': 'Malware & System Attacks',
+                        'botnetAttacks': 'Malware & System Attacks',
+                        
+                        // 👥 Harassment & Exploitation
+                        'cyberstalking': 'Harassment & Exploitation',
+                        'onlineHarassment': 'Harassment & Exploitation',
+                        'cyberbullying': 'Harassment & Exploitation',
+                        'revengePorn': 'Harassment & Exploitation',
+                        'sextortion': 'Harassment & Exploitation',
+                        'onlinePredatoryBehavior': 'Harassment & Exploitation',
+                        'doxxing': 'Harassment & Exploitation',
+                        'hateSpeech': 'Harassment & Exploitation',
+                        
+                        // 🚫 Content-Related Crimes
+                        'childSexualAbuseMaterial': 'Content-Related Crimes',
+                        'illegalContentDistribution': 'Content-Related Crimes',
+                        'copyrightInfringement': 'Content-Related Crimes',
+                        'softwarePiracy': 'Content-Related Crimes',
+                        'illegalOnlineGambling': 'Content-Related Crimes',
+                        'onlineDrugTrafficking': 'Content-Related Crimes',
+                        'illegalWeaponsSales': 'Content-Related Crimes',
+                        'humanTrafficking': 'Content-Related Crimes',
+                        
+                        // ⚡ System Disruption & Sabotage
+                        'denialOfServiceAttacks': 'System Disruption & Sabotage',
+                        'websiteDefacement': 'System Disruption & Sabotage',
+                        'systemSabotage': 'System Disruption & Sabotage',
+                        'networkIntrusion': 'System Disruption & Sabotage',
+                        'sqlInjection': 'System Disruption & Sabotage',
+                        'crossSiteScripting': 'System Disruption & Sabotage',
+                        'manInTheMiddleAttacks': 'System Disruption & Sabotage',
+                        
+                        // 🏛️ Government & Terrorism
+                        'cyberterrorism': 'Government & Terrorism',
+                        'cyberWarfare': 'Government & Terrorism',
+                        'governmentSystemHacking': 'Government & Terrorism',
+                        'electionInterference': 'Government & Terrorism',
+                        'criticalInfrastructureAttacks': 'Government & Terrorism',
+                        'propagandaDistribution': 'Government & Terrorism',
+                        'stateSponsoredAttacks': 'Government & Terrorism',
+                        
+                        // 🔍 Technical Exploitation
+                        'zeroDayExploits': 'Technical Exploitation',
+                        'vulnerabilityExploitation': 'Technical Exploitation',
+                        'backdoorCreation': 'Technical Exploitation',
+                        'privilegeEscalation': 'Technical Exploitation',
+                        'codeInjection': 'Technical Exploitation',
+                        'bufferOverflowAttacks': 'Technical Exploitation',
+                        
+                        // 🎯 Targeted Attacks
+                        'advancedPersistentThreats': 'Targeted Attacks',
+                        'spearPhishing': 'Targeted Attacks',
+                        'ceoFraud': 'Targeted Attacks',
+                        'supplyChainAttacks': 'Targeted Attacks',
+                        'insiderThreats': 'Targeted Attacks'
+                      };
+
+                      // Category-specific field mappings (exactly as analyzed from Flutter)
+                      const categoryFields = {
+                        'Communication & Social Media Crimes': [
+                          'incident_location', 'platform_website', 'account_reference', 
+                          'estimated_loss', 'suspect_name', 'suspect_relationship', 
+                          'suspect_contact', 'suspect_details'
+                        ],
+                        'Financial & Economic Crimes': [
+                          'incident_location', 'platform_website', 'account_reference', 
+                          'estimated_loss', 'suspect_name', 'suspect_contact'
+                        ],
+                        'Data & Privacy Crimes': [
+                          'incident_location', 'account_reference', 'technical_info', 
+                          'vulnerability_details', 'security_level', 'impact_assessment'
+                        ],
+                        'Malware & System Attacks': [
+                          'system_details', 'technical_info', 'attack_vector'
+                        ],
+                        'Harassment & Exploitation': [
+                          'incident_location', 'platform_website', 'suspect_name', 
+                          'suspect_relationship', 'suspect_contact', 'suspect_details', 
+                          'content_description'
+                        ],
+                        'Content-Related Crimes': [
+                          'incident_location', 'platform_website', 'estimated_loss', 
+                          'suspect_name', 'suspect_contact', 'content_description'
+                        ],
+                        'System Disruption & Sabotage': [
+                          'system_details', 'technical_info', 'vulnerability_details', 
+                          'attack_vector', 'impact_assessment'
+                        ],
+                        'Government & Terrorism': [
+                          'incident_location', 'security_level', 'target_info', 
+                          'impact_assessment'
+                        ],
+                        'Technical Exploitation': [
+                          'system_details', 'technical_info', 'vulnerability_details', 
+                          'target_info', 'attack_vector', 'impact_assessment'
+                        ],
+                        'Targeted Attacks': [
+                          'target_info', 'attack_vector', 'impact_assessment'
+                        ]
+                      };
+
+                      // All available field configurations with full type safety
+                      const allFieldConfigs = {
+                        'incident_location': { label: '📍 Incident Location', group: 'location', hint: 'Where did this incident occur?' },
+                        'platform_website': { label: '📱 Platform/Website', group: 'platform', hint: 'Facebook, Instagram, GCash, etc.' },
+                        'account_reference': { label: '🔢 Account/Reference', group: 'financial', hint: 'Transaction ID, account number, reference code' },
+                        'estimated_loss': { label: '💰 Financial Loss', group: 'financial', format: 'currency', hint: 'Amount in Philippine Pesos (₱)' },
+                        'suspect_name': { label: '🎭 Suspect Name/Alias', group: 'suspect', hint: 'Real name, nickname, or username' },
+                        'suspect_relationship': { label: '👥 Suspect Relationship', group: 'suspect', hint: 'How do you know the suspect?' },
+                        'suspect_contact': { label: '📞 Suspect Contact', group: 'suspect', hint: 'Phone, email, social media handle' },
+                        'suspect_details': { label: '📝 Suspect Details', group: 'suspect', hint: 'Physical description, location, other details' },
+                        'system_details': { label: '💻 System/Device Details', group: 'technical', hint: 'Operating system, device type, software affected' },
+                        'technical_info': { label: '⚙️ Technical Information', group: 'technical', hint: 'Error messages, file names, network details' },
+                        'vulnerability_details': { label: '🔓 Vulnerability Details', group: 'technical', hint: 'How the system was compromised' },
+                        'attack_vector': { label: '🎯 Attack Method/Vector', group: 'technical', hint: 'How the attack was executed' },
+                        'security_level': { label: '🔒 Security Classification', group: 'security', hint: 'Public, Confidential, Restricted, etc.' },
+                        'target_info': { label: '🎯 Target Information', group: 'security', hint: 'Who or what was targeted' },
+                        'content_description': { label: '📄 Content Description', group: 'content', hint: 'Description of illegal content (no explicit details)' },
+                        'impact_assessment': { label: '📊 Impact Assessment', group: 'impact', hint: 'How has this affected you or your organization?' }
+                      } as const;
+
+                      // Determine crime category and get relevant fields
+                      const crimeType = complaint.crime_type || '';
+                      const category = crimeTypeToCategory[crimeType as keyof typeof crimeTypeToCategory] || '';
+                      const relevantFields = categoryFields[category as keyof typeof categoryFields] || [];
+                      
+                      // DEBUG: Log the complaint data to see what we actually have
+                      console.log('🔍 DEBUG - Complaint object:', complaint);
+                      console.log('🔍 DEBUG - Crime type:', crimeType);
+                      console.log('🔍 DEBUG - Category:', category);
+                      console.log('🔍 DEBUG - Relevant fields:', relevantFields);
+                      console.log('🔍 DEBUG - Field values:');
+                      relevantFields.forEach((fieldKey: string) => {
+                        console.log(`  ${fieldKey}:`, complaint[fieldKey]);
+                      });
+                      
+                      // Filter and collect only category-relevant populated fields
+                      const categorySpecificFields: Array<{key: string; label: string; group: string; value: string; hint?: string}> = [];
+                      
+                      relevantFields.forEach((fieldKey: string) => {
+                        const fieldConfig = allFieldConfigs[fieldKey as keyof typeof allFieldConfigs];
+                        if (!fieldConfig) return;
+                        
+                        let value = complaint[fieldKey];
+                        
+                        // Skip if field is not populated
+                        if (!value || value === '' || value === null || value === undefined) {
+                          return;
+                        }
+                        
+                        // Format values based on type
+                        if ('format' in fieldConfig && fieldConfig.format === 'currency' && typeof value === 'number' && value > 0) {
+                          value = `₱${value.toLocaleString('en-PH')}`;
+                        }
+                        
+                        // Special formatting for certain fields
+                        if (fieldKey === 'security_level' && typeof value === 'string') {
+                          value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+                        }
+                        
+                        if (fieldKey === 'suspect_relationship' && typeof value === 'string') {
+                          value = value.replace(/_/g, ' ').split(' ').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                          ).join(' ');
+                        }
+                        
+                        categorySpecificFields.push({
+                          key: fieldKey,
+                          label: fieldConfig.label,
+                          group: fieldConfig.group,
+                          value: value.toString(),
+                          hint: 'hint' in fieldConfig ? (fieldConfig as any).hint : undefined
+                        });
+                      });
+
+                      // Group fields by category for organized display
+                      const groupedFields = categorySpecificFields.reduce((groups: Record<string, any[]>, field) => {
+                        const group = field.group;
+                        if (!groups[group]) {
+                          groups[group] = [];
+                        }
+                        groups[group].push(field);
+                        return groups;
+                      }, {});
+
+                      // Define group display order and titles
+                      const groupOrder = [
+                        { key: 'location', title: '📍 Location Information' },
+                        { key: 'platform', title: '📱 Platform Details' },
+                        { key: 'financial', title: '💰 Financial Information' },
+                        { key: 'suspect', title: '🎭 Suspect Information' },
+                        { key: 'technical', title: '💻 Technical Details' },
+                        { key: 'security', title: '🔒 Security Information' },
+                        { key: 'content', title: '📄 Content Details' },
+                        { key: 'impact', title: '📊 Impact Assessment' }
+                      ];
+
+                      return { categorySpecificFields, groupedFields, groupOrder, category };
+                    })().categorySpecificFields.length > 0 ? (
+                      <>
+                        {/* Display crime category info */}
+                        <div className="mb-4 p-3 bg-lawbot-amber-50 dark:bg-lawbot-amber-900/20 rounded-lg border border-lawbot-amber-200 dark:border-lawbot-amber-800">
+                          <p className="text-sm font-medium text-lawbot-amber-800 dark:text-lawbot-amber-200">
+                            🏷️ <strong>Crime Category:</strong> {(() => {
+                              const { category } = (() => {
+                                const crimeTypeToCategory = {
+                                  'phishing': 'Communication & Social Media Crimes',
+                                  'socialEngineering': 'Communication & Social Media Crimes',
+                                  'spamMessages': 'Communication & Social Media Crimes',
+                                  'fakeSocialMediaProfiles': 'Communication & Social Media Crimes',
+                                  'onlineImpersonation': 'Communication & Social Media Crimes',
+                                  'businessEmailCompromise': 'Communication & Social Media Crimes',
+                                  'smsFraud': 'Communication & Social Media Crimes',
+                                  'onlineBankingFraud': 'Financial & Economic Crimes',
+                                  'creditCardFraud': 'Financial & Economic Crimes',
+                                  'investmentScams': 'Financial & Economic Crimes',
+                                  'cryptocurrencyFraud': 'Financial & Economic Crimes',
+                                  'onlineShoppingScams': 'Financial & Economic Crimes',
+                                  'paymentGatewayFraud': 'Financial & Economic Crimes',
+                                  'insuranceFraud': 'Financial & Economic Crimes',
+                                  'taxFraud': 'Financial & Economic Crimes',
+                                  'moneyLaundering': 'Financial & Economic Crimes',
+                                  'identityTheft': 'Data & Privacy Crimes',
+                                  'dataBreach': 'Data & Privacy Crimes',
+                                  'unauthorizedSystemAccess': 'Data & Privacy Crimes',
+                                  'corporateEspionage': 'Data & Privacy Crimes',
+                                  'governmentDataTheft': 'Data & Privacy Crimes',
+                                  'medicalRecordsTheft': 'Data & Privacy Crimes',
+                                  'personalInformationTheft': 'Data & Privacy Crimes',
+                                  'accountTakeover': 'Data & Privacy Crimes',
+                                  'ransomware': 'Malware & System Attacks',
+                                  'virusAttacks': 'Malware & System Attacks',
+                                  'trojanHorses': 'Malware & System Attacks',
+                                  'spyware': 'Malware & System Attacks',
+                                  'adware': 'Malware & System Attacks',
+                                  'worms': 'Malware & System Attacks',
+                                  'keyloggers': 'Malware & System Attacks',
+                                  'rootkits': 'Malware & System Attacks',
+                                  'cryptojacking': 'Malware & System Attacks',
+                                  'botnetAttacks': 'Malware & System Attacks',
+                                  'cyberstalking': 'Harassment & Exploitation',
+                                  'onlineHarassment': 'Harassment & Exploitation',
+                                  'cyberbullying': 'Harassment & Exploitation',
+                                  'revengePorn': 'Harassment & Exploitation',
+                                  'sextortion': 'Harassment & Exploitation',
+                                  'onlinePredatoryBehavior': 'Harassment & Exploitation',
+                                  'doxxing': 'Harassment & Exploitation',
+                                  'hateSpeech': 'Harassment & Exploitation',
+                                  'childSexualAbuseMaterial': 'Content-Related Crimes',
+                                  'illegalContentDistribution': 'Content-Related Crimes',
+                                  'copyrightInfringement': 'Content-Related Crimes',
+                                  'softwarePiracy': 'Content-Related Crimes',
+                                  'illegalOnlineGambling': 'Content-Related Crimes',
+                                  'onlineDrugTrafficking': 'Content-Related Crimes',
+                                  'illegalWeaponsSales': 'Content-Related Crimes',
+                                  'humanTrafficking': 'Content-Related Crimes',
+                                  'denialOfServiceAttacks': 'System Disruption & Sabotage',
+                                  'websiteDefacement': 'System Disruption & Sabotage',
+                                  'systemSabotage': 'System Disruption & Sabotage',
+                                  'networkIntrusion': 'System Disruption & Sabotage',
+                                  'sqlInjection': 'System Disruption & Sabotage',
+                                  'crossSiteScripting': 'System Disruption & Sabotage',
+                                  'manInTheMiddleAttacks': 'System Disruption & Sabotage',
+                                  'cyberterrorism': 'Government & Terrorism',
+                                  'cyberWarfare': 'Government & Terrorism',
+                                  'governmentSystemHacking': 'Government & Terrorism',
+                                  'electionInterference': 'Government & Terrorism',
+                                  'criticalInfrastructureAttacks': 'Government & Terrorism',
+                                  'propagandaDistribution': 'Government & Terrorism',
+                                  'stateSponsoredAttacks': 'Government & Terrorism',
+                                  'zeroDayExploits': 'Technical Exploitation',
+                                  'vulnerabilityExploitation': 'Technical Exploitation',
+                                  'backdoorCreation': 'Technical Exploitation',
+                                  'privilegeEscalation': 'Technical Exploitation',
+                                  'codeInjection': 'Technical Exploitation',
+                                  'bufferOverflowAttacks': 'Technical Exploitation',
+                                  'advancedPersistentThreats': 'Targeted Attacks',
+                                  'spearPhishing': 'Targeted Attacks',
+                                  'ceoFraud': 'Targeted Attacks',
+                                  'supplyChainAttacks': 'Targeted Attacks',
+                                  'insiderThreats': 'Targeted Attacks'
+                                };
+                                const crimeType = complaint.crime_type || '';
+                                const category = crimeTypeToCategory[crimeType as keyof typeof crimeTypeToCategory];
+                                return { category };
+                              })();
+                              return category || 'Unknown Category';
+                            })()}
+                          </p>
+                        </div>
+                        
+                        {/* Display category-specific fields */}
+                        {(() => {
+                          const { groupedFields, groupOrder } = (() => {
+                            // Re-execute for display
+                            const crimeTypeToCategory = {
+                              'phishing': 'Communication & Social Media Crimes',
+                              'socialEngineering': 'Communication & Social Media Crimes',
+                              'spamMessages': 'Communication & Social Media Crimes',
+                              'fakeSocialMediaProfiles': 'Communication & Social Media Crimes',
+                              'onlineImpersonation': 'Communication & Social Media Crimes',
+                              'businessEmailCompromise': 'Communication & Social Media Crimes',
+                              'smsFraud': 'Communication & Social Media Crimes',
+                              'onlineBankingFraud': 'Financial & Economic Crimes',
+                              'creditCardFraud': 'Financial & Economic Crimes',
+                              'investmentScams': 'Financial & Economic Crimes',
+                              'cryptocurrencyFraud': 'Financial & Economic Crimes',
+                              'onlineShoppingScams': 'Financial & Economic Crimes',
+                              'paymentGatewayFraud': 'Financial & Economic Crimes',
+                              'insuranceFraud': 'Financial & Economic Crimes',
+                              'taxFraud': 'Financial & Economic Crimes',
+                              'moneyLaundering': 'Financial & Economic Crimes',
+                              'identityTheft': 'Data & Privacy Crimes',
+                              'dataBreach': 'Data & Privacy Crimes',
+                              'unauthorizedSystemAccess': 'Data & Privacy Crimes',
+                              'corporateEspionage': 'Data & Privacy Crimes',
+                              'governmentDataTheft': 'Data & Privacy Crimes',
+                              'medicalRecordsTheft': 'Data & Privacy Crimes',
+                              'personalInformationTheft': 'Data & Privacy Crimes',
+                              'accountTakeover': 'Data & Privacy Crimes',
+                              'ransomware': 'Malware & System Attacks',
+                              'virusAttacks': 'Malware & System Attacks',
+                              'trojanHorses': 'Malware & System Attacks',
+                              'spyware': 'Malware & System Attacks',
+                              'adware': 'Malware & System Attacks',
+                              'worms': 'Malware & System Attacks',
+                              'keyloggers': 'Malware & System Attacks',
+                              'rootkits': 'Malware & System Attacks',
+                              'cryptojacking': 'Malware & System Attacks',
+                              'botnetAttacks': 'Malware & System Attacks',
+                              'cyberstalking': 'Harassment & Exploitation',
+                              'onlineHarassment': 'Harassment & Exploitation',
+                              'cyberbullying': 'Harassment & Exploitation',
+                              'revengePorn': 'Harassment & Exploitation',
+                              'sextortion': 'Harassment & Exploitation',
+                              'onlinePredatoryBehavior': 'Harassment & Exploitation',
+                              'doxxing': 'Harassment & Exploitation',
+                              'hateSpeech': 'Harassment & Exploitation',
+                              'childSexualAbuseMaterial': 'Content-Related Crimes',
+                              'illegalContentDistribution': 'Content-Related Crimes',
+                              'copyrightInfringement': 'Content-Related Crimes',
+                              'softwarePiracy': 'Content-Related Crimes',
+                              'illegalOnlineGambling': 'Content-Related Crimes',
+                              'onlineDrugTrafficking': 'Content-Related Crimes',
+                              'illegalWeaponsSales': 'Content-Related Crimes',
+                              'humanTrafficking': 'Content-Related Crimes',
+                              'denialOfServiceAttacks': 'System Disruption & Sabotage',
+                              'websiteDefacement': 'System Disruption & Sabotage',
+                              'systemSabotage': 'System Disruption & Sabotage',
+                              'networkIntrusion': 'System Disruption & Sabotage',
+                              'sqlInjection': 'System Disruption & Sabotage',
+                              'crossSiteScripting': 'System Disruption & Sabotage',
+                              'manInTheMiddleAttacks': 'System Disruption & Sabotage',
+                              'cyberterrorism': 'Government & Terrorism',
+                              'cyberWarfare': 'Government & Terrorism',
+                              'governmentSystemHacking': 'Government & Terrorism',
+                              'electionInterference': 'Government & Terrorism',
+                              'criticalInfrastructureAttacks': 'Government & Terrorism',
+                              'propagandaDistribution': 'Government & Terrorism',
+                              'stateSponsoredAttacks': 'Government & Terrorism',
+                              'zeroDayExploits': 'Technical Exploitation',
+                              'vulnerabilityExploitation': 'Technical Exploitation',
+                              'backdoorCreation': 'Technical Exploitation',
+                              'privilegeEscalation': 'Technical Exploitation',
+                              'codeInjection': 'Technical Exploitation',
+                              'bufferOverflowAttacks': 'Technical Exploitation',
+                              'advancedPersistentThreats': 'Targeted Attacks',
+                              'spearPhishing': 'Targeted Attacks',
+                              'ceoFraud': 'Targeted Attacks',
+                              'supplyChainAttacks': 'Targeted Attacks',
+                              'insiderThreats': 'Targeted Attacks'
+                            };
+
+                            const categoryFields = {
+                              'Communication & Social Media Crimes': [
+                                'incident_location', 'platform_website', 'account_reference', 
+                                'estimated_loss', 'suspect_name', 'suspect_relationship', 
+                                'suspect_contact', 'suspect_details'
+                              ],
+                              'Financial & Economic Crimes': [
+                                'incident_location', 'platform_website', 'account_reference', 
+                                'estimated_loss', 'suspect_name', 'suspect_contact'
+                              ],
+                              'Data & Privacy Crimes': [
+                                'incident_location', 'account_reference', 'technical_info', 
+                                'vulnerability_details', 'security_level', 'impact_assessment'
+                              ],
+                              'Malware & System Attacks': [
+                                'system_details', 'technical_info', 'attack_vector'
+                              ],
+                              'Harassment & Exploitation': [
+                                'incident_location', 'platform_website', 'suspect_name', 
+                                'suspect_relationship', 'suspect_contact', 'suspect_details', 
+                                'content_description'
+                              ],
+                              'Content-Related Crimes': [
+                                'incident_location', 'platform_website', 'estimated_loss', 
+                                'suspect_name', 'suspect_contact', 'content_description'
+                              ],
+                              'System Disruption & Sabotage': [
+                                'system_details', 'technical_info', 'vulnerability_details', 
+                                'attack_vector', 'impact_assessment'
+                              ],
+                              'Government & Terrorism': [
+                                'incident_location', 'security_level', 'target_info', 
+                                'impact_assessment'
+                              ],
+                              'Technical Exploitation': [
+                                'system_details', 'technical_info', 'vulnerability_details', 
+                                'target_info', 'attack_vector', 'impact_assessment'
+                              ],
+                              'Targeted Attacks': [
+                                'target_info', 'attack_vector', 'impact_assessment'
+                              ]
+                            };
+
+                            const allFieldConfigs = {
+                              'incident_location': { label: '📍 Incident Location', group: 'location' },
+                              'platform_website': { label: '📱 Platform/Website', group: 'platform' },
+                              'account_reference': { label: '🔢 Account/Reference', group: 'financial' },
+                              'estimated_loss': { label: '💰 Financial Loss', group: 'financial', format: 'currency' },
+                              'suspect_name': { label: '🎭 Suspect Name', group: 'suspect' },
+                              'suspect_relationship': { label: '👥 Suspect Relationship', group: 'suspect' },
+                              'suspect_contact': { label: '📞 Suspect Contact', group: 'suspect' },
+                              'suspect_details': { label: '📝 Suspect Details', group: 'suspect' },
+                              'system_details': { label: '💻 System Details', group: 'technical' },
+                              'technical_info': { label: '⚙️ Technical Information', group: 'technical' },
+                              'vulnerability_details': { label: '🔓 Vulnerability Details', group: 'technical' },
+                              'attack_vector': { label: '🎯 Attack Method/Vector', group: 'technical' },
+                              'security_level': { label: '🔒 Security Level', group: 'security' },
+                              'target_info': { label: '🎯 Target Information', group: 'security' },
+                              'content_description': { label: '📄 Content Description', group: 'content' },
+                              'impact_assessment': { label: '📊 Impact Assessment', group: 'impact' }
+                            };
+
+                            const crimeType = complaint.crime_type || '';
+                            const category = crimeTypeToCategory[crimeType as keyof typeof crimeTypeToCategory] || '';
+                            const relevantFields = categoryFields[category as keyof typeof categoryFields] || [];
+                            
+                            const categorySpecificFields: Array<{key: string; label: string; group: string; value: string; hint?: string}> = [];
+                            relevantFields.forEach((fieldKey: string) => {
+                              const fieldConfig = allFieldConfigs[fieldKey as keyof typeof allFieldConfigs];
+                              if (!fieldConfig) return;
+                              
+                              let value = complaint[fieldKey];
+                              
+                              if (!value || value === '' || value === null || value === undefined) {
+                                return;
+                              }
+                              
+                              // Format values based on type
+                              if ('format' in fieldConfig && fieldConfig.format === 'currency' && typeof value === 'number' && value > 0) {
+                                value = `₱${value.toLocaleString('en-PH')}`;
+                              }
+                              
+                              // Special formatting for certain fields
+                              if (fieldKey === 'security_level' && typeof value === 'string') {
+                                value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+                              }
+                              
+                              if (fieldKey === 'suspect_relationship' && typeof value === 'string') {
+                                value = value.replace(/_/g, ' ').split(' ').map(word => 
+                                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                ).join(' ');
+                              }
+                              
+                              categorySpecificFields.push({
+                                key: fieldKey,
+                                label: fieldConfig.label,
+                                group: fieldConfig.group,
+                                value: value.toString(),
+                                hint: 'hint' in fieldConfig ? (fieldConfig as any).hint : undefined
+                              });
+                            });
+
+                            const groupedFields = categorySpecificFields.reduce((groups: Record<string, any[]>, field) => {
+                              const group = field.group;
+                              if (!groups[group]) {
+                                groups[group] = [];
+                              }
+                              groups[group].push(field);
+                              return groups;
+                            }, {});
+
+                            const groupOrder = [
+                              { key: 'location', title: '📍 Location Information' },
+                              { key: 'platform', title: '📱 Platform Details' },
+                              { key: 'financial', title: '💰 Financial Information' },
+                              { key: 'suspect', title: '🎭 Suspect Information' },
+                              { key: 'technical', title: '💻 Technical Details' },
+                              { key: 'security', title: '🔒 Security Information' },
+                              { key: 'content', title: '📄 Content Details' },
+                              { key: 'impact', title: '📊 Impact Assessment' }
+                            ];
+
+                            return { groupedFields, groupOrder };
+                          })();
+                          
+                          return groupOrder.map(group => {
+                            const fields = groupedFields[group.key];
+                            if (!fields || fields.length === 0) return null;
+                            
+                            return (
+                              <div key={group.key} className="space-y-3">
+                                <div className="flex items-center space-x-2 mb-3">
+                                  <div className="h-px bg-lawbot-amber-300 dark:bg-lawbot-amber-700 flex-1"></div>
+                                  <h4 className="text-sm font-bold text-lawbot-amber-700 dark:text-lawbot-amber-300 px-3 py-1 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 rounded-full">
+                                    {group.title}
+                                  </h4>
+                                  <div className="h-px bg-lawbot-amber-300 dark:bg-lawbot-amber-700 flex-1"></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {fields.map((field: {key: string; label: string; value: string; hint?: string}, index: number) => (
+                                    <div key={index} className="p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 hover:border-lawbot-blue-300 dark:hover:border-lawbot-blue-700 transition-colors">
+                                      <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">
+                                        {field.label}
+                                      </label>
+                                      {field.hint && (
+                                        <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500 mb-2 italic">
+                                          {field.hint}
+                                        </p>
+                                      )}
+                                      <p className="text-lawbot-slate-900 dark:text-white font-medium break-words">
+                                        {field.value}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }).filter(Boolean);
+                        })()}
+                      </>
+                    ) : (
+                      <div className="p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-700/50 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-600 text-center">
+                        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                          No additional crime details provided for this {(() => {
+                            const crimeTypeToCategory = {
+                              'phishing': 'Communication & Social Media Crimes',
+                              'socialEngineering': 'Communication & Social Media Crimes',
+                              'onlineBankingFraud': 'Financial & Economic Crimes',
+                              'identityTheft': 'Data & Privacy Crimes',
+                              'ransomware': 'Malware & System Attacks',
+                              'cyberstalking': 'Harassment & Exploitation',
+                              'childSexualAbuseMaterial': 'Content-Related Crimes',
+                              'denialOfServiceAttacks': 'System Disruption & Sabotage',
+                              'cyberterrorism': 'Government & Terrorism',
+                              'zeroDayExploits': 'Technical Exploitation',
+                              'advancedPersistentThreats': 'Targeted Attacks'
+                            };
+                            const category = crimeTypeToCategory[complaint.crime_type as keyof typeof crimeTypeToCategory] || 'cybercrime';
+                            return category.toLowerCase();
+                          })()} case.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Enhanced AI Summarizer Section */}
                 <Card className="card-modern bg-gradient-to-br from-lawbot-purple-50/30 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
@@ -850,7 +1459,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <span>⚡ System Recommendations</span>
                         </h4>
                         <ul className="space-y-3">
-                          {aiAnalysis.recommendations.map((rec, index) => (
+                          {aiAnalysis.recommendations.map((rec: string, index: number) => (
                             <li key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                               <CheckCircle className="h-4 w-4 text-lawbot-emerald-500 mt-0.5 flex-shrink-0" />
                               <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{rec}</span>
@@ -1107,6 +1716,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
           fetchCaseDetails()
         }}
         caseData={complaint}
+        onStatusUpdate={(newStatus: string, remarks: string) => {
+          // Handle the status update callback
+          console.log('Status updated:', newStatus, remarks)
+          fetchCaseDetails()
+        }}
       />
     </div>
   )

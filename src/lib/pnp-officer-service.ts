@@ -73,36 +73,7 @@ export interface PNPOfficerStats {
 export interface OfficerCase {
   id: string
   complaint_id: string
-  complaint: {
-    id: string
-    complaint_number: string
-    title: string
-    description: string
-    crime_type: string
-    status: string
-    priority: string
-    risk_score: number
-    estimated_loss: number | null
-    incident_date_time: string
-    incident_location: string
-    assigned_officer: string
-    assigned_officer_id: string
-    assigned_unit: string
-    unit_id: string
-    platform_website?: string
-    account_reference?: string
-    ai_priority?: string
-    ai_risk_score?: number
-    ai_confidence_score?: number
-    last_ai_assessment?: string
-    created_at: string
-    updated_at: string
-    user_profiles: {
-      full_name: string
-      email: string
-      phone_number: string
-    }
-  }
+  complaint: any
   assignment_type: string
   status: string
   notes?: string
@@ -305,7 +276,6 @@ export class PNPOfficerService {
       console.log('🔄 Fetching cases for officer:', targetOfficerId)
       
       // Get cases directly from complaints table using assigned_officer_id
-      // Simplified query without complex joins
       const { data: directCases, error: directError } = await supabase
         .from('complaints')
         .select('*')
@@ -327,6 +297,9 @@ export class PNPOfficerService {
       // For each complaint, fetch the user profile separately
       const casesWithUserProfiles = await Promise.all(
         directCases.map(async (complaint: any) => {
+          // Log each complaint to verify fields are loaded
+          console.log('🔍 PNP Officer Service - Processing case:', complaint.complaint_number || complaint.id);
+          
           // Fetch user profile for this complaint
           let userProfile = null
           if (complaint.user_id) {

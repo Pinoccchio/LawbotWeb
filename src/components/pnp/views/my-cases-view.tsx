@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
-import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import PNPOfficerService, { OfficerCase } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
@@ -36,7 +35,6 @@ export function MyCasesView() {
   // Modal state
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
-  const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
 
   // Fetch evidence count for a complaint
@@ -123,8 +121,9 @@ export function MyCasesView() {
   }
 
   const handleUpdateStatus = (caseData: any) => {
+    // Instead of a separate status modal, we'll use the action tab in PNPCaseDetailModal
     setSelectedCase(caseData)
-    setStatusModalOpen(true)
+    setDetailModalOpen(true)
   }
 
   const handleViewEvidence = (caseData: any) => {
@@ -132,16 +131,16 @@ export function MyCasesView() {
     setEvidenceModalOpen(true)
   }
 
-  const handleStatusUpdate = async (newStatus: string, updateData: any) => {
+  const handleStatusUpdate = async (newStatus: string, remarks: string) => {
     try {
-      console.log('🔄 Updating case status:', { newStatus, updateData })
+      console.log('🔄 Updating case status:', { newStatus, remarks })
       
       if (selectedCase) {
         // Update case status in database
         await PNPOfficerService.updateCaseStatus(
           selectedCase.complaint?.id || selectedCase.complaint_id, 
           newStatus, 
-          updateData.notes
+          remarks
         )
         
         console.log('✅ Case status updated successfully')
@@ -150,7 +149,7 @@ export function MyCasesView() {
         await fetchOfficerCases()
       }
       
-      setStatusModalOpen(false)
+      setDetailModalOpen(false)
     } catch (error) {
       console.error('❌ Error updating case status:', error)
       // TODO: Show error toast to user
@@ -516,11 +515,10 @@ export function MyCasesView() {
       )}
 
       {/* Modals */}
-      <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
-      <StatusUpdateModal 
-        isOpen={statusModalOpen} 
-        onClose={() => setStatusModalOpen(false)} 
-        caseData={selectedCase}
+      <CaseDetailModal 
+        isOpen={detailModalOpen} 
+        onClose={() => setDetailModalOpen(false)} 
+        caseData={selectedCase} 
         onStatusUpdate={handleStatusUpdate}
       />
       <EvidenceViewerModal
