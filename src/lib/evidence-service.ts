@@ -166,6 +166,24 @@ export class EvidenceService {
             }
           }
           
+          // Fetch user profile name if uploaded_by exists
+          let uploaderName = file.uploaded_by || 'System'
+          if (file.uploaded_by && file.uploaded_by !== 'System') {
+            try {
+              const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('full_name')
+                .eq('firebase_uid', file.uploaded_by)
+                .single()
+              
+              if (userProfile && userProfile.full_name) {
+                uploaderName = userProfile.full_name
+              }
+            } catch (err) {
+              console.log(`⚠️ Could not fetch user profile for ${file.uploaded_by}`)
+            }
+          }
+          
           return {
             id: file.id,
             complaint_id: file.complaint_id,
@@ -177,6 +195,7 @@ export class EvidenceService {
             uploaded_at: file.uploaded_at,
             created_at: file.created_at,
             uploaded_by: file.uploaded_by,
+            uploaded_by_name: uploaderName,  // Add full name
             is_valid: file.is_valid,
             validation_notes: file.validation_notes,
             complaint: complaintData

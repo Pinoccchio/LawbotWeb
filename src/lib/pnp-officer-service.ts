@@ -850,23 +850,52 @@ export class PNPOfficerService {
       
       console.log(`✅ Found ${evidenceFiles.length} evidence files`)
       
-      return evidenceFiles.map((file: any) => ({
-        id: file.id,
-        complaint_id: file.complaint_id,
-        file_name: file.file_name,
-        file_type: file.file_type,
-        file_size: file.file_size,
-        file_url: file.file_url,
-        uploaded_by: file.uploaded_by,
-        uploaded_at: file.uploaded_at,
-        description: file.description,
-        category: file.category || 'document',
-        is_verified: file.is_verified || false,
-        verification_date: file.verification_date,
-        verified_by: file.verified_by,
-        hash: file.hash,
-        metadata: file.metadata
-      }))
+      // Fetch user profiles for uploaded_by names
+      const enrichedFiles = await Promise.all(
+        evidenceFiles.map(async (file: any) => {
+          let uploaderName = file.uploaded_by || 'System'
+          
+          // Try to fetch user profile name if uploaded_by exists
+          if (file.uploaded_by && file.uploaded_by !== 'System') {
+            try {
+              const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('full_name')
+                .eq('firebase_uid', file.uploaded_by)
+                .single()
+              
+              if (userProfile && userProfile.full_name) {
+                uploaderName = userProfile.full_name
+              }
+            } catch (err) {
+              console.log(`⚠️ Could not fetch user profile for ${file.uploaded_by}`)
+            }
+          }
+          
+          return {
+            id: file.id,
+            complaint_id: file.complaint_id,
+            file_name: file.file_name,
+            file_type: file.file_type,
+            file_size: file.file_size,
+            file_url: file.file_url,
+            download_url: file.download_url,  // Add download URL for previews
+            uploaded_by: file.uploaded_by,
+            uploaded_by_name: uploaderName,  // Add full name
+            uploaded_at: file.uploaded_at,
+            description: file.description,
+            category: file.category || 'document',
+            is_valid: file.is_valid,  // Add is_valid for validation status
+            is_verified: file.is_verified || false,
+            verification_date: file.verification_date,
+            verified_by: file.verified_by,
+            hash: file.hash,
+            metadata: file.metadata
+          }
+        })
+      )
+      
+      return enrichedFiles
     } catch (error) {
       console.error('❌ Error fetching evidence files:', error)
       return []
@@ -991,6 +1020,7 @@ export interface EvidenceFile {
   file_size: number
   file_url: string
   uploaded_by: string
+  uploaded_by_name?: string  // Add full name of uploader
   uploaded_at: string
   description?: string
   category: string
@@ -999,6 +1029,8 @@ export interface EvidenceFile {
   verified_by?: string
   hash?: string
   metadata?: any
+  download_url?: string  // Add download URL
+  is_valid?: boolean  // Add validation status
 }
 
 // Search interface for type safety

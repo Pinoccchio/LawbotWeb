@@ -29,7 +29,10 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import PNPOfficerService from "@/lib/pnp-officer-service"
+import EvidenceService from "@/lib/evidence-service"
 import { supabase } from "@/lib/supabase"
+import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
+import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 
 interface CaseDetailModalProps {
   isOpen: boolean
@@ -43,6 +46,9 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   const [evidenceFiles, setEvidenceFiles] = useState<any[]>([])
   const [complaintDetails, setComplaintDetails] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
+  const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
 
   useEffect(() => {
     if (isOpen && caseData) {
@@ -202,6 +208,81 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     if (fileType?.startsWith('video/')) return 'video'
     if (fileType?.includes('pdf') || fileType?.includes('document')) return 'document'
     return 'text'
+  }
+
+  // Handle view evidence
+  const handleViewEvidence = (file: any) => {
+    setSelectedEvidence(file)
+    setEvidenceModalOpen(true)
+  }
+
+  // Handle contact complainant
+  const handleContactComplainant = () => {
+    if (userProfile?.phone_number || complaint.phone_number) {
+      const phoneNumber = userProfile?.phone_number || complaint.phone_number
+      window.open(`tel:${phoneNumber}`, '_self')
+    } else if (userProfile?.email || complaint.email) {
+      const email = userProfile?.email || complaint.email
+      window.open(`mailto:${email}?subject=Regarding Case ${complaint.complaint_number}`, '_blank')
+    } else {
+      alert('No contact information available for this complainant.')
+    }
+  }
+
+  // Handle generate report
+  const handleGenerateReport = () => {
+    // For now, just show an alert. In production, this would generate a PDF report
+    alert(`Report generation for Case ${complaint.complaint_number} is being prepared. This feature will be available soon.`)
+  }
+
+  // Handle download evidence
+  const handleDownloadEvidence = async (file: any) => {
+    try {
+      const downloadUrl = await EvidenceService.downloadEvidence(file.id)
+      
+      if (downloadUrl) {
+        // Use blob download approach to bypass CORS restrictions
+        try {
+          // Fetch the file as a blob
+          const response = await fetch(downloadUrl)
+          if (!response.ok) throw new Error('Failed to fetch file')
+          
+          const blob = await response.blob()
+          
+          // Create a blob URL
+          const blobUrl = URL.createObjectURL(blob)
+          
+          // Create temporary anchor element to force download
+          const link = document.createElement('a')
+          link.href = blobUrl
+          link.download = file.file_name // Force download with original filename
+          document.body.appendChild(link)
+          link.click()
+          
+          // Cleanup
+          document.body.removeChild(link)
+          URL.revokeObjectURL(blobUrl)
+          
+          console.log('✅ File downloaded successfully:', file.file_name)
+        } catch (fetchError) {
+          console.error('❌ Blob download failed, trying direct download:', fetchError)
+          
+          // Fallback to direct download
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = file.file_name
+          link.target = '_blank'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        }
+      } else {
+        alert('Failed to generate download link. Please try again.')
+      }
+    } catch (error) {
+      console.error('❌ Error downloading evidence:', error)
+      alert('Error downloading evidence file. Please try again.')
+    }
   }
 
   return (
@@ -679,11 +760,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                               </div>
                             </div>
                             <div className="flex space-x-3">
-                              <Button size="sm" className="btn-gradient">
+                              <Button size="sm" className="btn-gradient" onClick={() => handleViewEvidence(file)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
                               </Button>
-                              <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50">
+                              <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleDownloadEvidence(file)}>
                                 <Download className="h-4 w-4 mr-2" />
                                 Download
                               </Button>
@@ -769,13 +850,13 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline">
+                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline" onClick={handleContactComplainant}>
                         <div className="p-1 bg-lawbot-blue-500 rounded-full mr-3">
                           <Phone className="h-3 w-3 text-white" />
                         </div>
                         📞 Contact Complainant
                       </Button>
-                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline">
+                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline" onClick={() => setStatusModalOpen(true)}>
                         <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
                           <FileText className="h-3 w-3 text-white" />
                         </div>
@@ -806,7 +887,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline">
+                      <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline" onClick={handleGenerateReport}>
                         <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
                           <Download className="h-3 w-3 text-white" />
                         </div>
@@ -839,6 +920,31 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
           )}
         </div>
       </Card>
+      
+      {/* Evidence Viewer Modal */}
+      <EvidenceViewerModal
+        isOpen={evidenceModalOpen}
+        onClose={() => {
+          setEvidenceModalOpen(false)
+          setSelectedEvidence(null)
+        }}
+        caseData={{ 
+          id: complaint.complaint_number || complaint.id, 
+          title: `Evidence: ${selectedEvidence?.file_name || "Unknown"}`,
+          evidenceFile: selectedEvidence
+        }}
+      />
+      
+      {/* Status Update Modal */}
+      <StatusUpdateModal
+        isOpen={statusModalOpen}
+        onClose={() => {
+          setStatusModalOpen(false)
+          // Refresh case details after status update
+          fetchCaseDetails()
+        }}
+        caseData={complaint}
+      />
     </div>
   )
 }

@@ -406,7 +406,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           </div>
                           <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                             <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">👮 Uploaded By</Label>
-                            <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{selectedFile.uploaded_by || 'System'}</p>
+                            <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{(selectedFile as any).uploaded_by_name || selectedFile.uploaded_by || 'System'}</p>
                           </div>
                           <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                             <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">📅 Upload Date</Label>
