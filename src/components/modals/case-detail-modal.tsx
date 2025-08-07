@@ -70,6 +70,72 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     complexity: '⚖️ Complexity analysis required'
   })
 
+  // Generate initial key details from case data
+  const generateInitialKeyDetails = (complaint: any, evidenceCount: number = 0) => {
+    const details = {
+      financialImpact: '💰 Financial impact to be assessed',
+      victimProfile: '👥 Single victim case',
+      evidenceAssessment: '📎 Evidence package pending review',
+      riskFactors: '🚨 Risk assessment in progress',
+      complexity: '⚖️ Complexity analysis required'
+    }
+    
+    // Financial Impact
+    if (complaint.estimated_loss && complaint.estimated_loss > 0) {
+      const amount = complaint.estimated_loss.toLocaleString()
+      details.financialImpact = `💰 Loss: ₱${amount}`
+    }
+    
+    // Victim Profile
+    const profileParts = []
+    if (complaint.incident_location) {
+      profileParts.push(complaint.incident_location)
+    }
+    if (complaint.platform_website) {
+      profileParts.push(`${complaint.platform_website} user`)
+    }
+    if (complaint.suspect_name) {
+      profileParts.push('suspect identified')
+    }
+    if (profileParts.length > 0) {
+      details.victimProfile = `👥 ${profileParts.join(', ')}`
+    }
+    
+    // Evidence Assessment
+    if (evidenceCount > 0) {
+      details.evidenceAssessment = `📎 ${evidenceCount} evidence files available`
+    } else if (complaint.platform_website || complaint.technical_info) {
+      details.evidenceAssessment = '📎 Digital evidence available'
+    }
+    
+    // Risk Factors
+    if (complaint.priority === 'high') {
+      details.riskFactors = '🚨 High priority case'
+    } else if (complaint.priority === 'medium') {
+      details.riskFactors = '🚨 Medium priority case'
+    } else {
+      details.riskFactors = '🚨 Standard priority case'
+    }
+    
+    // Complexity
+    const complexityIndicators = 0 +
+      (complaint.technical_info ? 1 : 0) +
+      (complaint.system_details ? 1 : 0) +
+      (complaint.vulnerability_details ? 1 : 0) +
+      (complaint.suspect_details ? 1 : 0) +
+      (complaint.impact_assessment ? 1 : 0)
+    
+    if (complexityIndicators >= 3) {
+      details.complexity = '⚖️ Complex investigation required'
+    } else if (complexityIndicators > 0) {
+      details.complexity = '⚖️ Moderate complexity case'
+    } else {
+      details.complexity = '⚖️ Standard investigation'
+    }
+    
+    return details
+  }
+
   // Reset all case-specific state to default values
   const resetCaseState = () => {
     // Reset case data
@@ -102,6 +168,12 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     if (isOpen && caseData) {
       // Reset all state before fetching new case details
       resetCaseState()
+      
+      // Immediately set initial key details based on available data
+      const complaint = caseData.complaint || caseData
+      const initialDetails = generateInitialKeyDetails(complaint, 0)
+      setAiKeyDetails(initialDetails)
+      
       fetchCaseDetails()
     }
   }, [isOpen, caseData])
@@ -163,6 +235,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
       // Fetch evidence files
       const files = await PNPOfficerService.getEvidenceFiles(complaintId)
       setEvidenceFiles(files)
+      
+      // Set initial key details based on actual data
+      const initialDetails = generateInitialKeyDetails(complaintDetails || complaint, files.length)
+      setAiKeyDetails(initialDetails)
       
       // Generate AI summary for the case
       generateAISummary(complaintDetails || complaint, files.length)

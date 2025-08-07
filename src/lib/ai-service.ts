@@ -429,14 +429,8 @@ Note: Base your analysis only on the information provided. If critical fields ar
       // Detect crime category
       const category = this.detectCrimeCategory(caseData.crime_type)
       
-      // Build dynamic fields list for prompt
-      let availableInfo = ''
-      if (caseData.platform_website) availableInfo += `Platform: ${caseData.platform_website}\n`
-      if (caseData.estimated_loss) availableInfo += `Financial Loss: ₱${caseData.estimated_loss.toLocaleString()}\n`
-      if (caseData.suspect_name) availableInfo += `Suspect Identified: Yes\n`
-      if (caseData.incident_location) availableInfo += `Location: ${caseData.incident_location}\n`
-      if (caseData.technical_info || caseData.system_details) availableInfo += `Technical Details: Available\n`
-      if (caseData.evidence_count) availableInfo += `Evidence Files: ${caseData.evidence_count}\n`
+      // Use comprehensive dynamic field builder
+      const dynamicFields = this.buildDynamicPrompt(caseData, category)
       
       const prompt = `
 You are generating action items for a Philippine National Police cybercrime investigation.
@@ -446,26 +440,59 @@ Crime Type: ${caseData.crime_type}
 Category: ${category}
 Priority: ${caseData.priority}
 Status: ${caseData.status}
-${availableInfo}
+Risk Score: ${caseData.risk_score || 'Not assessed'}
 
-Based on the specific crime type and available information, provide investigation action items.
+CASE DETAILS:
+${caseData.description}
+
+DYNAMIC FIELDS:
+${dynamicFields}
+
+Assigned Unit: ${caseData.assigned_unit || 'Not assigned'}
+Assigned Officer: ${caseData.assigned_officer || 'Not assigned'}
+
+Analyze ALL provided information to generate specific, actionable items based on:
+- Available suspect information (name, contact, relationship, details)
+- Technical details (system info, vulnerabilities, attack vectors)
+- Financial impact and loss amounts
+- Platform and location specifics
+- Security levels and impact assessments
+- Evidence count and types
 
 For ${category}, focus on:
 ${this.getCategoryActionFocus(category)}
 
 Generate 3 HIGH priority, 3 MEDIUM priority, and 3 LOW priority actions.
 Format as JSON: { "high": [], "medium": [], "low": [] }
-Each action should be:
-- Specific to this crime type
-- Under 10 words
-- Actionable by PNP officers
-- Based on available case information
 
-Example format:
+Each action should be:
+- Specific to this crime type and available data
+- Under 10 words
+- Directly actionable by PNP officers
+- Based on the specific fields provided
+
+HIGH priority actions should address:
+- Immediate threats (if suspect info available)
+- Evidence preservation (if technical details available)
+- Victim safety (if harassment/exploitation indicators)
+- Financial recovery (if loss amount specified)
+
+MEDIUM priority actions should focus on:
+- Investigation expansion using platform/location data
+- Technical analysis of system/vulnerability details
+- Suspect tracking using available contact info
+- Cross-referencing with similar cases
+
+LOW priority actions should cover:
+- Documentation and reporting
+- Long-term monitoring
+- Prevention recommendations
+
+Example considering dynamic fields:
 {
-  "high": ["Contact victim immediately", "Preserve digital evidence", "Secure crime scene"],
-  "medium": ["Interview witnesses", "Check CCTV footage", "Analyze phone records"],
-  "low": ["File detailed report", "Update case database", "Schedule follow-up"]
+  "high": ["Trace suspect via phone: [actual number]", "Secure [specific platform] account immediately", "Freeze transactions worth ₱[amount]"],
+  "medium": ["Analyze [specific vulnerability] in [system]", "Contact [platform] security team", "Interview contacts at [location]"],
+  "low": ["Document [attack vector] methodology", "Monitor [platform] for similar activity", "Update [security level] protocols"]
 }
 `
 
@@ -584,15 +611,8 @@ Example format:
       // Detect crime category
       const category = this.detectCrimeCategory(caseData.crime_type)
       
-      // Build available information
-      let availableInfo = ''
-      if (caseData.estimated_loss) availableInfo += `Financial Loss: ₱${caseData.estimated_loss.toLocaleString()}\n`
-      if (caseData.platform_website) availableInfo += `Platform: ${caseData.platform_website}\n`
-      if (caseData.suspect_name) availableInfo += `Suspect Known: Yes\n`
-      if (caseData.suspect_relationship) availableInfo += `Relationship: ${caseData.suspect_relationship}\n`
-      if (caseData.incident_location) availableInfo += `Location: ${caseData.incident_location}\n`
-      if (caseData.evidence_count) availableInfo += `Evidence Files: ${caseData.evidence_count}\n`
-      if (caseData.system_details || caseData.technical_info) availableInfo += `Technical Details: Available\n`
+      // Use comprehensive dynamic field builder
+      const dynamicFields = this.buildDynamicPrompt(caseData, category)
 
       const prompt = `
 Generate key case details for a Philippine National Police cybercrime investigation.
@@ -601,16 +621,27 @@ CASE INFORMATION:
 Crime Type: ${caseData.crime_type}
 Category: ${category}
 Priority: ${caseData.priority}
-Description: ${caseData.description.substring(0, 200)}...
-${availableInfo}
+Status: ${caseData.status}
+Risk Score: ${caseData.risk_score || 'Not assessed'}
+
+CASE DETAILS:
+${caseData.description}
+
+DYNAMIC FIELDS:
+${dynamicFields}
+
+Assigned Unit: ${caseData.assigned_unit || 'Not assigned'}
+Assigned Officer: ${caseData.assigned_officer || 'Not assigned'}
+
+Analyze ALL provided information including technical details, suspect information, security levels, and impact assessments.
 
 Generate 5 key insights as brief, professional assessments (under 8 words each):
 
-1. FINANCIAL IMPACT: Assess monetary risk/damage potential
-2. VICTIM PROFILE: Analyze victim vulnerability/characteristics  
-3. EVIDENCE QUALITY: Evaluate strength of evidence package
-4. RISK FACTORS: Identify escalation/safety concerns
-5. CASE COMPLEXITY: Assess investigation difficulty
+1. FINANCIAL IMPACT: Assess monetary risk/damage potential based on estimated_loss and crime type
+2. VICTIM PROFILE: Analyze victim vulnerability using location, platform, and relationship data  
+3. EVIDENCE QUALITY: Evaluate strength using evidence count, technical details, and available documentation
+4. RISK FACTORS: Identify concerns using suspect info, security level, vulnerability details
+5. CASE COMPLEXITY: Assess difficulty using technical complexity, attack vectors, and impact scope
 
 Format as JSON:
 {
@@ -621,7 +652,11 @@ Format as JSON:
   "complexity": "⚖️ Brief assessment here"
 }
 
-Make assessments specific to the crime type and available information.
+Base your assessment on ALL available fields, especially:
+- For financial crimes: Use estimated_loss, platform_website, account_reference
+- For technical crimes: Use system_details, technical_info, vulnerability_details, attack_vector
+- For harassment: Use suspect details, relationship, platform information
+- For security crimes: Use security_level, target_info, impact_assessment
 `
 
       const result = await model.generateContent(prompt)
@@ -641,64 +676,120 @@ Make assessments specific to the crime type and available information.
     } catch (error) {
       console.error('❌ Error generating AI key details:', error)
       
-      // Generate intelligent fallback based on category and available data
+      // Generate intelligent fallback based on ALL available dynamic fields
       const category = this.detectCrimeCategory(caseData.crime_type)
       
+      // Build comprehensive fallback values using actual data
       let financialImpact = '💰 Financial impact to be assessed'
       let victimProfile = '👥 Single victim case'  
       let evidenceAssessment = `📎 ${caseData.evidence_count || 0} evidence files submitted`
       let riskFactors = '🚨 Standard risk assessment needed'
       let complexity = '⚖️ Moderate complexity investigation'
       
-      // Category-specific intelligent fallbacks
-      switch (category) {
-        case CrimeCategory.FINANCIAL_ECONOMIC:
-          if (caseData.estimated_loss) {
-            financialImpact = `💰 Direct loss: ₱${caseData.estimated_loss.toLocaleString()}`
-          } else {
-            financialImpact = '💰 High financial risk potential'
-          }
-          riskFactors = '🚨 Account security compromise risk'
-          complexity = '⚖️ Complex financial investigation'
-          break
-          
-        case CrimeCategory.HARASSMENT_EXPLOITATION:
-          victimProfile = caseData.suspect_relationship 
-            ? `👥 Known suspect: ${caseData.suspect_relationship}`
-            : '👥 Vulnerable victim - safety priority'
-          riskFactors = '🚨 High escalation risk - victim safety'
-          if (caseData.platform_website) {
-            evidenceAssessment = `📎 ${caseData.platform_website} evidence collected`
-          }
-          break
-          
-        case CrimeCategory.MALWARE_SYSTEM:
-        case CrimeCategory.TECHNICAL_EXPLOITATION:
-          financialImpact = '💰 System damage and downtime costs'
-          riskFactors = '🚨 Ongoing security threat active'
-          complexity = '⚖️ High-tech investigation required'
-          if (caseData.system_details) {
-            evidenceAssessment = '📎 Technical forensics evidence ready'
-          }
-          break
-          
-        case CrimeCategory.DATA_PRIVACY:
-          victimProfile = '👥 Data breach affecting multiple parties'
-          riskFactors = '🚨 Privacy compliance violations'
-          complexity = '⚖️ Complex data protection case'
-          break
-          
-        default:
-          if (caseData.estimated_loss && caseData.estimated_loss > 0) {
-            financialImpact = `💰 Loss reported: ₱${caseData.estimated_loss.toLocaleString()}`
-          }
-          if (caseData.suspect_name) {
-            victimProfile = '👥 Suspect identified - targeted attack'
-          }
-          if (caseData.evidence_count && caseData.evidence_count > 3) {
-            evidenceAssessment = '📎 Strong evidence package available'
-          }
+      // Financial Impact - Use actual data
+      if (caseData.estimated_loss && caseData.estimated_loss > 0) {
+        const amount = caseData.estimated_loss.toLocaleString()
+        if (caseData.estimated_loss >= 1000000) {
+          financialImpact = `💰 Major loss: ₱${amount}`
+        } else if (caseData.estimated_loss >= 100000) {
+          financialImpact = `💰 Significant loss: ₱${amount}`
+        } else {
+          financialImpact = `💰 Loss reported: ₱${amount}`
+        }
+      } else if ([CrimeCategory.FINANCIAL_ECONOMIC, CrimeCategory.CONTENT_RELATED].includes(category)) {
+        financialImpact = '💰 Financial assessment pending'
       }
+      
+      // Victim Profile - Use location, platform, and suspect relationship
+      const profileElements = []
+      if (caseData.incident_location) {
+        profileElements.push(caseData.incident_location)
+      }
+      if (caseData.platform_website) {
+        profileElements.push(`${caseData.platform_website} user`)
+      }
+      if (caseData.suspect_relationship && caseData.suspect_relationship !== 'unknown') {
+        profileElements.push(caseData.suspect_relationship.replace(/_/g, ' '))
+      } else if (caseData.suspect_name) {
+        profileElements.push('suspect identified')
+      }
+      
+      if (profileElements.length > 0) {
+        victimProfile = `👥 ${profileElements.join(', ')}`
+      } else if (caseData.full_name) {
+        victimProfile = `👥 Victim: ${caseData.full_name.split(' ')[0]}`
+      }
+      
+      // Evidence Assessment - Use all evidence-related fields
+      const evidenceElements = []
+      if (caseData.evidence_count && caseData.evidence_count > 0) {
+        evidenceElements.push(`${caseData.evidence_count} files`)
+      }
+      if (caseData.platform_website) {
+        evidenceElements.push(`${caseData.platform_website} data`)
+      }
+      if (caseData.account_reference) {
+        evidenceElements.push('account records')
+      }
+      if (caseData.technical_info || caseData.system_details) {
+        evidenceElements.push('technical logs')
+      }
+      if (caseData.content_description) {
+        evidenceElements.push('content documented')
+      }
+      
+      if (evidenceElements.length > 0) {
+        evidenceAssessment = `📎 Evidence: ${evidenceElements.join(', ')}`
+      }
+      
+      // Risk Factors - Use security and threat indicators
+      const riskElements = []
+      if (caseData.security_level && caseData.security_level !== 'public') {
+        riskElements.push(`${caseData.security_level} security`)
+      }
+      if (caseData.vulnerability_details) {
+        riskElements.push('active vulnerability')
+      }
+      if (caseData.attack_vector) {
+        riskElements.push('attack method known')
+      }
+      if (caseData.suspect_contact) {
+        riskElements.push('suspect traceable')
+      }
+      if (caseData.priority === 'high') {
+        riskElements.push('high priority')
+      }
+      
+      if (riskElements.length > 0) {
+        riskFactors = `🚨 Risks: ${riskElements.join(', ')}`
+      } else {
+        riskFactors = `🚨 ${caseData.priority} priority case`
+      }
+      
+      // Complexity - Use technical details and impact
+      const complexityFactors = []
+      if (caseData.system_details || caseData.technical_info) {
+        complexityFactors.push('technical')
+      }
+      if (caseData.impact_assessment) {
+        complexityFactors.push('high impact')
+      }
+      if (caseData.target_info) {
+        complexityFactors.push('targeted attack')
+      }
+      if (caseData.suspect_details && caseData.suspect_contact) {
+        complexityFactors.push('suspect known')
+      }
+      
+      if (complexityFactors.length >= 3) {
+        complexity = `⚖️ Complex: ${complexityFactors.slice(0, 2).join(', ')}`
+      } else if (complexityFactors.length > 0) {
+        complexity = `⚖️ ${complexityFactors.join(', ')} case`
+      } else {
+        complexity = `⚖️ ${category.toLowerCase().replace(/_/g, ' ')} case`
+      }
+      
+      console.log('📊 Generated fallback key details using dynamic fields')
       
       return {
         financialImpact,
