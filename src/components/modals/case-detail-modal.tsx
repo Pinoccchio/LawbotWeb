@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import PNPOfficerService from "@/lib/pnp-officer-service"
 import EvidenceService from "@/lib/evidence-service"
+import AIService from "@/lib/ai-service"
 import { supabase } from "@/lib/supabase"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
@@ -49,12 +50,67 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [aiSummary, setAiSummary] = useState<string>('')
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
+  const [aiActionItems, setAiActionItems] = useState<{high: string[], medium: string[], low: string[]}>({
+    high: [], medium: [], low: []
+  })
+  const [aiKeyDetails, setAiKeyDetails] = useState<{
+    financialImpact: string
+    victimProfile: string
+    evidenceAssessment: string
+    riskFactors: string
+    complexity: string
+  }>({
+    financialImpact: '💰 Financial impact to be assessed',
+    victimProfile: '👥 Single victim case',
+    evidenceAssessment: '📎 Evidence package pending review',
+    riskFactors: '🚨 Risk assessment in progress',
+    complexity: '⚖️ Complexity analysis required'
+  })
+
+  // Reset all case-specific state to default values
+  const resetCaseState = () => {
+    // Reset case data
+    setStatusHistory([])
+    setEvidenceFiles([])
+    setComplaintDetails(null)
+    setUserProfile(null)
+    setSelectedEvidence(null)
+    setEvidenceModalOpen(false)
+    setStatusModalOpen(false)
+    
+    // Reset AI state
+    setAiSummary('')
+    setAiSummaryLoading(false)
+    setAiActionItems({
+      high: [], 
+      medium: [], 
+      low: []
+    })
+    setAiKeyDetails({
+      financialImpact: '💰 Financial impact to be assessed',
+      victimProfile: '👥 Single victim case',
+      evidenceAssessment: '📎 Evidence package pending review',
+      riskFactors: '🚨 Risk assessment in progress',
+      complexity: '⚖️ Complexity analysis required'
+    })
+  }
 
   useEffect(() => {
     if (isOpen && caseData) {
+      // Reset all state before fetching new case details
+      resetCaseState()
       fetchCaseDetails()
     }
   }, [isOpen, caseData])
+
+  // Clean up state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetCaseState()
+    }
+  }, [isOpen])
 
   const fetchCaseDetails = async () => {
     setIsLoading(true)
@@ -107,10 +163,81 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
       const files = await PNPOfficerService.getEvidenceFiles(complaintId)
       setEvidenceFiles(files)
       
+      // Generate AI summary for the case
+      generateAISummary(complaintDetails || complaint, files.length)
+      
     } catch (error) {
       console.error('Error fetching case details:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+  
+  // Generate AI summary
+  const generateAISummary = async (complaint: any, evidenceCount: number) => {
+    setAiSummaryLoading(true)
+    try {
+      // Prepare case data for AI with all dynamic fields
+      const caseDataForAI = {
+        // Core fields
+        complaint_number: complaint.complaint_number,
+        crime_type: complaint.crime_type,
+        description: complaint.description,
+        incident_date_time: complaint.incident_date_time,
+        status: complaint.status,
+        priority: complaint.priority,
+        
+        // Location and platform fields
+        incident_location: complaint.incident_location,
+        platform_website: complaint.platform_website,
+        account_reference: complaint.account_reference,
+        
+        // Financial fields
+        estimated_loss: complaint.estimated_loss || complaint.estimated_financial_loss,
+        
+        // Suspect information
+        suspect_name: complaint.suspect_name,
+        suspect_relationship: complaint.suspect_relationship,
+        suspect_contact: complaint.suspect_contact,
+        suspect_details: complaint.suspect_details,
+        
+        // Technical fields
+        system_details: complaint.system_details,
+        technical_info: complaint.technical_info,
+        vulnerability_details: complaint.vulnerability_details,
+        attack_vector: complaint.attack_vector,
+        
+        // Security and impact fields
+        security_level: complaint.security_level,
+        target_info: complaint.target_info,
+        content_description: complaint.content_description,
+        impact_assessment: complaint.impact_assessment,
+        
+        // Metadata
+        risk_score: complaint.risk_score || complaint.ai_risk_score,
+        evidence_count: evidenceCount,
+        assigned_unit: complaint.assigned_unit,
+        assigned_officer: complaint.assigned_officer,
+        full_name: complaint.full_name || userProfile?.full_name
+      }
+      
+      // Generate summary
+      const summary = await AIService.generateCaseSummary(caseDataForAI)
+      setAiSummary(summary)
+      
+      // Generate action items
+      const actions = await AIService.generateActionItems(caseDataForAI)
+      setAiActionItems(actions)
+      
+      // Generate key details
+      const keyDetails = await AIService.generateKeyDetails(caseDataForAI)
+      setAiKeyDetails(keyDetails)
+      
+    } catch (error) {
+      console.error('Error generating AI summary:', error)
+      setAiSummary('AI summary generation failed. Please review case details manually.')
+    } finally {
+      setAiSummaryLoading(false)
     }
   }
 
@@ -477,30 +604,45 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <Target className="h-4 w-4 mr-2" />
                           🎯 Key Details
                         </h4>
-                        <div className="space-y-3">
-                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
-                              💰 {complaint.estimated_loss ? `Financial loss: ₱${complaint.estimated_loss.toLocaleString()}` : 'Financial impact to be assessed'}
-                            </span>
+                        {aiSummaryLoading ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-lawbot-purple-600 mr-2" />
+                            <span className="text-sm text-lawbot-purple-600 dark:text-lawbot-purple-400">Generating AI insights...</span>
                           </div>
-                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🏷️ Crime type: {complaint.crime_type}</span>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                              <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                {aiKeyDetails.financialImpact}
+                              </span>
+                            </div>
+                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                              <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                {aiKeyDetails.victimProfile}
+                              </span>
+                            </div>
+                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                              <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                {aiKeyDetails.evidenceAssessment}
+                              </span>
+                            </div>
+                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                              <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                {aiKeyDetails.riskFactors}
+                              </span>
+                            </div>
+                            <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                              <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                {aiKeyDetails.complexity}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
-                              👥 {complaint.victim_count > 1 ? `${complaint.victim_count} victims affected` : 'Single victim case'}
-                            </span>
-                          </div>
-                          <div className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                            <div className="w-2 h-2 bg-lawbot-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
-                              📎 {evidenceFiles.length > 0 ? `${evidenceFiles.length} evidence files submitted` : 'Evidence collection in progress'}
-                            </span>
-                          </div>
-                        </div>
+                        )}
                       </div>
                       
                       <div>
@@ -509,12 +651,32 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           📋 Executive Summary
                         </h4>
                         <div className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-violet-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-violet-900/20 p-5 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                          <p className="text-sm text-lawbot-purple-800 dark:text-lawbot-purple-200 leading-relaxed">
-                            {complaint.ai_summary || 
-                             `This case involves ${complaint.crime_type} ${complaint.incident_location ? `reported in ${complaint.incident_location}` : ''}. 
-                             ${complaint.description ? complaint.description.substring(0, 200) + '...' : 'Investigation is ongoing to gather more details about the incident.'}`
-                            }
-                          </p>
+                          {aiSummaryLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="h-5 w-5 animate-spin text-lawbot-purple-600 mr-2" />
+                              <span className="text-sm text-lawbot-purple-600 dark:text-lawbot-purple-400">Generating AI summary...</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <p className="text-sm text-lawbot-purple-800 dark:text-lawbot-purple-200 leading-relaxed whitespace-pre-wrap">
+                                {aiSummary || 
+                                 `This case involves ${complaint.crime_type} ${complaint.incident_location ? `reported in ${complaint.incident_location}` : ''}. 
+                                 ${complaint.description ? complaint.description.substring(0, 200) + '...' : 'Investigation is ongoing to gather more details about the incident.'}`
+                                }
+                              </p>
+                              {aiSummary && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="text-xs text-lawbot-purple-600 hover:text-lawbot-purple-700"
+                                  onClick={() => generateAISummary(complaint, evidenceFiles.length)}
+                                >
+                                  <Brain className="h-3 w-3 mr-1" />
+                                  Regenerate
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -526,74 +688,75 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                         <Zap className="h-4 w-4 mr-2" />
                         ⚡ Immediate Action Items
                       </h4>
-                      <div className="grid md:grid-cols-3 gap-6">
-                        <div className="bg-gradient-to-br from-lawbot-red-50 to-lawbot-red-100/50 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/10 p-5 rounded-xl border border-lawbot-red-200 dark:border-lawbot-red-800 hover:shadow-lg transition-all duration-300">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="p-1 bg-lawbot-red-500 rounded-full">
-                              <AlertTriangle className="h-3 w-3 text-white" />
-                            </div>
-                            <h5 className="font-bold text-lawbot-red-800 dark:text-lawbot-red-200 text-sm">🔴 High Priority</h5>
-                          </div>
-                          <ul className="text-xs text-lawbot-red-700 dark:text-lawbot-red-300 space-y-2 font-medium">
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
-                              <span>Contact victim within 24 hours</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
-                              <span>Preserve digital evidence</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
-                              <span>Check for similar cases</span>
-                            </li>
-                          </ul>
+                      {aiSummaryLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-5 w-5 animate-spin text-lawbot-purple-600 mr-2" />
+                          <span className="text-sm text-lawbot-purple-600 dark:text-lawbot-purple-400">Generating AI action items...</span>
                         </div>
-                        <div className="bg-gradient-to-br from-lawbot-amber-50 to-lawbot-amber-100/50 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/10 p-5 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="p-1 bg-lawbot-amber-500 rounded-full">
-                              <Clock className="h-3 w-3 text-white" />
+                      ) : (
+                        <div className="grid md:grid-cols-3 gap-6">
+                          <div className="bg-gradient-to-br from-lawbot-red-50 to-lawbot-red-100/50 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/10 p-5 rounded-xl border border-lawbot-red-200 dark:border-lawbot-red-800 hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="p-1 bg-lawbot-red-500 rounded-full">
+                                <AlertTriangle className="h-3 w-3 text-white" />
+                              </div>
+                              <h5 className="font-bold text-lawbot-red-800 dark:text-lawbot-red-200 text-sm">🔴 High Priority</h5>
                             </div>
-                            <h5 className="font-bold text-lawbot-amber-800 dark:text-lawbot-amber-200 text-sm">🟡 Medium Priority</h5>
+                            <ul className="text-xs text-lawbot-red-700 dark:text-lawbot-red-300 space-y-2 font-medium">
+                              {(aiActionItems.high.length > 0 ? aiActionItems.high : [
+                                'Contact victim within 24 hours',
+                                'Preserve digital evidence',
+                                'Check for similar cases'
+                              ]).map((action, idx) => (
+                                <li key={idx} className="flex items-start space-x-2">
+                                  <CheckCircle className="h-3 w-3 text-lawbot-red-500 mt-0.5 flex-shrink-0" />
+                                  <span>{action}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <ul className="text-xs text-lawbot-amber-700 dark:text-lawbot-amber-300 space-y-2 font-medium">
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
-                              <span>Analyze transaction patterns</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
-                              <span>Coordinate with bank security</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
-                              <span>Interview witnesses</span>
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="bg-gradient-to-br from-lawbot-blue-50 to-lawbot-blue-100/50 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/10 p-5 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800 hover:shadow-lg transition-all duration-300">
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="p-1 bg-lawbot-blue-500 rounded-full">
-                              <TrendingUp className="h-3 w-3 text-white" />
+                          <div className="bg-gradient-to-br from-lawbot-amber-50 to-lawbot-amber-100/50 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/10 p-5 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="p-1 bg-lawbot-amber-500 rounded-full">
+                                <Clock className="h-3 w-3 text-white" />
+                              </div>
+                              <h5 className="font-bold text-lawbot-amber-800 dark:text-lawbot-amber-200 text-sm">🟡 Medium Priority</h5>
                             </div>
-                            <h5 className="font-bold text-lawbot-blue-800 dark:text-lawbot-blue-200 text-sm">🔍 Investigation</h5>
+                            <ul className="text-xs text-lawbot-amber-700 dark:text-lawbot-amber-300 space-y-2 font-medium">
+                              {(aiActionItems.medium.length > 0 ? aiActionItems.medium : [
+                                'Analyze transaction patterns',
+                                'Coordinate with bank security',
+                                'Interview witnesses'
+                              ]).map((action, idx) => (
+                                <li key={idx} className="flex items-start space-x-2">
+                                  <CheckCircle className="h-3 w-3 text-lawbot-amber-500 mt-0.5 flex-shrink-0" />
+                                  <span>{action}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <ul className="text-xs text-lawbot-blue-700 dark:text-lawbot-blue-300 space-y-2 font-medium">
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
-                              <span>Technical analysis of devices</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
-                              <span>Cross-reference databases</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                              <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
-                              <span>Prepare legal documentation</span>
-                            </li>
-                          </ul>
+                          <div className="bg-gradient-to-br from-lawbot-blue-50 to-lawbot-blue-100/50 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/10 p-5 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800 hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="p-1 bg-lawbot-blue-500 rounded-full">
+                                <TrendingUp className="h-3 w-3 text-white" />
+                              </div>
+                              <h5 className="font-bold text-lawbot-blue-800 dark:text-lawbot-blue-200 text-sm">🔍 Investigation</h5>
+                            </div>
+                            <ul className="text-xs text-lawbot-blue-700 dark:text-lawbot-blue-300 space-y-2 font-medium">
+                              {(aiActionItems.low.length > 0 ? aiActionItems.low : [
+                                'Technical analysis of devices',
+                                'Cross-reference databases',
+                                'Prepare legal documentation'
+                              ]).map((action, idx) => (
+                                <li key={idx} className="flex items-start space-x-2">
+                                  <CheckCircle className="h-3 w-3 text-lawbot-blue-500 mt-0.5 flex-shrink-0" />
+                                  <span>{action}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
