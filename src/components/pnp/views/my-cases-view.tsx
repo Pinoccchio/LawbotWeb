@@ -115,6 +115,17 @@ export function MyCasesView() {
     return matchesSearch && matchesStatus && matchesPriority
   })
 
+  // Count cases by status for tab labels
+  const statusCounts = {
+    pending: filteredCases.filter(c => c.complaint.status === "Pending").length,
+    underInvestigation: filteredCases.filter(c => c.complaint.status === "Under Investigation").length,
+    requiresInfo: filteredCases.filter(c => c.complaint.status === "Requires More Information").length,
+    resolved: filteredCases.filter(c => c.complaint.status === "Resolved").length,
+    dismissed: filteredCases.filter(c => c.complaint.status === "Dismissed").length
+  }
+
+  // Individual status counts are calculated above
+
   const handleViewDetails = (caseData: any) => {
     setSelectedCase(caseData)
     setDetailModalOpen(true)
@@ -269,29 +280,63 @@ export function MyCasesView() {
               No Cases Assigned
             </h3>
             <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mb-6 max-w-md">
-              You don't have any cases assigned to you yet. Cases will appear here once they are assigned by administrators.
+              You don't have any cases assigned to you yet. Cases with the following statuses will appear here once assigned:
             </p>
+            <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 mb-2">Case Statuses:</p>
+              <ul className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 space-y-1">
+                <li>• Pending - New cases awaiting initial review</li>
+                <li>• Under Investigation - Active investigation in progress</li>
+                <li>• Requires More Information - Additional details needed</li>
+                <li>• Resolved - Successfully completed cases</li>
+                <li>• Dismissed - Cases closed without resolution</li>
+              </ul>
+            </div>
           </div>
         </Card>
       ) : (
-        <Tabs defaultValue="active" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-          <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-3">
-            <TabsTrigger value="active" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
-              📁 Active Cases
-            </TabsTrigger>
+        <Tabs defaultValue="pending" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+          <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-5">
             <TabsTrigger value="pending" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
-              ⏳ Pending Action
+              📋 Pending ({statusCounts.pending})
+            </TabsTrigger>
+            <TabsTrigger value="investigation" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
+              🔍 Investigation ({statusCounts.underInvestigation})
+            </TabsTrigger>
+            <TabsTrigger value="requiresInfo" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-orange-600 font-medium">
+              ❓ More Info ({statusCounts.requiresInfo})
             </TabsTrigger>
             <TabsTrigger value="resolved" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-              ✅ Resolved
+              ✅ Resolved ({statusCounts.resolved})
+            </TabsTrigger>
+            <TabsTrigger value="dismissed" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
+              ❌ Dismissed ({statusCounts.dismissed})
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="active">
+        {/* Pending Cases Tab */}
+        <TabsContent value="pending">
           <div className="space-y-4">
-            {filteredCases
-              .filter((case_) => case_.complaint.status !== "Resolved" && case_.complaint.status !== "Dismissed")
-              .map((case_) => {
+            {(() => {
+              const pendingCases = filteredCases.filter((case_) => case_.complaint.status === "Pending")
+              
+              if (pendingCases.length === 0) {
+                return (
+                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+                    <div className="flex flex-col items-center justify-center">
+                      <FileText className="h-16 w-16 text-lawbot-amber-300 dark:text-lawbot-amber-600 mb-4" />
+                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
+                        No Pending Cases
+                      </h3>
+                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
+                        No cases with status: <span className="font-medium">Pending</span>
+                      </p>
+                    </div>
+                  </Card>
+                )
+              }
+              
+              return pendingCases.map((case_) => {
                 // Extract real case data
                 const caseData = case_.complaint
                 const caseId = caseData.complaint_number
@@ -390,125 +435,179 @@ export function MyCasesView() {
                     </CardContent>
                   </Card>
                 )
-              })}
+              })
+            })()}
           </div>
         </TabsContent>
 
-        <TabsContent value="pending">
+        {/* Under Investigation Cases Tab */}
+        <TabsContent value="investigation">
           <div className="space-y-4">
-            {filteredCases
-              .filter((case_) => case_.complaint.status === "Pending" || case_.complaint.status === "Requires More Information")
-              .map((case_) => {
-                // Extract real case data
-                const caseData = case_.complaint
-                const caseId = caseData.complaint_number
-                const title = caseData.title || `${caseData.crime_type} Case`
-                const priority = caseData.priority
-                const status = caseData.status
-                
+            {(() => {
+              const investigationCases = filteredCases.filter((case_) => case_.complaint.status === "Under Investigation")
+              
+              if (investigationCases.length === 0) {
                 return (
-                  <Card key={case_.id} className="card-modern bg-gradient-to-r from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-8">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-4">
-                            <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
-                            <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
-                              {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
-                            </Badge>
-                            <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
-                              {status === 'Pending' ? '📋' : '❓'} {status}
-                            </Badge>
-                          </div>
-                          <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
-                          <div className="bg-gradient-to-r from-lawbot-amber-100 to-lawbot-orange-100 dark:from-lawbot-amber-900/30 dark:to-lawbot-orange-900/30 p-4 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800">
-                            <div className="flex items-center mb-2">
-                              <Clock className="h-4 w-4 mr-2 text-lawbot-amber-600" />
-                              <span className="text-sm font-semibold text-lawbot-amber-800 dark:text-lawbot-amber-200">Action Required</span>
-                            </div>
-                            <p className="text-sm text-lawbot-amber-800 dark:text-lawbot-amber-200 leading-relaxed">
-                              {status === "Pending"
-                                ? "⏳ This case is pending initial review and assignment. Take immediate action to begin investigation."
-                                : "❓ Additional information has been requested from the complainant. Follow up on missing details."}
-                            </p>
-                          </div>
+                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                    <div className="flex flex-col items-center justify-center">
+                      <Search className="h-16 w-16 text-lawbot-blue-300 dark:text-lawbot-blue-600 mb-4" />
+                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
+                        No Cases Under Investigation
+                      </h3>
+                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
+                        No cases with status: <span className="font-medium">Under Investigation</span>
+                      </p>
+                    </div>
+                  </Card>
+                )
+              }
+              
+              return investigationCases.map((case_) => {
+                // Simplified case card for Under Investigation
+                return (
+                  <Card key={case_.id} className="card-modern hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-bold text-lg">{case_.complaint.complaint_number}</h3>
+                          <p className="text-sm text-gray-600">{case_.complaint.crime_type}</p>
                         </div>
-                        <div className="flex flex-col space-y-3 ml-6">
-                          <Button
-                            size="sm"
-                            className="btn-gradient bg-gradient-to-r from-lawbot-amber-600 to-lawbot-amber-700 hover:from-lawbot-amber-700 hover:to-lawbot-amber-800"
-                            onClick={() => handleUpdateStatus(caseData)}
-                          >
-                            <Activity className="h-4 w-4 mr-2" />
-                            Take Action
-                          </Button>
-                          <Button size="sm" variant="outline" className="btn-modern border-lawbot-amber-300 text-lawbot-amber-600 hover:bg-lawbot-amber-50" onClick={() => handleViewDetails(caseData)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
+                        <div className="flex space-x-2">
+                          <Button size="sm" onClick={() => handleViewDetails(case_.complaint)}>View Details</Button>
+                          <Button size="sm" onClick={() => handleViewEvidence(case_.complaint)}>Evidence</Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 )
-              })}
+              })
+            })()}
           </div>
         </TabsContent>
 
+        {/* Requires More Information Cases Tab */}
+        <TabsContent value="requiresInfo">
+          <div className="space-y-4">
+            {(() => {
+              const requiresInfoCases = filteredCases.filter((case_) => case_.complaint.status === "Requires More Information")
+              
+              if (requiresInfoCases.length === 0) {
+                return (
+                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-orange-50 to-white dark:from-lawbot-orange-900/10 dark:to-lawbot-slate-800 border-lawbot-orange-200 dark:border-lawbot-orange-800">
+                    <div className="flex flex-col items-center justify-center">
+                      <AlertTriangle className="h-16 w-16 text-lawbot-orange-300 dark:text-lawbot-orange-600 mb-4" />
+                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
+                        No Cases Requiring More Information
+                      </h3>
+                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
+                        No cases with status: <span className="font-medium">Requires More Information</span>
+                      </p>
+                    </div>
+                  </Card>
+                )
+              }
+              
+              return requiresInfoCases.map((case_) => (
+                <Card key={case_.id} className="card-modern hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-lg">{case_.complaint.complaint_number}</h3>
+                        <p className="text-sm text-gray-600">{case_.complaint.crime_type}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button size="sm" onClick={() => handleViewDetails(case_.complaint)}>View Details</Button>
+                        <Button size="sm" onClick={() => handleUpdateStatus(case_.complaint)}>Take Action</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            })()}
+          </div>
+        </TabsContent>
+
+        {/* Resolved Cases Tab */}
         <TabsContent value="resolved">
           <div className="space-y-4">
-            {filteredCases
-              .filter((case_) => case_.complaint.status === "Resolved" || case_.complaint.status === "Dismissed")
-              .map((case_) => {
-                // Extract real case data
-                const caseData = case_.complaint
-                const caseId = caseData.complaint_number
-                const title = caseData.title || `${caseData.crime_type} Case`
-                const priority = caseData.priority
-                const status = caseData.status
-                const date = new Date(caseData.updated_at).toLocaleDateString()
-                
+            {(() => {
+              const resolvedCases = filteredCases.filter((case_) => case_.complaint.status === "Resolved")
+              
+              if (resolvedCases.length === 0) {
                 return (
-                  <Card key={case_.id} className="card-modern bg-gradient-to-r from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800 hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-8">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-4">
-                            <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
-                            <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
-                              {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
-                            </Badge>
-                            <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
-                              {status === 'Resolved' ? '✅' : '❌'} {status}
-                            </Badge>
-                          </div>
-                          <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
-                          <div className="bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-green-100 dark:from-lawbot-emerald-900/30 dark:to-lawbot-green-900/30 p-4 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-                            <div className="flex items-center mb-2">
-                              <CheckCircle className="h-4 w-4 mr-2 text-lawbot-emerald-600" />
-                              <span className="text-sm font-semibold text-lawbot-emerald-800 dark:text-lawbot-emerald-200">Case Completed</span>
-                            </div>
-                            <p className="text-sm text-lawbot-emerald-800 dark:text-lawbot-emerald-200 leading-relaxed">
-                              ✅ Case successfully {status.toLowerCase()} on {date}. Investigation completed with
-                              sufficient evidence for prosecution. All documentation finalized.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col space-y-3 ml-6">
-                          <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleViewDetails(caseData)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Report
-                          </Button>
-                          <Button size="sm" variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50">
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Files
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
+                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                    <div className="flex flex-col items-center justify-center">
+                      <CheckCircle className="h-16 w-16 text-lawbot-emerald-300 dark:text-lawbot-emerald-600 mb-4" />
+                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
+                        No Resolved Cases
+                      </h3>
+                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
+                        No cases with status: <span className="font-medium">Resolved</span>
+                      </p>
+                    </div>
                   </Card>
                 )
-              })}
+              }
+              
+              return resolvedCases.map((case_) => (
+                <Card key={case_.id} className="card-modern hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-lg">{case_.complaint.complaint_number}</h3>
+                        <p className="text-sm text-emerald-600">✅ {case_.complaint.crime_type} - Resolved</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleViewDetails(case_.complaint)}>View Report</Button>
+                        <Button size="sm" variant="outline">Download Files</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            })()}
+          </div>
+        </TabsContent>
+
+        {/* Dismissed Cases Tab */}
+        <TabsContent value="dismissed">
+          <div className="space-y-4">
+            {(() => {
+              const dismissedCases = filteredCases.filter((case_) => case_.complaint.status === "Dismissed")
+              
+              if (dismissedCases.length === 0) {
+                return (
+                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+                    <div className="flex flex-col items-center justify-center">
+                      <AlertCircle className="h-16 w-16 text-lawbot-red-300 dark:text-lawbot-red-600 mb-4" />
+                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
+                        No Dismissed Cases
+                      </h3>
+                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
+                        No cases with status: <span className="font-medium">Dismissed</span>
+                      </p>
+                    </div>
+                  </Card>
+                )
+              }
+              
+              return dismissedCases.map((case_) => (
+                <Card key={case_.id} className="card-modern hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-lg">{case_.complaint.complaint_number}</h3>
+                        <p className="text-sm text-red-600">❌ {case_.complaint.crime_type} - Dismissed</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => handleViewDetails(case_.complaint)}>View Report</Button>
+                        <Button size="sm" variant="outline">Download Files</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            })()}
           </div>
         </TabsContent>
         </Tabs>
