@@ -801,6 +801,271 @@ Base your assessment on ALL available fields, especially:
     }
   }
 
+  // Generate predictive analysis for case
+  static async generatePredictiveAnalysis(caseData: CaseDataForSummary): Promise<{
+    confidence: number
+    riskLevel: string
+    predictedOutcome: string
+    estimatedTime: string
+    recommendations: string[]
+    keyIndicators: Array<{label: string, value: number, color: string}>
+    dataSourcesUsed: string[]
+  }> {
+    try {
+      console.log('🔮 Generating predictive analysis for:', caseData.complaint_number)
+      
+      // Detect crime category
+      const category = this.detectCrimeCategory(caseData.crime_type)
+      
+      // Use comprehensive dynamic field builder
+      const dynamicFields = this.buildDynamicPrompt(caseData, category)
+      
+      // Build list of available data sources with actual values
+      const dataSources = []
+      if (caseData.incident_location) dataSources.push(`📍 Location: ${caseData.incident_location}`)
+      if (caseData.platform_website) dataSources.push(`📱 Platform: ${caseData.platform_website}`)
+      if (caseData.estimated_loss) dataSources.push(`💰 Loss: ₱${caseData.estimated_loss.toLocaleString()}`)
+      if (caseData.suspect_name) dataSources.push(`🎭 Suspect: ${caseData.suspect_name}`)
+      if (caseData.suspect_contact) dataSources.push(`📞 Contact: ${caseData.suspect_contact}`)
+      if (caseData.suspect_relationship) dataSources.push(`👥 Relationship: ${caseData.suspect_relationship.replace(/_/g, ' ')}`)
+      if (caseData.technical_info) dataSources.push(`⚙️ Technical: ${caseData.technical_info.substring(0, 50)}...`)
+      if (caseData.system_details) dataSources.push(`💻 System: ${caseData.system_details.substring(0, 50)}...`)
+      if (caseData.vulnerability_details) dataSources.push(`🔓 Vulnerability: ${caseData.vulnerability_details.substring(0, 50)}...`)
+      if (caseData.security_level) dataSources.push(`🔒 Security: ${caseData.security_level}`)
+      if (caseData.target_info) dataSources.push(`🎯 Target: ${caseData.target_info.substring(0, 50)}...`)
+      if (caseData.account_reference) dataSources.push(`🔢 Account: ${caseData.account_reference}`)
+      if (caseData.content_description) dataSources.push(`📄 Content: ${caseData.content_description.substring(0, 50)}...`)
+      if (caseData.impact_assessment) dataSources.push(`📊 Impact: ${caseData.impact_assessment.substring(0, 50)}...`)
+      if (caseData.evidence_count && caseData.evidence_count > 0) dataSources.push(`📎 Evidence: ${caseData.evidence_count} files`)
+      
+      const prompt = `
+You are generating predictive analysis for a Philippine National Police cybercrime investigation.
+
+CASE INFORMATION:
+Crime Type: ${caseData.crime_type}
+Category: ${category}
+Priority: ${caseData.priority}
+Status: ${caseData.status}
+Risk Score: ${caseData.risk_score || 'Not assessed'}
+
+CASE DETAILS:
+${caseData.description}
+
+DYNAMIC FIELDS AND EVIDENCE:
+${dynamicFields}
+
+Assigned Unit: ${caseData.assigned_unit || 'Not assigned'}
+Assigned Officer: ${caseData.assigned_officer || 'Not assigned'}
+
+Based on ALL available information, generate predictive analysis:
+
+1. PREDICTED OUTCOME: Analyze similar ${caseData.crime_type} cases and predict most likely outcome
+   - Consider: Available evidence quality, suspect identification status, financial recovery potential
+   - Format: Brief outcome prediction (e.g., "Successful prosecution likely", "Partial recovery expected")
+
+2. ESTIMATED RESOLUTION TIME: Based on case complexity and available resources
+   - Simple cases with clear evidence: 3-7 days
+   - Medium complexity with some investigation needed: 1-3 weeks
+   - Complex cases requiring extensive investigation: 1-3 months
+   - Consider: Evidence availability, suspect cooperation, technical complexity
+
+3. AI RECOMMENDATIONS: Generate 5 specific, actionable recommendations based on:
+   - Missing critical information that would strengthen the case
+   - Next investigative steps based on available leads
+   - Evidence preservation priorities
+   - Suspect tracking opportunities
+   - Preventive measures for victim
+
+4. CONFIDENCE CALCULATION: Assess prediction confidence (0-100) based on:
+   - Completeness of information (all fields populated = higher confidence)
+   - Evidence quality and quantity
+   - Clear suspect identification
+   - Similar case precedents
+
+5. RISK EVOLUTION: Predict how risk might change over time
+   - Will risk increase if not addressed quickly?
+   - What factors could escalate the situation?
+
+Format response as JSON:
+{
+  "confidence": [0-100 based on data completeness],
+  "riskLevel": "[current priority] - [predicted trend: increasing/stable/decreasing]",
+  "predictedOutcome": "[specific outcome prediction based on case data]",
+  "estimatedTime": "[time estimate with reasoning]",
+  "recommendations": [
+    "Specific action 1 based on [relevant field]",
+    "Specific action 2 based on [relevant field]",
+    "Specific action 3 based on [relevant field]",
+    "Specific action 4 based on [relevant field]",
+    "Specific action 5 based on [relevant field]"
+  ]
+}
+
+Base predictions on the specific data provided. Reference actual field values in recommendations.
+`
+
+      const result = await model.generateContent(prompt)
+      const response = await result.response
+      const text = response.text()
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const prediction = JSON.parse(jsonMatch[0])
+        
+        // Calculate key indicators based on actual data
+        const keyIndicators = [
+          { 
+            label: "Risk Score", 
+            value: caseData.risk_score || 50, 
+            color: "red" 
+          },
+          { 
+            label: "Evidence Strength", 
+            value: Math.min((caseData.evidence_count || 0) * 20, 100), 
+            color: "blue" 
+          },
+          { 
+            label: "Case Completeness", 
+            value: this.calculateCaseCompleteness(caseData), 
+            color: "green" 
+          }
+        ]
+        
+        console.log('✅ Predictive analysis generated successfully')
+        
+        return {
+          confidence: prediction.confidence,
+          riskLevel: prediction.riskLevel,
+          predictedOutcome: prediction.predictedOutcome,
+          estimatedTime: prediction.estimatedTime,
+          recommendations: prediction.recommendations,
+          keyIndicators,
+          dataSourcesUsed: dataSources
+        }
+      }
+      
+      throw new Error('Could not parse AI response')
+      
+    } catch (error) {
+      console.error('❌ Error generating predictive analysis:', error)
+      
+      // Generate intelligent fallback based on available data
+      return this.generatePredictiveFallback(caseData)
+    }
+  }
+  
+  // Calculate case completeness percentage
+  private static calculateCaseCompleteness(caseData: CaseDataForSummary): number {
+    const fields = [
+      caseData.description,
+      caseData.incident_location,
+      caseData.incident_date_time,
+      caseData.platform_website,
+      caseData.estimated_loss,
+      caseData.suspect_name,
+      caseData.evidence_count && caseData.evidence_count > 0,
+      caseData.technical_info,
+      caseData.impact_assessment
+    ]
+    
+    const filledFields = fields.filter(field => field).length
+    return Math.round((filledFields / fields.length) * 100)
+  }
+  
+  // Generate fallback predictive analysis
+  private static generatePredictiveFallback(caseData: CaseDataForSummary): any {
+    const category = this.detectCrimeCategory(caseData.crime_type)
+    const completeness = this.calculateCaseCompleteness(caseData)
+    
+    // Build data sources list with actual values
+    const dataSources = []
+    if (caseData.incident_location) dataSources.push(`📍 Location: ${caseData.incident_location}`)
+    if (caseData.platform_website) dataSources.push(`📱 Platform: ${caseData.platform_website}`)
+    if (caseData.estimated_loss) dataSources.push(`💰 Loss: ₱${caseData.estimated_loss.toLocaleString()}`)
+    if (caseData.suspect_name || caseData.suspect_contact) {
+      if (caseData.suspect_name && caseData.suspect_contact) {
+        dataSources.push(`🫱 Suspect: ${caseData.suspect_name} (${caseData.suspect_contact})`)
+      } else if (caseData.suspect_name) {
+        dataSources.push(`🫱 Suspect: ${caseData.suspect_name}`)
+      } else {
+        dataSources.push(`📞 Contact: ${caseData.suspect_contact}`)
+      }
+    }
+    if (caseData.technical_info || caseData.system_details) {
+      if (caseData.technical_info && caseData.system_details) {
+        dataSources.push(`💻 Technical: ${caseData.technical_info}, ${caseData.system_details}`)
+      } else {
+        dataSources.push(`💻 Technical: ${caseData.technical_info || caseData.system_details}`)
+      }
+    }
+    if (caseData.evidence_count && caseData.evidence_count > 0) dataSources.push(`📎 Evidence: ${caseData.evidence_count} files`)
+    
+    // Generate outcome based on available data
+    let predictedOutcome = 'Investigation ongoing'
+    if (caseData.suspect_name && caseData.evidence_count && caseData.evidence_count >= 3) {
+      predictedOutcome = 'Successful prosecution likely'
+    } else if (caseData.evidence_count && caseData.evidence_count > 0) {
+      predictedOutcome = 'Partial resolution expected'
+    } else {
+      predictedOutcome = 'Additional evidence needed'
+    }
+    
+    // Estimate time based on complexity
+    let estimatedTime = '1-2 weeks'
+    if (completeness >= 80) {
+      estimatedTime = '3-7 days'
+    } else if (completeness >= 50) {
+      estimatedTime = '1-3 weeks'
+    } else {
+      estimatedTime = '2-4 weeks'
+    }
+    
+    // Generate recommendations based on missing data
+    const recommendations = []
+    if (!caseData.evidence_count || caseData.evidence_count === 0) {
+      recommendations.push('Collect and upload digital evidence immediately')
+    }
+    if (!caseData.suspect_name && !caseData.suspect_contact) {
+      recommendations.push('Focus on suspect identification through platform data')
+    }
+    if (caseData.platform_website) {
+      recommendations.push(`Contact ${caseData.platform_website} security team for user data`)
+    }
+    if (caseData.estimated_loss && caseData.estimated_loss > 0) {
+      recommendations.push(`Initiate financial recovery for ₱${caseData.estimated_loss.toLocaleString()}`)
+    }
+    if (!caseData.technical_info && category === CrimeCategory.MALWARE_SYSTEM) {
+      recommendations.push('Conduct technical forensics on affected systems')
+    }
+    
+    // Fill remaining recommendations
+    while (recommendations.length < 5) {
+      const genericRecs = [
+        'Document all investigative steps thoroughly',
+        'Coordinate with specialized cybercrime unit',
+        'Preserve chain of custody for evidence',
+        'Monitor for similar cases or patterns',
+        'Update case status regularly'
+      ]
+      recommendations.push(genericRecs[recommendations.length])
+    }
+    
+    return {
+      confidence: completeness,
+      riskLevel: `${caseData.priority} - ${completeness < 50 ? 'increasing' : 'stable'}`,
+      predictedOutcome,
+      estimatedTime,
+      recommendations,
+      keyIndicators: [
+        { label: "Risk Score", value: caseData.risk_score || 50, color: "red" },
+        { label: "Evidence Strength", value: Math.min((caseData.evidence_count || 0) * 20, 100), color: "blue" },
+        { label: "Case Completeness", value: completeness, color: "green" }
+      ],
+      dataSourcesUsed: dataSources.length > 0 ? dataSources : ['Basic case information']
+    }
+  }
+
   // Analyze case patterns and connections
   static async analyzeCasePatterns(caseData: CaseDataForSummary): Promise<string> {
     try {

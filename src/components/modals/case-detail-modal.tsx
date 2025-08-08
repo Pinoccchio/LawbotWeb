@@ -69,6 +69,34 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     riskFactors: '🚨 Risk assessment in progress',
     complexity: '⚖️ Complexity analysis required'
   })
+  const [aiPredictiveAnalysis, setAiPredictiveAnalysis] = useState<{
+    confidence: number
+    riskLevel: string
+    predictedOutcome: string
+    estimatedTime: string
+    recommendations: string[]
+    keyIndicators: Array<{label: string, value: number, color: string}>
+    dataSourcesUsed: string[]
+  }>({
+    confidence: 75,
+    riskLevel: 'Medium',
+    predictedOutcome: 'Under Analysis',
+    estimatedTime: '3-7 days',
+    recommendations: [
+      'Contact complainant for additional information',
+      'Collect and preserve digital evidence',
+      'Coordinate with specialized unit',
+      'Document all investigative steps',
+      'Monitor for related cases'
+    ],
+    keyIndicators: [
+      { label: "Risk Score", value: 50, color: "red" },
+      { label: "Evidence Strength", value: 0, color: "blue" },
+      { label: "Case Completeness", value: 50, color: "green" }
+    ],
+    dataSourcesUsed: ['Basic case information']
+  })
+  const [predictiveAnalysisLoading, setPredictiveAnalysisLoading] = useState(false)
 
   // Generate initial key details from case data
   const generateInitialKeyDetails = (complaint: any, evidenceCount: number = 0) => {
@@ -162,6 +190,26 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
       riskFactors: '🚨 Risk assessment in progress',
       complexity: '⚖️ Complexity analysis required'
     })
+    setAiPredictiveAnalysis({
+      confidence: 75,
+      riskLevel: 'Medium',
+      predictedOutcome: 'Under Analysis',
+      estimatedTime: '3-7 days',
+      recommendations: [
+        'Contact complainant for additional information',
+        'Collect and preserve digital evidence',
+        'Coordinate with specialized unit',
+        'Document all investigative steps',
+        'Monitor for related cases'
+      ],
+      keyIndicators: [
+        { label: "Risk Score", value: 50, color: "red" },
+        { label: "Evidence Strength", value: 0, color: "blue" },
+        { label: "Case Completeness", value: 50, color: "green" }
+      ],
+      dataSourcesUsed: ['Basic case information']
+    })
+    setPredictiveAnalysisLoading(false)
   }
 
   useEffect(() => {
@@ -253,6 +301,8 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   // Generate AI summary
   const generateAISummary = async (complaint: any, evidenceCount: number) => {
     setAiSummaryLoading(true)
+    setPredictiveAnalysisLoading(true)
+    
     try {
       // Prepare case data for AI with all dynamic fields
       const caseDataForAI = {
@@ -298,23 +348,39 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
         full_name: complaint.full_name || userProfile?.full_name
       }
       
-      // Generate summary
-      const summary = await AIService.generateCaseSummary(caseDataForAI)
-      setAiSummary(summary)
+      // Run all AI generations in parallel for better performance
+      const [summary, actions, keyDetails, predictiveAnalysis] = await Promise.allSettled([
+        AIService.generateCaseSummary(caseDataForAI),
+        AIService.generateActionItems(caseDataForAI),
+        AIService.generateKeyDetails(caseDataForAI),
+        AIService.generatePredictiveAnalysis(caseDataForAI)
+      ])
       
-      // Generate action items
-      const actions = await AIService.generateActionItems(caseDataForAI)
-      setAiActionItems(actions)
+      // Set results from successful promises
+      if (summary.status === 'fulfilled') {
+        setAiSummary(summary.value)
+      }
       
-      // Generate key details
-      const keyDetails = await AIService.generateKeyDetails(caseDataForAI)
-      setAiKeyDetails(keyDetails)
+      if (actions.status === 'fulfilled') {
+        setAiActionItems(actions.value)
+      }
+      
+      if (keyDetails.status === 'fulfilled') {
+        setAiKeyDetails(keyDetails.value)
+      }
+      
+      if (predictiveAnalysis.status === 'fulfilled') {
+        setAiPredictiveAnalysis(predictiveAnalysis.value)
+      } else {
+        console.error('Error generating predictive analysis:', predictiveAnalysis.reason)
+      }
       
     } catch (error) {
       console.error('Error generating AI summary:', error)
       setAiSummary('AI summary generation failed. Please review case details manually.')
     } finally {
       setAiSummaryLoading(false)
+      setPredictiveAnalysisLoading(false)
     }
   }
 
@@ -353,24 +419,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
     }
   }
 
-  // Use AI data from complaint or generate default
-  const aiAnalysis = {
-    confidence: complaint.ai_confidence_score || 75,
-    riskLevel: complaint.ai_priority || complaint.priority || "Medium",
-    predictedOutcome: "Under Analysis",
-    estimatedTime: "3-7 days",
-    recommendations: complaint.ai_recommendations ? JSON.parse(complaint.ai_recommendations) : [
-      "Contact complainant for additional information",
-      "Collect and preserve digital evidence",
-      "Coordinate with specialized unit",
-      "Document all investigative steps",
-    ],
-    keyIndicators: [
-      { label: "Risk Score", value: complaint.ai_risk_score || complaint.risk_score || 50, color: "red" },
-      { label: "Evidence Count", value: evidenceFiles.length > 0 ? Math.min(evidenceFiles.length * 20, 100) : 0, color: "blue" },
-      { label: "AI Confidence", value: complaint.ai_confidence_score || 75, color: "green" },
-    ],
-  }
+  // Use dynamic AI predictive analysis (no longer hardcoded)
 
   // Generate timeline from status history and complaint data
   const timeline = [
@@ -1458,7 +1507,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                         <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
                           🧠 Predictive Analysis Report
                           <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
-                            🎯 Confidence: {aiAnalysis.confidence}%
+                            🎯 Confidence: {aiPredictiveAnalysis.confidence}%
                           </Badge>
                         </CardTitle>
                         <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
@@ -1468,8 +1517,15 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6 pt-6">
+                    {predictiveAnalysisLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600 mr-3" />
+                        <span className="text-lg text-lawbot-blue-600 dark:text-lawbot-blue-400">Generating predictive analysis...</span>
+                      </div>
+                    ) : (
+                      <>
                     <div className="grid md:grid-cols-3 gap-6">
-                      {aiAnalysis.keyIndicators.map((indicator, index) => (
+                      {aiPredictiveAnalysis.keyIndicators.map((indicator, index) => (
                         <div key={index} className="text-center p-5 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700 hover:shadow-lg transition-all duration-300">
                           <div className="mb-4">
                             <div
@@ -1513,16 +1569,16 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Risk Level:</span>
                             <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800">
-                              🚨 {aiAnalysis.riskLevel}
+                              🚨 {aiPredictiveAnalysis.riskLevel}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Predicted Outcome:</span>
-                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiAnalysis.predictedOutcome}</span>
+                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPredictiveAnalysis.predictedOutcome}</span>
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Estimated Resolution:</span>
-                            <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiAnalysis.estimatedTime}</span>
+                            <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiPredictiveAnalysis.estimatedTime}</span>
                           </div>
                         </div>
                       </div>
@@ -1532,10 +1588,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                           <div className="p-1 bg-lawbot-emerald-500 rounded-full">
                             <Zap className="h-3 w-3 text-white" />
                           </div>
-                          <span>⚡ System Recommendations</span>
+                          <span>⚡ AI Recommendations</span>
                         </h4>
                         <ul className="space-y-3">
-                          {aiAnalysis.recommendations.map((rec: string, index: number) => (
+                          {aiPredictiveAnalysis.recommendations.map((rec: string, index: number) => (
                             <li key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                               <CheckCircle className="h-4 w-4 text-lawbot-emerald-500 mt-0.5 flex-shrink-0" />
                               <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{rec}</span>
@@ -1544,6 +1600,35 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
                         </ul>
                       </div>
                     </div>
+
+                    <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
+
+                    <div className="p-5 bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100/50 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/10 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                      <h4 className="font-semibold mb-4 flex items-center space-x-2 text-lawbot-purple-700 dark:text-lawbot-purple-300">
+                        <div className="p-1 bg-lawbot-purple-500 rounded-full">
+                          <FileText className="h-3 w-3 text-white" />
+                        </div>
+                        <span>📊 Analysis Data Sources</span>
+                      </h4>
+                      <div className="space-y-2">
+                        <p className="text-sm text-lawbot-purple-700 dark:text-lawbot-purple-300 font-medium mb-3">
+                          This predictive analysis is based on:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {aiPredictiveAnalysis.dataSourcesUsed.map((source, index) => (
+                            <div key={index} className="flex items-center space-x-2 p-2 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                              <CheckCircle className="h-3 w-3 text-lawbot-purple-500 flex-shrink-0" />
+                              <span className="text-xs font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{source}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-lawbot-purple-600 dark:text-lawbot-purple-400 mt-3 italic">
+                          * Analysis accuracy improves with more complete data. Fields analyzed include all populated dynamic fields specific to {complaint.crime_type}.
+                        </p>
+                      </div>
+                    </div>
+                    </>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
