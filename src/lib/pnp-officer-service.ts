@@ -556,7 +556,7 @@ export class PNPOfficerService {
             console.log('✅ Officer profile loaded for status history:')
             console.log('   - Officer Name:', officerName)
             console.log('   - Firebase UID:', officerFirebaseId)
-            console.log('   - Profile Source:', currentOfficer.profile_source || 'pnp_officer_profiles')
+            console.log('   - Profile Source:', 'pnp_officer_profiles')
           } else {
             console.warn('⚠️ Could not load officer profile, using fallback values:')
             console.warn('   - Fallback Name:', officerName)
@@ -572,17 +572,16 @@ export class PNPOfficerService {
         if (!officerFirebaseId) {
           console.error('❌ No Firebase UID available for audit trail')
           console.error('❌ This indicates an authentication issue')
-          officerFirebaseId = null // Set to null rather than undefined
+          // Don't set to empty string - leave as null for database
         } else {
           console.log('✅ Firebase UID available for audit trail:', officerFirebaseId)
           console.log('✅ Will be validated against pnp_officer_profiles.firebase_uid FK constraint')
         }
         
-        const statusHistoryData = {
+        const statusHistoryData: any = {
           complaint_id: actualComplaintId,
           status: newStatus,
           updated_by: officerName, // Use actual officer name
-          updated_by_user_id: officerFirebaseId, // Use Firebase ID for audit trail
           remarks: updateData?.notes || updateData?.remarks || '',
           // Enhanced status update fields
           urgency_level: updateData?.urgencyLevel || 'normal',
@@ -595,6 +594,15 @@ export class PNPOfficerService {
           email_notification: true, // Default to true
           sms_notification: updateData?.urgencyLevel === 'urgent', // SMS only for urgent
           timestamp: new Date().toISOString()
+        }
+        
+        // Only add updated_by_user_id if we have a valid Firebase UID
+        // If the FK references pnp_officer_profiles.firebase_uid, it must be a valid officer or NULL
+        if (officerFirebaseId) {
+          statusHistoryData.updated_by_user_id = officerFirebaseId
+        } else {
+          // Don't include the field if we don't have a valid ID - let database set it to NULL
+          console.warn('⚠️ No Firebase UID available, updated_by_user_id will be NULL in database')
         }
         
         console.log('📋 Inserting status history:', statusHistoryData)
@@ -629,12 +637,14 @@ export class PNPOfficerService {
         }
         
         try {
-          const { error: historyError } = await supabase
+          const { data: historyData, error: historyError } = await supabase
             .from('status_history')
             .insert(statusHistoryData)
+            .select()
+            .single()
           
           if (historyError) {
-            console.error('❌ Database error adding status history:', historyError)
+            console.error('❌ Database error adding status history:', JSON.stringify(historyError, null, 2))
             console.error('❌ History error code:', historyError.code)
             console.error('❌ History error message:', historyError.message)
             console.error('❌ History error details:', historyError.details)
@@ -661,13 +671,18 @@ export class PNPOfficerService {
             // Log error but don't throw to prevent status update from failing
             console.error('⚠️ Status history creation failed, but case status was updated')
           } else {
-            console.log('✅ Status history added with enhanced data including Firebase UID')
-            console.log('✅ Audit trail: updated_by_user_id =', statusHistoryData.updated_by_user_id)
+            console.log('✅ Status history added successfully!')
+            console.log('✅ History record created:', historyData)
+            console.log('✅ Audit trail: updated_by_user_id =', historyData?.updated_by_user_id || 'NULL')
           }
         } catch (statusHistoryException) {
           console.error('❌ Exception inserting status history:', statusHistoryException)
-          console.error('❌ Exception type:', statusHistoryException.constructor.name)
-          console.error('❌ Exception stack:', statusHistoryException.stack)
+          if (statusHistoryException instanceof Error) {
+            console.error('❌ Exception type:', statusHistoryException.constructor.name)
+            console.error('❌ Exception stack:', statusHistoryException.stack)
+          } else {
+            console.error('❌ Unknown exception type:', statusHistoryException)
+          }
         }
       }
       
