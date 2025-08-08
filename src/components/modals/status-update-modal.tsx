@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import PNPOfficerService from "@/lib/pnp-officer-service"
 import { supabase } from "@/lib/supabase"
+import { getTemplatesForStatus, getTemplatesByCategory, getCategoryDisplayName, getCategoryColor, StatusTemplate } from "@/lib/status-templates"
 
 interface StatusUpdateModalProps {
   isOpen: boolean
@@ -34,6 +35,8 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [availableTemplates, setAvailableTemplates] = useState<StatusTemplate[]>([])
+  const [templatesByCategory, setTemplatesByCategory] = useState<Record<string, StatusTemplate[]>>({})
 
   // Fetch current officer profile from database
   useEffect(() => {
@@ -86,6 +89,23 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     }
   }, [isOpen, caseData])
 
+  // Update available templates when selected status changes
+  useEffect(() => {
+    if (selectedStatus && caseData) {
+      console.log('🔄 Updating templates for status change:', caseData.status, '→', selectedStatus)
+      
+      // Get templates appropriate for this status transition
+      const templates = getTemplatesForStatus(selectedStatus, caseData.status)
+      const categorized = getTemplatesByCategory(templates)
+      
+      setAvailableTemplates(templates)
+      setTemplatesByCategory(categorized)
+      
+      console.log('✅ Found', templates.length, 'templates for', selectedStatus)
+      console.log('📋 Template categories:', Object.keys(categorized))
+    }
+  }, [selectedStatus, caseData])
+
   if (!isOpen || !caseData) return null
 
   // Debug: Log current status selection state
@@ -133,28 +153,25 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   const complaintNumber = caseData?.complaint_number || caseData?.id || 'Unknown'
   const caseTitle = caseData?.title || `${caseData?.crime_type || 'Unknown'} Case`
 
-  const updateTemplates = [
-    {
-      title: "Initial Contact Made",
-      content:
-        "Successfully contacted the complainant. Gathered additional details about the incident. Proceeding with evidence collection.",
-    },
-    {
-      title: "Evidence Collected",
-      content:
-        "All relevant digital evidence has been secured and documented. Chain of custody established. Ready for technical analysis.",
-    },
-    {
-      title: "Investigation Complete",
-      content:
-        "Investigation concluded. All evidence analyzed and documented. Preparing final report and recommendations.",
-    },
-    {
-      title: "Case Resolved",
-      content:
-        "Case successfully resolved. Suspect identified and appropriate action taken. Complainant notified of outcome.",
-    },
-  ]
+  // Handle template selection with auto-population of related fields
+  const handleTemplateSelect = (template: StatusTemplate) => {
+    console.log('🔄 Template selected:', template.title)
+    
+    // Set the template content
+    setUpdateNotes(template.content)
+    
+    // Auto-set recommended urgency level
+    setUrgencyLevel(template.urgencyLevel)
+    
+    // Auto-set follow-up date if recommended
+    if (template.recommendedFollowUpDays) {
+      const followUpDate = new Date()
+      followUpDate.setDate(followUpDate.getDate() + template.recommendedFollowUpDays)
+      setFollowUpDate(followUpDate.toISOString().slice(0, 16))
+    }
+    
+    console.log('✅ Template applied with urgency:', template.urgencyLevel)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,21 +259,51 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
 
         <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Current Status */}
+            {/* Current Status & Transition Indicator */}
             <div className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 p-6 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800 animate-fade-in-up">
+              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium mb-4">📊 Status Transition</p>
+              
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium mb-2">📊 Current Status</p>
-                  <div className="flex items-center space-x-3 mt-1">
+                {/* Current Status */}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex items-center space-x-3">
                     {(() => {
                       const StatusIcon = getStatusIcon(caseData.status)
                       return <StatusIcon className="h-5 w-5 text-lawbot-blue-500" />
                     })()}
                     <span className="font-bold text-lawbot-slate-900 dark:text-white text-lg">{caseData.status}</span>
                   </div>
+                  <Badge variant="outline" className="text-xs">Current</Badge>
                 </div>
-                <Badge className={`${getStatusColor(caseData.status)} text-white px-4 py-2 text-sm font-medium`}>{caseData.status}</Badge>
+
+                {/* Arrow Transition */}
+                <div className="flex flex-col items-center space-y-1 px-4">
+                  <div className="text-2xl">→</div>
+                  <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Updating to</div>
+                </div>
+
+                {/* New Status */}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="flex items-center space-x-3">
+                    {(() => {
+                      const StatusIcon = getStatusIcon(selectedStatus)
+                      return <StatusIcon className="h-5 w-5 text-lawbot-emerald-500" />
+                    })()}
+                    <span className="font-bold text-lawbot-emerald-700 dark:text-lawbot-emerald-300 text-lg">{selectedStatus}</span>
+                  </div>
+                  <Badge className={`${getStatusColor(selectedStatus)} text-white px-3 py-1 text-xs`}>New Status</Badge>
+                </div>
               </div>
+              
+              {/* Template Count Indicator */}
+              {availableTemplates.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-lawbot-blue-200 dark:border-lawbot-blue-700">
+                  <div className="flex items-center justify-center space-x-2 text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    <FileText className="h-4 w-4" />
+                    <span>{availableTemplates.length} professional templates available for this transition</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* New Status Selection */}
@@ -307,22 +354,65 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                 </Label>
               </div>
               <div className="space-y-4">
+                {/* Dynamic Template System */}
                 <div className="p-4 bg-gradient-to-r from-lawbot-purple-50 to-lawbot-blue-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                  <Label className="text-sm font-semibold text-lawbot-purple-700 dark:text-lawbot-purple-300 mb-3 block">⚡ Quick Templates</Label>
-                  <div className="flex flex-wrap gap-3">
-                    {updateTemplates.map((template, index) => (
-                      <Button
-                        key={index}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:hover:bg-lawbot-purple-900/20 font-medium"
-                        onClick={() => setUpdateNotes(template.content)}
-                      >
-                        {template.title}
-                      </Button>
-                    ))}
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-sm font-semibold text-lawbot-purple-700 dark:text-lawbot-purple-300">
+                      ⚡ Status-Specific Templates
+                    </Label>
+                    <Badge variant="outline" className="text-xs">
+                      {availableTemplates.length} templates available
+                    </Badge>
                   </div>
+                  
+                  {availableTemplates.length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(templatesByCategory).map(([category, templates]) => (
+                        <div key={category} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${getCategoryColor(category)}`}></div>
+                            <Label className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                              {getCategoryDisplayName(category)}
+                            </Label>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {templates.map((template) => (
+                              <Button
+                                key={template.id}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:hover:bg-lawbot-purple-900/20 font-medium text-left justify-start p-3 h-auto"
+                                onClick={() => handleTemplateSelect(template)}
+                                title={template.content}
+                              >
+                                <div className="flex flex-col items-start space-y-1 w-full">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm">{template.icon}</span>
+                                    <span className="font-medium text-xs">{template.title}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2 text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                                    <Badge variant="secondary" className="text-xs px-2 py-0">
+                                      {template.urgencyLevel}
+                                    </Badge>
+                                    {template.recommendedFollowUpDays && (
+                                      <span>{template.recommendedFollowUpDays}d follow-up</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No templates available for this status transition</p>
+                      <p className="text-xs mt-1">You can still write custom notes below</p>
+                    </div>
+                  )}
                 </div>
                 <Textarea
                   id="updateNotes"
@@ -463,43 +553,6 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
               </div>
             </div>
 
-            {/* Resolution Checklist (for resolved status) */}
-            {selectedStatus === "Resolved" && (
-              <div className="space-y-4 p-6 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-green-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-green-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 animate-fade-in-up">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-white" />
-                  </div>
-                  <Label className="text-lg font-bold text-lawbot-emerald-800 dark:text-lawbot-emerald-200">✅ Resolution Checklist</Label>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
-                    <Checkbox id="evidenceSecured" className="border-lawbot-emerald-300 text-lawbot-emerald-600" />
-                    <Label htmlFor="evidenceSecured" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      🔒 All evidence properly secured and documented
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
-                    <Checkbox id="complainantNotified" className="border-lawbot-emerald-300 text-lawbot-emerald-600" />
-                    <Label htmlFor="complainantNotified" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      📞 Complainant notified of resolution
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
-                    <Checkbox id="reportCompleted" className="border-lawbot-emerald-300 text-lawbot-emerald-600" />
-                    <Label htmlFor="reportCompleted" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      📋 Final investigation report completed
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
-                    <Checkbox id="supervisorApproval" className="border-lawbot-emerald-300 text-lawbot-emerald-600" />
-                    <Label htmlFor="supervisorApproval" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      👨‍💼 Supervisor approval obtained
-                    </Label>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons */}
             {/* Success Display */}

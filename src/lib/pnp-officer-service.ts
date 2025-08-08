@@ -540,11 +540,49 @@ export class PNPOfficerService {
       
       // Add to enhanced status history with all update data
       if (this.currentUserId) {
+        // Get current officer profile to extract name and Firebase UID for audit trail
+        let officerName = 'Web Officer' // Default fallback
+        let officerFirebaseId = this.currentUserId // This should be the Firebase UID
+        
+        try {
+          console.log('🔄 Loading officer profile for Firebase UID:', this.currentUserId)
+          const currentOfficer = await this.getCurrentOfficerProfile()
+          
+          if (currentOfficer && currentOfficer.full_name) {
+            officerName = currentOfficer.full_name
+            // Use the firebase_uid from the profile if available, otherwise use currentUserId
+            officerFirebaseId = currentOfficer.firebase_uid || this.currentUserId
+            
+            console.log('✅ Officer profile loaded for status history:')
+            console.log('   - Officer Name:', officerName)
+            console.log('   - Firebase UID:', officerFirebaseId)
+            console.log('   - Profile Source:', currentOfficer.profile_source || 'pnp_officer_profiles')
+          } else {
+            console.warn('⚠️ Could not load officer profile, using fallback values:')
+            console.warn('   - Fallback Name:', officerName)
+            console.warn('   - Firebase UID from auth:', officerFirebaseId)
+          }
+        } catch (profileError) {
+          console.warn('⚠️ Error loading officer profile for status history:', profileError)
+          console.warn('   - Using fallback name:', officerName)
+          console.warn('   - Using Firebase UID from auth:', officerFirebaseId)
+        }
+        
+        // Validate that we have a Firebase UID for the audit trail
+        if (!officerFirebaseId) {
+          console.error('❌ No Firebase UID available for audit trail')
+          console.error('❌ This indicates an authentication issue')
+          officerFirebaseId = null // Set to null rather than undefined
+        } else {
+          console.log('✅ Firebase UID available for audit trail:', officerFirebaseId)
+          console.log('✅ Will be validated against pnp_officer_profiles.firebase_uid FK constraint')
+        }
+        
         const statusHistoryData = {
           complaint_id: actualComplaintId,
           status: newStatus,
-          updated_by: `Officer ${this.currentUserId}`,
-          updated_by_user_id: null, // Set to null to avoid foreign key constraint issues in development
+          updated_by: officerName, // Use actual officer name
+          updated_by_user_id: officerFirebaseId, // Use Firebase ID for audit trail
           remarks: updateData?.notes || updateData?.remarks || '',
           // Enhanced status update fields
           urgency_level: updateData?.urgencyLevel || 'normal',
@@ -560,6 +598,14 @@ export class PNPOfficerService {
         }
         
         console.log('📋 Inserting status history:', statusHistoryData)
+        console.log('📋 Status history data types:')
+        console.log('   - complaint_id:', typeof statusHistoryData.complaint_id, statusHistoryData.complaint_id)
+        console.log('   - status:', typeof statusHistoryData.status, statusHistoryData.status)
+        console.log('   - updated_by:', typeof statusHistoryData.updated_by, statusHistoryData.updated_by)
+        console.log('   - updated_by_user_id:', typeof statusHistoryData.updated_by_user_id, statusHistoryData.updated_by_user_id)
+        console.log('   - remarks:', typeof statusHistoryData.remarks, statusHistoryData.remarks)
+        console.log('   - urgency_level:', typeof statusHistoryData.urgency_level, statusHistoryData.urgency_level)
+        console.log('   - timestamp:', typeof statusHistoryData.timestamp, statusHistoryData.timestamp)
         
         // Validate urgency level
         const validUrgencyLevels = ['low', 'normal', 'high', 'urgent']
@@ -582,19 +628,46 @@ export class PNPOfficerService {
           }
         }
         
-        const { error: historyError } = await supabase
-          .from('status_history')
-          .insert(statusHistoryData)
-        
-        if (historyError) {
-          console.error('❌ Database error adding status history:', historyError)
-          console.error('❌ History error code:', historyError.code)
-          console.error('❌ History error message:', historyError.message)
-          console.error('❌ History error details:', historyError.details)
-          console.error('❌ Failed history data:', statusHistoryData)
-          // Don't throw error for history, but log it
-        } else {
-          console.log('✅ Status history added with enhanced data')
+        try {
+          const { error: historyError } = await supabase
+            .from('status_history')
+            .insert(statusHistoryData)
+          
+          if (historyError) {
+            console.error('❌ Database error adding status history:', historyError)
+            console.error('❌ History error code:', historyError.code)
+            console.error('❌ History error message:', historyError.message)
+            console.error('❌ History error details:', historyError.details)
+            console.error('❌ History error hint:', historyError.hint)
+            console.error('❌ Failed history data:', JSON.stringify(statusHistoryData, null, 2))
+            
+            // Provide helpful debugging information
+            if (historyError.message?.includes('check constraint')) {
+              console.error('🔍 Check constraint violation - verify status, urgency_level values are valid')
+              console.error('🔍 Valid statuses: Pending, Under Investigation, Requires More Information, Resolved, Dismissed')
+              console.error('🔍 Valid urgency levels: low, normal, high, urgent')
+            }
+            if (historyError.message?.includes('not null')) {
+              console.error('🔍 Not null constraint violation - a required field is missing')
+              console.error('🔍 Required fields: complaint_id, status, updated_by')
+            }
+            if (historyError.message?.includes('foreign key')) {
+              console.error('🔍 Foreign key constraint violation:')
+              console.error('🔍 - Check if complaint_id exists in complaints table')
+              console.error('🔍 - Check if updated_by_user_id exists in pnp_officer_profiles.firebase_uid')
+              console.error('🔍 - Current Firebase UID:', statusHistoryData.updated_by_user_id)
+            }
+            
+            // Log error but don't throw to prevent status update from failing
+            console.error('⚠️ Status history creation failed, but case status was updated')
+          } else {
+            console.log('✅ Status history added with enhanced data including Firebase UID')
+            console.log('✅ Audit trail: updated_by_user_id =', statusHistoryData.updated_by_user_id)
+          }
+        } catch (statusHistoryException) {
+          console.error('❌ Exception inserting status history:', statusHistoryException)
+          console.error('❌ Exception type:', statusHistoryException.constructor.name)
+          console.error('❌ Exception stack:', statusHistoryException.stack)
         }
       }
       
