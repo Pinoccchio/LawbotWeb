@@ -500,15 +500,40 @@ Example considering dynamic fields:
       const response = await result.response
       const text = response.text()
       
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      // Extract JSON from response with better parsing
+      console.log('🔍 Raw AI action items response:', text.substring(0, 200) + '...')
+      
+      // Try multiple JSON extraction methods
+      let actionItems = null
+      
+      // Method 1: Match complete JSON object
+      const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$|[\s\n]*[^{}]*$)/)
       if (jsonMatch) {
-        const actionItems = JSON.parse(jsonMatch[0])
-        console.log('✅ AI action items generated successfully')
-        return actionItems
+        try {
+          actionItems = JSON.parse(jsonMatch[0])
+          console.log('✅ AI action items generated successfully (method 1)')
+          return actionItems
+        } catch (parseError) {
+          console.warn('⚠️ Action items JSON parse error (method 1):', parseError)
+        }
       }
       
-      throw new Error('Could not parse AI response')
+      // Method 2: Find first { to last } in response
+      const firstBrace = text.indexOf('{')
+      const lastBrace = text.lastIndexOf('}')
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const jsonString = text.substring(firstBrace, lastBrace + 1)
+          actionItems = JSON.parse(jsonString)
+          console.log('✅ AI action items generated successfully (method 2)')
+          return actionItems
+        } catch (parseError) {
+          console.warn('⚠️ Action items JSON parse error (method 2):', parseError)
+        }
+      }
+      
+      console.error('❌ All JSON parsing methods failed for action items AI response')
+      throw new Error('Could not parse AI action items response - malformed JSON')
       
     } catch (error) {
       console.error('❌ Error generating AI action items:', error)
@@ -663,15 +688,52 @@ Base your assessment on ALL available fields, especially:
       const response = await result.response
       const text = response.text()
       
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      // Extract JSON from response with better parsing
+      console.log('🔍 Raw AI response:', text.substring(0, 200) + '...')
+      
+      // Try multiple JSON extraction methods
+      let keyDetails = null
+      
+      // Method 1: Match complete JSON object
+      const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$|[\s\n]*[^{}]*$)/)
       if (jsonMatch) {
-        const keyDetails = JSON.parse(jsonMatch[0])
-        console.log('✅ AI key details generated successfully')
-        return keyDetails
+        try {
+          keyDetails = JSON.parse(jsonMatch[0])
+          console.log('✅ AI key details generated successfully (method 1)')
+          return keyDetails
+        } catch (parseError) {
+          console.warn('⚠️ JSON parse error (method 1):', parseError)
+        }
       }
       
-      throw new Error('Could not parse AI response')
+      // Method 2: Find first { to last } in response
+      const firstBrace = text.indexOf('{')
+      const lastBrace = text.lastIndexOf('}')
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          const jsonString = text.substring(firstBrace, lastBrace + 1)
+          keyDetails = JSON.parse(jsonString)
+          console.log('✅ AI key details generated successfully (method 2)')
+          return keyDetails
+        } catch (parseError) {
+          console.warn('⚠️ JSON parse error (method 2):', parseError)
+        }
+      }
+      
+      // Method 3: Try to clean and parse the response
+      try {
+        const cleanedText = text.replace(/```json|```/g, '').trim()
+        const lines = cleanedText.split('\n').filter(line => line.trim().startsWith('{') || line.trim().includes(':') || line.trim().endsWith('}'))
+        const jsonString = lines.join('')
+        keyDetails = JSON.parse(jsonString)
+        console.log('✅ AI key details generated successfully (method 3)')
+        return keyDetails
+      } catch (parseError) {
+        console.warn('⚠️ JSON parse error (method 3):', parseError)
+      }
+      
+      console.error('❌ All JSON parsing methods failed for AI response')
+      throw new Error('Could not parse AI response - malformed JSON')
       
     } catch (error) {
       console.error('❌ Error generating AI key details:', error)
@@ -908,10 +970,37 @@ Base predictions on the specific data provided. Reference actual field values in
       const response = await result.response
       const text = response.text()
       
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      // Extract JSON from response with better parsing
+      console.log('🔍 Raw AI predictive analysis response:', text.substring(0, 200) + '...')
+      
+      // Try multiple JSON extraction methods
+      let prediction = null
+      
+      // Method 1: Match complete JSON object
+      const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$|[\s\n]*[^{}]*$)/)
       if (jsonMatch) {
-        const prediction = JSON.parse(jsonMatch[0])
+        try {
+          prediction = JSON.parse(jsonMatch[0])
+        } catch (parseError) {
+          console.warn('⚠️ Predictive analysis JSON parse error (method 1):', parseError)
+        }
+      }
+      
+      // Method 2: Find first { to last } in response
+      if (!prediction) {
+        const firstBrace = text.indexOf('{')
+        const lastBrace = text.lastIndexOf('}')
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          try {
+            const jsonString = text.substring(firstBrace, lastBrace + 1)
+            prediction = JSON.parse(jsonString)
+          } catch (parseError) {
+            console.warn('⚠️ Predictive analysis JSON parse error (method 2):', parseError)
+          }
+        }
+      }
+      
+      if (prediction) {
         
         // Calculate key indicators based on actual data
         const keyIndicators = [

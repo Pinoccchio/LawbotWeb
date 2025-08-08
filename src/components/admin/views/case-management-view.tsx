@@ -509,7 +509,16 @@ export function CaseManagementView() {
 
       {/* Modals */}
       <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
-      <StatusUpdateModal isOpen={statusModalOpen} onClose={() => setStatusModalOpen(false)} caseData={selectedCase} />
+      <StatusUpdateModal 
+        isOpen={statusModalOpen} 
+        onClose={() => setStatusModalOpen(false)} 
+        caseData={selectedCase}
+        onStatusUpdate={async (newStatus: string, updateData: any) => {
+          console.log('🔄 Admin status update:', newStatus, updateData)
+          // For admin view, we can add specific admin logic here if needed
+          setStatusModalOpen(false)
+        }}
+      />
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}

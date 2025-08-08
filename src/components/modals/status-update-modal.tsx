@@ -29,59 +29,67 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   const [notifyStakeholders, setNotifyStakeholders] = useState(true)
   const [urgencyLevel, setUrgencyLevel] = useState("normal")
   const [followUpDate, setFollowUpDate] = useState("")
-  const [assignedOfficer, setAssignedOfficer] = useState("")
-  const [officers, setOfficers] = useState<{ id: string; name: string; unit: string; badge: string }[]>([])
-  const [isLoadingOfficers, setIsLoadingOfficers] = useState(true)
+  const [currentOfficer, setCurrentOfficer] = useState<{ id: string; name: string; unit: string; badge: string } | null>(null)
+  const [isLoadingCurrentOfficer, setIsLoadingCurrentOfficer] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
-  // Fetch real officers from database
+  // Fetch current officer profile from database
   useEffect(() => {
-    const fetchOfficers = async () => {
+    const fetchCurrentOfficer = async () => {
       try {
-        setIsLoadingOfficers(true)
-        console.log('🔄 Fetching PNP officers for status update modal...')
+        setIsLoadingCurrentOfficer(true)
+        console.log('🔄 Fetching current officer profile for status update modal...')
         
-        const { data, error } = await supabase
-          .from('pnp_officer_profiles')
-          .select(`
-            id, 
-            firebase_uid, 
-            full_name, 
-            badge_number,
-            unit_id,
-            pnp_units (
-              id,
-              unit_name
-            )
-          `)
-          .order('full_name')
+        const officerProfile = await PNPOfficerService.getCurrentOfficerProfile()
         
-        if (error) {
-          console.error('❌ Error fetching officers:', error)
-          return
+        if (officerProfile) {
+          setCurrentOfficer({
+            id: officerProfile.firebase_uid,
+            name: officerProfile.full_name,
+            unit: officerProfile.unit?.unit_name || 'No Unit Assigned',
+            badge: officerProfile.badge_number
+          })
+          console.log('✅ Current officer loaded:', officerProfile.full_name)
+        } else {
+          console.log('⚠️ No current officer profile found')
         }
-        
-        const formattedOfficers = data?.map(officer => ({
-          id: officer.firebase_uid,
-          name: officer.full_name,
-          unit: officer.pnp_units?.unit_name || 'No Unit Assigned',
-          badge: officer.badge_number
-        })) || []
-        
-        setOfficers(formattedOfficers)
-        console.log('✅ Officers loaded:', formattedOfficers.length)
       } catch (error) {
-        console.error('❌ Error fetching officers:', error)
+        console.error('❌ Error fetching current officer:', error)
       } finally {
-        setIsLoadingOfficers(false)
+        setIsLoadingCurrentOfficer(false)
       }
     }
     
     if (isOpen) {
-      fetchOfficers()
+      fetchCurrentOfficer()
     }
   }, [isOpen])
 
+  // Reset state when modal opens with case data
+  useEffect(() => {
+    if (isOpen && caseData) {
+      console.log('🔄 Resetting modal state for case:', caseData.complaint_number || caseData.id)
+      console.log('🔄 Current case status:', caseData.status)
+      
+      setSelectedStatus(caseData.status || "Pending")
+      setUpdateNotes("")
+      setNotifyStakeholders(true)
+      setUrgencyLevel("normal")
+      setFollowUpDate("")
+      setIsSubmitting(false)
+      setSubmitError(null)
+      setSubmitSuccess(false)
+      
+      console.log('✅ Modal state reset complete')
+    }
+  }, [isOpen, caseData])
+
   if (!isOpen || !caseData) return null
+
+  // Debug: Log current status selection state
+  console.log('🔍 Modal render - selectedStatus:', selectedStatus, 'caseData.status:', caseData.status)
 
   const statusOptions = [
     {
@@ -99,8 +107,8 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       description: "PNP officers are actively investigating the case",
     },
     {
-      value: "Requires More Info",
-      label: "Requires More Info",
+      value: "Requires More Information",
+      label: "Requires More Information",
       icon: FileText,
       color: "bg-purple-500",
       description: "Additional information is needed to proceed with investigation",
@@ -151,8 +159,21 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Clear any previous errors
+    setSubmitError(null)
+    setIsSubmitting(true)
+    
     try {
       console.log('🔄 Submitting status update...')
+      
+      // Basic validation
+      if (!selectedStatus) {
+        throw new Error('Please select a status')
+      }
+      
+      if (!currentOfficer) {
+        throw new Error('Officer information not loaded. Please wait and try again.')
+      }
       
       // Create update data object
       const updateData = {
@@ -161,18 +182,34 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
         notifyStakeholders,
         urgencyLevel,
         followUpDate,
-        assignedOfficer,
+        assignedOfficer: currentOfficer.id,
         timestamp: new Date().toISOString(),
       }
+      
+      console.log('📋 Submitting update data:', updateData)
       
       // Call the parent's status update handler
       await onStatusUpdate(selectedStatus, updateData)
       
       console.log('✅ Status update submitted successfully')
-      onClose()
+      setSubmitSuccess(true)
+      
+      // Don't close automatically - show success message instead
+      // User can manually close by clicking the close button
     } catch (error) {
       console.error('❌ Error submitting status update:', error)
-      // TODO: Show error toast to user
+      
+      // Extract meaningful error message
+      let errorMessage = 'Failed to update status. Please try again.'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error)
+      }
+      
+      setSubmitError(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -230,7 +267,11 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                 </div>
                 <Label className="text-lg font-bold text-lawbot-slate-900 dark:text-white">🔄 Select New Status</Label>
               </div>
-              <RadioGroup value={selectedStatus} onValueChange={setSelectedStatus}>
+              <RadioGroup value={selectedStatus} onValueChange={(value) => {
+                console.log('🔄 Status selection changed from:', selectedStatus, 'to:', value)
+                setSelectedStatus(value)
+                console.log('✅ Status updated to:', value)
+              }}>
                 <div className="grid gap-4">
                   {statusOptions.map((status) => (
                     <div
@@ -322,32 +363,39 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                   <div className="p-2 bg-lawbot-blue-500 rounded-lg">
                     <Shield className="h-4 w-4 text-white" />
                   </div>
-                  <Label htmlFor="assignedOfficer" className="text-base font-bold text-lawbot-slate-900 dark:text-white">
-                    👮 Assign to Officer
+                  <Label className="text-base font-bold text-lawbot-slate-900 dark:text-white">
+                    👮 Case Assigned To
                   </Label>
                 </div>
-                <Select value={assignedOfficer} onValueChange={setAssignedOfficer}>
-                  <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl">
-                    <SelectValue placeholder="Select officer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoadingOfficers ? (
-                      <SelectItem value="loading" disabled>
-                        Loading officers...
-                      </SelectItem>
-                    ) : officers.length === 0 ? (
-                      <SelectItem value="none" disabled>
-                        No officers available
-                      </SelectItem>
-                    ) : (
-                      officers.map((officer) => (
-                        <SelectItem key={officer.id} value={officer.id}>
-                          {officer.name} - {officer.unit}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="p-4 bg-lawbot-blue-50 dark:bg-lawbot-blue-900/20 border-2 border-lawbot-blue-200 dark:border-lawbot-blue-800 rounded-xl">
+                  {isLoadingCurrentOfficer ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-lawbot-blue-600"></div>
+                      <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Loading officer info...</span>
+                    </div>
+                  ) : currentOfficer ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-lawbot-blue-500 rounded-full flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-lawbot-slate-900 dark:text-white">
+                          {currentOfficer.name}
+                        </div>
+                        <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                          Badge #{currentOfficer.badge} • {currentOfficer.unit}
+                        </div>
+                      </div>
+                      <Badge className="bg-lawbot-blue-100 text-lawbot-blue-800 dark:bg-lawbot-blue-900/30 dark:text-lawbot-blue-300">
+                        You
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                      ⚠️ Officer information not available
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -362,13 +410,18 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
                 </Label>
               </div>
               <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-lawbot-slate-400" />
+                <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-lawbot-slate-400 z-10 pointer-events-none" />
                 <Input
                   id="followUpDate"
                   type="datetime-local"
                   value={followUpDate}
                   onChange={(e) => setFollowUpDate(e.target.value)}
-                  className="pl-12 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12"
+                  min={new Date().toISOString().slice(0, 16)}
+                  placeholder="Select date and time"
+                  className="pl-12 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12 cursor-pointer"
+                  style={{
+                    colorScheme: 'light dark'
+                  }}
                 />
               </div>
             </div>
@@ -449,21 +502,65 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
             )}
 
             {/* Action Buttons */}
+            {/* Success Display */}
+            {submitSuccess && (
+              <div className="p-4 bg-lawbot-emerald-50 dark:bg-lawbot-emerald-900/20 border-2 border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl mb-6 animate-fade-in">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-lawbot-emerald-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-lawbot-emerald-800 dark:text-lawbot-emerald-200">Status Updated Successfully!</h4>
+                    <p className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 mt-1">
+                      Case status has been changed to <span className="font-semibold">"{selectedStatus}"</span>. 
+                      You can close this dialog or update again if needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Display */}
+            {submitError && (
+              <div className="p-4 bg-lawbot-red-50 dark:bg-lawbot-red-900/20 border-2 border-lawbot-red-200 dark:border-lawbot-red-800 rounded-xl mb-6 animate-fade-in">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-lawbot-red-500 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-lawbot-red-800 dark:text-lawbot-red-200">Status Update Failed</h4>
+                    <p className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 mt-1">{submitError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-4 pt-6 border-t border-lawbot-slate-200 dark:border-lawbot-slate-700 animate-fade-in-up" style={{ animationDelay: '1200ms' }}>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                className="btn-modern border-lawbot-slate-300 text-lawbot-slate-600 hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800 px-6 py-3"
+                disabled={isSubmitting}
+                className="btn-modern border-lawbot-slate-300 text-lawbot-slate-600 hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800 px-6 py-3 disabled:opacity-50"
               >
                 ❌ Cancel
               </Button>
               <Button 
                 type="submit" 
-                className="btn-gradient bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 hover:from-lawbot-blue-700 hover:to-lawbot-emerald-700 text-white px-8 py-3 font-semibold"
+                disabled={isSubmitting || isLoadingCurrentOfficer}
+                className="btn-gradient bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 hover:from-lawbot-blue-700 hover:to-lawbot-emerald-700 text-white px-8 py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send className="mr-2 h-5 w-5" />
-                📝 Update Status
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    🔄 Updating...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-5 w-5" />
+                    📝 Update Status
+                  </>
+                )}
               </Button>
             </div>
           </form>

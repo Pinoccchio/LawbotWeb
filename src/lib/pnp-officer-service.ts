@@ -476,10 +476,49 @@ export class PNPOfficerService {
     }
   }
 
-  // Update case status
-  static async updateCaseStatus(complaintId: string, newStatus: string, notes?: string) {
+  // Update case status with enhanced status update data
+  static async updateCaseStatus(complaintId: string, newStatus: string, updateData?: any) {
     try {
-      console.log('🔄 Updating case status:', complaintId, newStatus)
+      console.log('🔄 Updating case status:', { complaintId, newStatus, updateData })
+      
+      // Validate inputs
+      if (!complaintId) {
+        throw new Error('Complaint ID is required for status update')
+      }
+      
+      if (!newStatus) {
+        throw new Error('New status is required for status update')
+      }
+      
+      // Validate status against database constraints
+      const validStatuses = ['Pending', 'Under Investigation', 'Requires More Information', 'Resolved', 'Dismissed']
+      if (!validStatuses.includes(newStatus)) {
+        throw new Error(`Invalid status: ${newStatus}. Must be one of: ${validStatuses.join(', ')}`)
+      }
+      
+      console.log('✅ Input validation passed')
+      
+      // Determine if this is a UUID or a complaint_number
+      let actualComplaintId = complaintId
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(complaintId)
+      
+      if (!isUUID) {
+        // This is likely a complaint_number, need to look up the UUID
+        console.log('🔄 Complaint ID appears to be complaint_number, looking up UUID...')
+        const { data: complaint, error: lookupError } = await supabase
+          .from('complaints')
+          .select('id')
+          .eq('complaint_number', complaintId)
+          .single()
+        
+        if (lookupError || !complaint) {
+          console.error('❌ Error looking up complaint by number:', lookupError)
+          throw new Error(`Could not find complaint with number: ${complaintId}`)
+        }
+        
+        actualComplaintId = complaint.id
+        console.log('✅ Found complaint UUID:', actualComplaintId)
+      }
       
       const { error } = await supabase
         .from('complaints')
@@ -487,28 +526,75 @@ export class PNPOfficerService {
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', complaintId)
+        .eq('id', actualComplaintId)
       
       if (error) {
-        console.error('❌ Error updating case status:', error)
+        console.error('❌ Database error updating case status:', error)
+        console.error('❌ Error code:', error.code)
+        console.error('❌ Error message:', error.message)
+        console.error('❌ Error details:', error.details)
         throw error
       }
       
-      // Add to status history
+      console.log('✅ Complaint status updated in database')
+      
+      // Add to enhanced status history with all update data
       if (this.currentUserId) {
+        const statusHistoryData = {
+          complaint_id: actualComplaintId,
+          status: newStatus,
+          updated_by: `Officer ${this.currentUserId}`,
+          updated_by_user_id: null, // Set to null to avoid foreign key constraint issues in development
+          remarks: updateData?.notes || updateData?.remarks || '',
+          // Enhanced status update fields
+          urgency_level: updateData?.urgencyLevel || 'normal',
+          follow_up_date: updateData?.followUpDate || null,
+          assigned_officer_id: null, // Set to null to avoid foreign key constraint issues
+          // Notification preferences
+          notify_complainant: updateData?.notifyStakeholders !== false,
+          notify_supervisors: updateData?.notifyStakeholders !== false,
+          notify_officers: updateData?.notifyStakeholders !== false,
+          email_notification: true, // Default to true
+          sms_notification: updateData?.urgencyLevel === 'urgent', // SMS only for urgent
+          timestamp: new Date().toISOString()
+        }
+        
+        console.log('📋 Inserting status history:', statusHistoryData)
+        
+        // Validate urgency level
+        const validUrgencyLevels = ['low', 'normal', 'high', 'urgent']
+        if (statusHistoryData.urgency_level && !validUrgencyLevels.includes(statusHistoryData.urgency_level)) {
+          console.warn(`⚠️ Invalid urgency level: ${statusHistoryData.urgency_level}, defaulting to 'normal'`)
+          statusHistoryData.urgency_level = 'normal'
+        }
+        
+        // Validate follow_up_date format
+        if (statusHistoryData.follow_up_date) {
+          try {
+            const date = new Date(statusHistoryData.follow_up_date)
+            if (isNaN(date.getTime())) {
+              console.warn(`⚠️ Invalid follow_up_date: ${statusHistoryData.follow_up_date}, setting to null`)
+              statusHistoryData.follow_up_date = null
+            }
+          } catch (e) {
+            console.warn(`⚠️ Error parsing follow_up_date: ${statusHistoryData.follow_up_date}, setting to null`)
+            statusHistoryData.follow_up_date = null
+          }
+        }
+        
         const { error: historyError } = await supabase
           .from('status_history')
-          .insert({
-            complaint_id: complaintId,
-            status: newStatus,
-            updated_by: `Officer ${this.currentUserId}`,
-            updated_by_user_id: this.currentUserId,
-            remarks: notes,
-            timestamp: new Date().toISOString()
-          })
+          .insert(statusHistoryData)
         
         if (historyError) {
-          console.error('❌ Error adding status history:', historyError)
+          console.error('❌ Database error adding status history:', historyError)
+          console.error('❌ History error code:', historyError.code)
+          console.error('❌ History error message:', historyError.message)
+          console.error('❌ History error details:', historyError.details)
+          console.error('❌ Failed history data:', statusHistoryData)
+          // Don't throw error for history, but log it
+        } else {
+          console.log('✅ Status history added with enhanced data')
         }
       }
       

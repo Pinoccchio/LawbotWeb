@@ -40,9 +40,11 @@ interface CaseDetailModalProps {
   isOpen: boolean
   onClose: () => void
   caseData: any
+  initialTab?: string
+  onStatusUpdate?: (newStatus: string, remarks: string) => Promise<void>
 }
 
-export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalProps) {
+export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overview", onStatusUpdate }: CaseDetailModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [statusHistory, setStatusHistory] = useState<any[]>([])
   const [evidenceFiles, setEvidenceFiles] = useState<any[]>([])
@@ -56,6 +58,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
   const [aiActionItems, setAiActionItems] = useState<{high: string[], medium: string[], low: string[]}>({
     high: [], medium: [], low: []
   })
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [aiKeyDetails, setAiKeyDetails] = useState<{
     financialImpact: string
     victimProfile: string
@@ -217,6 +220,9 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
       // Reset all state before fetching new case details
       resetCaseState()
       
+      // Set the active tab to the initial tab
+      setActiveTab(initialTab)
+      
       // Immediately set initial key details based on available data
       const complaint = caseData.complaint || caseData
       const initialDetails = generateInitialKeyDetails(complaint, 0)
@@ -224,7 +230,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
       
       fetchCaseDetails()
     }
-  }, [isOpen, caseData])
+  }, [isOpen, caseData, initialTab])
 
   // Clean up state when modal closes
   useEffect(() => {
@@ -575,7 +581,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData }: CaseDetailModalPr
               <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600" />
             </div>
           ) : (
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl">
               <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
                 📋 Overview

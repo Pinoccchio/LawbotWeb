@@ -42,7 +42,7 @@ interface EvidenceViewerModalProps {
     title: string
     evidenceFile?: EvidenceFile | null
     complaint_id?: string
-  }
+  } | null
 }
 
 export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewerModalProps) {
@@ -245,6 +245,8 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
     }
   }
 
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
@@ -257,7 +259,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
               🗂️ Evidence Files
             </CardTitle>
             <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-2 font-medium">
-              Case #{caseData?.complaint_number || caseData?.id} - {caseData?.title}
+              {caseData ? `Case #${caseData.id} - ${caseData.title}` : 'No case selected'}
             </CardDescription>
           </div>
         </CardHeader>
