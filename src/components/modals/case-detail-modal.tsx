@@ -447,7 +447,8 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     ...statusHistory.map(history => ({
       date: history.timestamp,
       event: `Status changed to ${history.status}${history.remarks ? ` - ${history.remarks}` : ''}`,
-      type: history.status === 'Resolved' ? 'evidence' : history.status === 'Under Investigation' ? 'analysis' : 'contact'
+      type: 'status-change',
+      status: history.status
     }))
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
@@ -1737,23 +1738,38 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <div key={index} className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
                           <div
                             className={`p-3 rounded-full shadow-sm ${
-                              event.type === "report"
-                                ? "bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 text-lawbot-blue-600 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 dark:text-lawbot-blue-400"
-                                : event.type === "ai"
-                                  ? "bg-gradient-to-r from-lawbot-purple-100 to-lawbot-purple-200 text-lawbot-purple-600 dark:from-lawbot-purple-900 dark:to-lawbot-purple-800 dark:text-lawbot-purple-400"
-                                  : event.type === "assignment"
-                                    ? "bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-emerald-200 text-lawbot-emerald-600 dark:from-lawbot-emerald-900 dark:to-lawbot-emerald-800 dark:text-lawbot-emerald-400"
-                                    : event.type === "contact"
-                                      ? "bg-gradient-to-r from-lawbot-amber-100 to-lawbot-amber-200 text-lawbot-amber-600 dark:from-lawbot-amber-900 dark:to-lawbot-amber-800 dark:text-lawbot-amber-400"
-                                      : event.type === "evidence"
-                                        ? "bg-gradient-to-r from-lawbot-red-100 to-lawbot-red-200 text-lawbot-red-600 dark:from-lawbot-red-900 dark:to-lawbot-red-800 dark:text-lawbot-red-400"
-                                        : "bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 text-lawbot-slate-600 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 dark:text-lawbot-slate-400"
+                              event.type === "status-change"
+                                ? event.status === "Resolved"
+                                  ? "bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-emerald-200 text-lawbot-emerald-600 dark:from-lawbot-emerald-900 dark:to-lawbot-emerald-800 dark:text-lawbot-emerald-400"
+                                  : event.status === "Dismissed"
+                                    ? "bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 text-lawbot-slate-600 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 dark:text-lawbot-slate-400"
+                                    : event.status === "Under Investigation"
+                                      ? "bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 text-lawbot-blue-600 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 dark:text-lawbot-blue-400"
+                                      : event.status === "Requires More Information" || event.status === "Requires More Info"
+                                        ? "bg-gradient-to-r from-lawbot-purple-100 to-lawbot-purple-200 text-lawbot-purple-600 dark:from-lawbot-purple-900 dark:to-lawbot-purple-800 dark:text-lawbot-purple-400"
+                                        : "bg-gradient-to-r from-lawbot-amber-100 to-lawbot-amber-200 text-lawbot-amber-600 dark:from-lawbot-amber-900 dark:to-lawbot-amber-800 dark:text-lawbot-amber-400"
+                                : event.type === "report"
+                                  ? "bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 text-lawbot-blue-600 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 dark:text-lawbot-blue-400"
+                                  : event.type === "ai"
+                                    ? "bg-gradient-to-r from-lawbot-purple-100 to-lawbot-purple-200 text-lawbot-purple-600 dark:from-lawbot-purple-900 dark:to-lawbot-purple-800 dark:text-lawbot-purple-400"
+                                    : event.type === "assignment"
+                                      ? "bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-emerald-200 text-lawbot-emerald-600 dark:from-lawbot-emerald-900 dark:to-lawbot-emerald-800 dark:text-lawbot-emerald-400"
+                                      : "bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 text-lawbot-slate-600 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 dark:text-lawbot-slate-400"
                             }`}
                           >
                             <div className="h-3 w-3 rounded-full bg-current"></div>
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
+                              {event.type === "status-change" && (
+                                <span>
+                                  {event.status === "Resolved" ? "✅" :
+                                   event.status === "Dismissed" ? "❌" :
+                                   event.status === "Under Investigation" ? "🔍" :
+                                   event.status === "Requires More Information" || event.status === "Requires More Info" ? "❓" :
+                                   "📋"}
+                                </span>
+                              )}
                               {event.type === "report" && <span>📝</span>}
                               {event.type === "ai" && <span>🧠</span>}
                               {event.type === "assignment" && <span>👮</span>}
