@@ -38,6 +38,56 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
       onViewChange("landing")
     }
   }
+
+  // Helper function to get availability status styling
+  const getAvailabilityStatusStyling = (status: string = 'available') => {
+    switch (status) {
+      case 'available':
+        return {
+          dotColor: 'bg-lawbot-emerald-500',
+          badgeColor: 'bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-200',
+          emoji: '🟢',
+          text: 'AVAILABLE',
+          title: 'Work Status: AVAILABLE'
+        }
+      case 'busy':
+        return {
+          dotColor: 'bg-lawbot-amber-500',
+          badgeColor: 'bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-200',
+          emoji: '🟡',
+          text: 'BUSY',
+          title: 'Work Status: BUSY'
+        }
+      case 'overloaded':
+        return {
+          dotColor: 'bg-lawbot-red-500',
+          badgeColor: 'bg-lawbot-red-100 text-lawbot-red-800 dark:bg-lawbot-red-900/30 dark:text-lawbot-red-200',
+          emoji: '🔴',
+          text: 'OVERLOADED',
+          title: 'Work Status: OVERLOADED'
+        }
+      case 'unavailable':
+        return {
+          dotColor: 'bg-lawbot-slate-500',
+          badgeColor: 'bg-lawbot-slate-100 text-lawbot-slate-800 dark:bg-lawbot-slate-900/30 dark:text-lawbot-slate-200',
+          emoji: '⚫',
+          text: 'UNAVAILABLE',
+          title: 'Work Status: UNAVAILABLE'
+        }
+      default:
+        return {
+          dotColor: 'bg-lawbot-emerald-500',
+          badgeColor: 'bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-200',
+          emoji: '🟢',
+          text: 'AVAILABLE',
+          title: 'Work Status: AVAILABLE'
+        }
+    }
+  }
+
+  // Get current availability status styling
+  const availabilityStatus = officerProfile?.availability_status || 'available'
+  const statusStyling = getAvailabilityStatusStyling(availabilityStatus)
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -90,8 +140,8 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
                       {userProfile?.full_name ? userProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'PO'}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Availability Status Indicator Dot */}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 bg-lawbot-emerald-500" title="Work Status: AVAILABLE">
+                  {/* Dynamic Availability Status Indicator Dot */}
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 ${statusStyling.dotColor}`} title={statusStyling.title}>
                   </div>
                 </div>
                 <div className="flex flex-col items-start">
@@ -124,9 +174,9 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
                       No Unit
                     </Badge>
                   )}
-                  {/* Availability Status Badge */}
-                  <Badge className="bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-200 text-xs font-bold border-0">
-                    🟢 AVAILABLE
+                  {/* Dynamic Availability Status Badge */}
+                  <Badge className={`${statusStyling.badgeColor} text-xs font-bold border-0`}>
+                    {statusStyling.emoji} {statusStyling.text}
                   </Badge>
                 </div>
                 <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">

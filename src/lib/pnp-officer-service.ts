@@ -1068,6 +1068,107 @@ export class PNPOfficerService {
     }
   }
   
+  // Update officer availability status
+  static async updateOfficerAvailability(updateData: OfficerAvailabilityUpdate): Promise<boolean> {
+    try {
+      console.log('🔄 Updating officer availability status:', updateData)
+      
+      // Get current officer profile to get the officer ID
+      const currentProfile = await this.getCurrentOfficerProfile()
+      if (!currentProfile) {
+        console.error('❌ No officer profile found for availability update')
+        return false
+      }
+      
+      // Validate availability status
+      const validStatuses: OfficerAvailabilityUpdate['availability_status'][] = ['available', 'busy', 'overloaded', 'unavailable']
+      if (!validStatuses.includes(updateData.availability_status)) {
+        console.error('❌ Invalid availability status:', updateData.availability_status)
+        return false
+      }
+      
+      console.log('✅ Updating availability for officer:', currentProfile.firebase_uid)
+      
+      // Update the database
+      const { error } = await supabase
+        .from('pnp_officer_profiles')
+        .update({
+          availability_status: updateData.availability_status,
+          last_status_update_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('firebase_uid', currentProfile.firebase_uid)
+      
+      if (error) {
+        console.error('❌ Database error updating officer availability:', error)
+        return false
+      }
+      
+      console.log('✅ Officer availability updated successfully')
+      return true
+    } catch (error) {
+      console.error('❌ Error updating officer availability:', error)
+      return false
+    }
+  }
+  
+  // Update officer profile information
+  static async updateOfficerProfile(updateData: OfficerProfileUpdate): Promise<boolean> {
+    try {
+      console.log('🔄 Updating officer profile:', updateData)
+      
+      // Get current officer profile to get the officer ID
+      const currentProfile = await this.getCurrentOfficerProfile()
+      if (!currentProfile) {
+        console.error('❌ No officer profile found for profile update')
+        return false
+      }
+      
+      // Validate required fields
+      if (updateData.full_name !== undefined && (!updateData.full_name || updateData.full_name.trim() === '')) {
+        console.error('❌ Full name cannot be empty')
+        return false
+      }
+      
+      // Prepare update object - only include fields that are provided
+      const updateObject: any = {
+        updated_at: new Date().toISOString()
+      }
+      
+      if (updateData.full_name !== undefined) {
+        updateObject.full_name = updateData.full_name.trim()
+      }
+      
+      if (updateData.phone_number !== undefined) {
+        updateObject.phone_number = updateData.phone_number
+      }
+      
+      if (updateData.region !== undefined) {
+        updateObject.region = updateData.region
+      }
+      
+      console.log('✅ Updating profile for officer:', currentProfile.firebase_uid)
+      console.log('📋 Update fields:', Object.keys(updateObject))
+      
+      // Update the database
+      const { error } = await supabase
+        .from('pnp_officer_profiles')
+        .update(updateObject)
+        .eq('firebase_uid', currentProfile.firebase_uid)
+      
+      if (error) {
+        console.error('❌ Database error updating officer profile:', error)
+        return false
+      }
+      
+      console.log('✅ Officer profile updated successfully')
+      return true
+    } catch (error) {
+      console.error('❌ Error updating officer profile:', error)
+      return false
+    }
+  }
+
   // Helper to determine file category
   private static getFileCategory(fileType: string): string {
     if (fileType.startsWith('image/')) return 'image'
@@ -1116,6 +1217,17 @@ export class PNPOfficerService {
       return false
     }
   }
+}
+
+// Update interfaces
+export interface OfficerAvailabilityUpdate {
+  availability_status: 'available' | 'busy' | 'overloaded' | 'unavailable'
+}
+
+export interface OfficerProfileUpdate {
+  full_name?: string
+  phone_number?: string | null
+  region?: string
 }
 
 // Evidence file interface
