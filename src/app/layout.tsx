@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/AuthContext"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/use-toast"
 
 export const metadata: Metadata = {
   title: "LawBot Web - Cybercrime Case Management System",

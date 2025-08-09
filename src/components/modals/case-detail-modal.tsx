@@ -35,6 +35,7 @@ import AIService from "@/lib/ai-service"
 import { supabase } from "@/lib/supabase"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
+import { EditComplaintModal } from "@/components/modals/edit-complaint-modal"
 
 interface CaseDetailModalProps {
   isOpen: boolean
@@ -53,6 +54,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   const [selectedEvidence, setSelectedEvidence] = useState<any>(null)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
   const [aiSummary, setAiSummary] = useState<string>('')
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
   const [aiActionItems, setAiActionItems] = useState<{high: string[], medium: string[], low: string[]}>({
@@ -177,6 +179,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     setSelectedEvidence(null)
     setEvidenceModalOpen(false)
     setStatusModalOpen(false)
+    setEditModalOpen(false)
     
     // Reset AI state
     setAiSummary('')
@@ -1817,6 +1820,14 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         </div>
                         📝 Update Case Status
                       </Button>
+                      {complaint.status === "Requires More Information" && (
+                        <Button className="w-full justify-start btn-modern border-lawbot-orange-300 text-lawbot-orange-600 hover:bg-lawbot-orange-50 dark:border-lawbot-orange-600 dark:text-lawbot-orange-400 dark:hover:bg-lawbot-orange-900/20" variant="outline" onClick={() => setEditModalOpen(true)}>
+                          <div className="p-1 bg-lawbot-orange-500 rounded-full mr-3">
+                            <FileText className="h-3 w-3 text-white" />
+                          </div>
+                          ✏️ Edit Information
+                        </Button>
+                      )}
                       <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline">
                         <div className="p-1 bg-lawbot-purple-500 rounded-full mr-3">
                           <User className="h-3 w-3 text-white" />
@@ -1902,6 +1913,19 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         onStatusUpdate={(newStatus: string, remarks: string) => {
           // Handle the status update callback
           console.log('Status updated:', newStatus, remarks)
+          fetchCaseDetails()
+        }}
+      />
+      
+      {/* Edit Complaint Modal */}
+      <EditComplaintModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false)
+        }}
+        caseData={{ complaintDetails: complaint }}
+        onUpdate={() => {
+          // Refresh case details after edit
           fetchCaseDetails()
         }}
       />
