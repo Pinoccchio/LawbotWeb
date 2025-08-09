@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { mockComplaintUpdateHistory } from "./mock-data"
 
 interface ComplaintUpdate {
   updates: Record<string, any>
@@ -34,30 +35,52 @@ class ComplaintService {
   }
 
   async getComplaintUpdateHistory(complaintId: string) {
+    console.log('🔍 [ComplaintService] getComplaintUpdateHistory called with ID:', complaintId)
+    console.log('🔍 [ComplaintService] Available mock data complaint IDs:', 
+      mockComplaintUpdateHistory.map(update => update.complaint_id))
+    
     try {
+      // Check if this is a mock complaint ID and return mock data
+      const mockData = mockComplaintUpdateHistory.filter(
+        update => update.complaint_id === complaintId
+      )
+      
+      console.log('🔍 [ComplaintService] Mock data filter result:', mockData.length, 'records')
+      
+      if (mockData.length > 0) {
+        console.log('✅ [ComplaintService] Using mock update history for complaint', complaintId, ':', mockData)
+        return mockData
+      }
+
+      // Otherwise fetch from database
+      console.log('🔍 [ComplaintService] No mock data found, querying database for complaint:', complaintId)
       const { data, error } = await supabase
-        .from('complaint_update_history')
-        .select(`
-          *,
-          user_profiles!updated_by(full_name),
-          pnp_officer_profiles!updated_by(full_name)
-        `)
+        .from('complaint_updates')
+        .select('*')
         .eq('complaint_id', complaintId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [ComplaintService] Supabase query error:', error)
+        throw error
+      }
 
-      // Process the data to include updater names
+      console.log('✅ [ComplaintService] Database query result:', data?.length || 0, 'records')
+
+      // Process the data with basic updater name logic
       const processedData = data?.map(update => ({
         ...update,
         updater_name: update.update_type === 'citizen_update' 
-          ? update.user_profiles?.full_name 
-          : update.pnp_officer_profiles?.full_name || 'System'
+          ? 'Citizen' 
+          : update.update_type === 'officer_update' 
+            ? 'Officer' 
+            : 'System'
       })) || []
 
       return processedData
     } catch (error) {
-      console.error('Error fetching update history:', error)
+      console.error('❌ [ComplaintService] Error fetching update history for complaint', complaintId, ':', error)
+      console.error('❌ [ComplaintService] Error details:', JSON.stringify(error, null, 2))
       return []
     }
   }

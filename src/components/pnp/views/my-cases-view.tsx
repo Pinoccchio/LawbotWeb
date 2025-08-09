@@ -127,6 +127,100 @@ export function MyCasesView() {
     dismissed: filteredCases.filter(c => c.complaint.status === "Dismissed").length
   }
 
+  // Helper functions for complaint update indicators
+  const hasBeenUpdatedByCitizen = (caseData: any): boolean => {
+    return caseData.last_citizen_update !== null && caseData.last_citizen_update !== undefined
+  }
+
+  const requiresMoreInfoAndUpdated = (caseData: any): boolean => {
+    return caseData.status === "Requires More Information" && hasBeenUpdatedByCitizen(caseData)
+  }
+
+  const getUpdateStatusText = (caseData: any): string => {
+    if (!hasBeenUpdatedByCitizen(caseData)) return ''
+    const totalUpdates = caseData.total_updates || 0
+    if (totalUpdates <= 1) return '1 update'
+    return `${totalUpdates} updates`
+  }
+
+  const getTimeSinceLastUpdate = (caseData: any): string => {
+    if (!caseData.last_citizen_update) return ''
+    const lastUpdate = new Date(caseData.last_citizen_update)
+    const now = new Date()
+    const difference = now.getTime() - lastUpdate.getTime()
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+    const hours = Math.floor(difference / (1000 * 60 * 60))
+    const minutes = Math.floor(difference / (1000 * 60))
+
+    if (days > 0) {
+      return `${days}d ago`
+    } else if (hours > 0) {
+      return `${hours}h ago`
+    } else if (minutes > 0) {
+      return `${minutes}m ago`
+    } else {
+      return 'Just now'
+    }
+  }
+
+  // Render update indicator badge
+  const renderUpdateIndicator = (caseData: any) => {
+    const updateText = getUpdateStatusText(caseData)
+    
+    return (
+      <Badge className="bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/30 dark:text-lawbot-emerald-300 border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 bg-lawbot-emerald-500 rounded-full animate-pulse"></div>
+          <span className="text-xs font-semibold">Updated</span>
+          {updateText && caseData.total_updates > 1 && (
+            <span className="text-xs">({caseData.total_updates})</span>
+          )}
+        </div>
+      </Badge>
+    )
+  }
+
+  // Render detailed update information panel
+  const renderDetailedUpdateInfo = (caseData: any) => {
+    const updateText = getUpdateStatusText(caseData)
+    const timeText = getTimeSinceLastUpdate(caseData)
+    
+    return (
+      <div className="mt-4 p-4 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-blue-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-lawbot-emerald-500 rounded-full animate-pulse"></div>
+              <span className="font-semibold text-lawbot-emerald-700 dark:text-lawbot-emerald-300 text-sm">
+                Case Updated by Citizen
+              </span>
+            </div>
+            {updateText && (
+              <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                {updateText}
+              </span>
+            )}
+            {timeText && (
+              <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">
+                {timeText}
+              </span>
+            )}
+          </div>
+          <Badge className="bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-300 border-lawbot-amber-200 dark:border-lawbot-amber-700">
+            <span className="text-xs font-bold">NEEDS REVIEW</span>
+          </Badge>
+        </div>
+        {caseData.update_request_message && (
+          <div className="mt-3 pt-3 border-t border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
+            <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
+              <span className="font-medium">Officer's Request:</span> "{caseData.update_request_message}"
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Reusable rich case card component
   const renderRichCaseCard = (case_: any, index: number = 0) => {
     // Extract real case data
@@ -170,6 +264,8 @@ export function MyCasesView() {
                    assignmentType === 'secondary' ? '👥 Secondary' :
                    assignmentType === 'consultant' ? '💼 Consultant' : '🔍 Reviewer'}
                 </Badge>
+                {/* Add visual indicators for updated cases */}
+                {requiresMoreInfoAndUpdated(caseData) && renderUpdateIndicator(caseData)}
               </div>
               <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -208,6 +304,8 @@ export function MyCasesView() {
                   {priority === "high" && " 🚨 High priority case requiring immediate attention."}
                 </p>
               </div>
+              {/* Show detailed update information for updated cases */}
+              {hasBeenUpdatedByCitizen(caseData) && renderDetailedUpdateInfo(caseData)}
             </div>
             <div className="flex flex-col space-y-3 ml-6">
               <Button size="sm" className="btn-gradient" onClick={() => handleViewDetails(caseData)}>

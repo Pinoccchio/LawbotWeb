@@ -32,6 +32,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import PNPOfficerService from "@/lib/pnp-officer-service"
 import EvidenceService from "@/lib/evidence-service"
 import AIService from "@/lib/ai-service"
+import ComplaintService from "@/lib/complaint-service"
 import { supabase } from "@/lib/supabase"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
@@ -48,6 +49,7 @@ interface CaseDetailModalProps {
 export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overview", onStatusUpdate }: CaseDetailModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [statusHistory, setStatusHistory] = useState<any[]>([])
+  const [updateHistory, setUpdateHistory] = useState<any[]>([])
   const [evidenceFiles, setEvidenceFiles] = useState<any[]>([])
   const [complaintDetails, setComplaintDetails] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
@@ -173,6 +175,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   const resetCaseState = () => {
     // Reset case data
     setStatusHistory([])
+    setUpdateHistory([])
     setEvidenceFiles([])
     setComplaintDetails(null)
     setUserProfile(null)
@@ -287,6 +290,19 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       
       if (history) {
         setStatusHistory(history)
+      }
+      
+      // Fetch complaint update history only for cases that require more information
+      const currentComplaint = complaintDetails || complaint
+      if (currentComplaint?.status === "Requires More Information" || currentComplaint?.status === "Requires More Info") {
+        console.log('🔍 [CaseDetailModal] Case requires more info - fetching update history for complaint ID:', complaintId)
+        console.log('🔍 [CaseDetailModal] Full complaint object:', complaint)
+        const updateHistoryData = await ComplaintService.getComplaintUpdateHistory(complaintId)
+        console.log('✅ [CaseDetailModal] Update history result:', updateHistoryData?.length || 0, 'records')
+        setUpdateHistory(updateHistoryData)
+      } else {
+        console.log('🔍 [CaseDetailModal] Case status is', currentComplaint?.status, '- skipping update history fetch')
+        setUpdateHistory([])
       }
       
       // Fetch evidence files
@@ -649,6 +665,189 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           {complaint.description || 'No description provided'}
                         </p>
                       </div>
+
+                      {/* Complaint Update Information */}
+                      {complaint.status === "Requires More Information" && complaint.last_citizen_update && (
+                        <>
+                          <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
+                          <div className="p-4 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-blue-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 bg-lawbot-emerald-500 rounded-full animate-pulse"></div>
+                                <label className="text-sm font-bold text-lawbot-emerald-700 dark:text-lawbot-emerald-300">📢 Case Updated by Citizen</label>
+                              </div>
+                              <Badge className="bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-300 border-lawbot-amber-200 dark:border-lawbot-amber-700">
+                                <span className="text-xs font-bold">NEEDS REVIEW</span>
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div className="text-sm">
+                                <span className="font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Updates:</span>
+                                <span className="ml-2 font-bold text-lawbot-slate-900 dark:text-white">
+                                  {complaint.total_updates ? `${complaint.total_updates} update${complaint.total_updates > 1 ? 's' : ''}` : '1 update'}
+                                </span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Last Update:</span>
+                                <span className="ml-2 font-bold text-lawbot-slate-900 dark:text-white">
+                                  {(() => {
+                                    const lastUpdate = new Date(complaint.last_citizen_update)
+                                    const now = new Date()
+                                    const difference = now.getTime() - lastUpdate.getTime()
+                                    const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+                                    const hours = Math.floor(difference / (1000 * 60 * 60))
+                                    const minutes = Math.floor(difference / (1000 * 60))
+                                    
+                                    if (days > 0) return `${days}d ago`
+                                    else if (hours > 0) return `${hours}h ago` 
+                                    else if (minutes > 0) return `${minutes}m ago`
+                                    else return 'Just now'
+                                  })()}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Fields Updated Display */}
+                            {updateHistory.length > 0 && (
+                              <div className="mb-3">
+                                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">
+                                  📝 Fields Updated:
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[...new Set(updateHistory.flatMap(update => update.fields_updated || []))].map((field) => (
+                                    <Badge key={field} variant="outline" className="text-xs bg-lawbot-emerald-50 text-lawbot-emerald-700 border-lawbot-emerald-200 dark:bg-lawbot-emerald-900/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                                      {field.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {complaint.update_request_message && (
+                              <div className="pt-3 border-t border-lawbot-emerald-200 dark:border-lawbot-emerald-700">
+                                <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                  <span className="font-medium">Your Request:</span> "{complaint.update_request_message}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Detailed Update History */}
+                      {complaint.status === "Requires More Information" && updateHistory.length > 0 && (
+                        <>
+                          <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
+                          <div className="space-y-4">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-5 w-5 text-lawbot-blue-500" />
+                              <h4 className="font-bold text-lg text-lawbot-slate-900 dark:text-white">📋 Update History</h4>
+                              <Badge className="bg-lawbot-blue-100 text-lawbot-blue-800 dark:bg-lawbot-blue-900/30 dark:text-lawbot-blue-300">
+                                {updateHistory.length} {updateHistory.length === 1 ? 'Update' : 'Updates'}
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-3 max-h-80 overflow-y-auto">
+                              {updateHistory.map((update, index) => (
+                                <div key={update.id || index} className="p-4 bg-gradient-to-r from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-800 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                                  {/* Update Header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 bg-lawbot-blue-500 rounded-full"></div>
+                                      <span className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                        {update.update_type === 'citizen_update' ? '👤 Citizen Update' : 
+                                         update.update_type === 'officer_update' ? '👮 Officer Update' : 
+                                         '🤖 System Update'}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                                      {new Date(update.created_at).toLocaleDateString('en-PH', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </div>
+                                  </div>
+
+                                  {/* Updater Info */}
+                                  <div className="mb-3">
+                                    <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                      <span className="font-medium">Updated by:</span> {update.updater_name || 'System'}
+                                    </p>
+                                    {update.update_reason && (
+                                      <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                                        <span className="font-medium">Reason:</span> {update.update_reason}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Fields Updated */}
+                                  {update.fields_updated && update.fields_updated.length > 0 && (
+                                    <div className="mb-3">
+                                      <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 mb-2">
+                                        📝 Fields Updated ({update.fields_updated.length}):
+                                      </p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {update.fields_updated.map((field: string) => (
+                                          <Badge key={field} variant="outline" className="text-xs bg-lawbot-emerald-50 text-lawbot-emerald-700 border-lawbot-emerald-200 dark:bg-lawbot-emerald-900/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
+                                            {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Field Changes */}
+                                  {update.new_values && Object.keys(update.new_values).length > 0 && (
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                        🔄 Changes Made:
+                                      </p>
+                                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {Object.entries(update.new_values).map(([field, newValue]) => {
+                                          const oldValue = update.old_values?.[field];
+                                          const displayField = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                          
+                                          return (
+                                            <div key={field} className="p-2 bg-white dark:bg-lawbot-slate-900 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-600">
+                                              <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-1">
+                                                {displayField}:
+                                              </p>
+                                              {oldValue && (
+                                                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500 line-through mb-1">
+                                                  <span className="bg-lawbot-red-50 dark:bg-lawbot-red-900/20 px-1 rounded">
+                                                    {String(oldValue).length > 100 ? String(oldValue).substring(0, 100) + '...' : String(oldValue)}
+                                                  </span>
+                                                </p>
+                                              )}
+                                              <p className="text-xs text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                                                <span className="bg-lawbot-emerald-50 dark:bg-lawbot-emerald-900/20 px-1 rounded font-medium">
+                                                  {String(newValue).length > 100 ? String(newValue).substring(0, 100) + '...' : String(newValue)}
+                                                </span>
+                                              </p>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Update Notes */}
+                                  {update.update_notes && (
+                                    <div className="mt-3 pt-3 border-t border-lawbot-slate-200 dark:border-lawbot-slate-600">
+                                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                        <span className="font-medium">Notes:</span> {update.update_notes}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
 
@@ -665,7 +864,6 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                     <CardContent className="space-y-5">
                       <div className="flex items-center space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                         <Avatar className="h-14 w-14 ring-4 ring-lawbot-emerald-100 dark:ring-lawbot-emerald-800">
-                          <AvatarImage src="/placeholder.svg?height=56&width=56" />
                           <AvatarFallback className="bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600 text-white font-bold text-lg">
                             {userProfile?.full_name ? userProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                           </AvatarFallback>
@@ -1741,7 +1939,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <div key={index} className="flex items-start space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-amber-200 dark:border-lawbot-amber-800 hover:shadow-lg transition-all duration-300">
                           <div
                             className={`p-3 rounded-full shadow-sm ${
-                              event.type === "status-change"
+                              event.type === "status-change" && "status" in event
                                 ? event.status === "Resolved"
                                   ? "bg-gradient-to-r from-lawbot-emerald-100 to-lawbot-emerald-200 text-lawbot-emerald-600 dark:from-lawbot-emerald-900 dark:to-lawbot-emerald-800 dark:text-lawbot-emerald-400"
                                   : event.status === "Dismissed"
@@ -1764,7 +1962,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
-                              {event.type === "status-change" && (
+                              {event.type === "status-change" && "status" in event && (
                                 <span>
                                   {event.status === "Resolved" ? "✅" :
                                    event.status === "Dismissed" ? "❌" :

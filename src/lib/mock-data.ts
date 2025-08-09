@@ -303,6 +303,10 @@ export const mockCases = [
     ai_confidence_score: 96,
     last_ai_assessment: "2025-01-18T14:35:00+08:00",
     remarks: "Requires additional server logs and affected customer list",
+    // Complaint editing fields
+    last_citizen_update: "2025-01-20T14:45:00+08:00",
+    total_updates: 2,
+    update_request_message: "Please provide more specific details about the attack scope, affected customer count, and any cryptocurrency wallet addresses used by the attackers for money laundering.",
     created_at: "2025-01-18T14:20:00+08:00",
     updated_at: "2025-01-18T18:30:00+08:00",
     evidence_files: [
@@ -471,6 +475,10 @@ export const mockCases = [
     ai_risk_score: 93,
     ai_confidence_score: 91,
     last_ai_assessment: "2025-01-12T10:45:00+08:00",
+    // Complaint editing fields
+    last_citizen_update: "2025-01-18T11:15:00+08:00",
+    total_updates: 2,
+    update_request_message: "Please provide detailed suspect contact information, escalation timeline, and any financial impact. Include all platform accounts used by the suspect.",
   },
   {
     id: "CYB-2025-010",
@@ -497,5 +505,124 @@ export const mockCases = [
     ai_confidence_score: 98,
     last_ai_assessment: "2025-01-11T13:15:00+08:00",
   },
+]
+
+// Mock Complaint Update History Data
+export const mockComplaintUpdateHistory = [
+  // Updates for CYB-2025-003 (Phishing Email Campaign) - Requires More Info
+  {
+    id: "update_001",
+    complaint_id: "CYB-2025-003",
+    updated_by: "user_bpi_security",
+    updater_name: "BPI Security Team",
+    update_type: "citizen_update",
+    fields_updated: ["description", "platform_website", "estimated_loss", "incident_location"],
+    old_values: {
+      description: "Large-scale phishing campaign targeting bank customers with fake login pages",
+      platform_website: "Fake BPI Website",
+      estimated_loss: 250000,
+      incident_location: "Online - Email and Website"
+    },
+    new_values: {
+      description: "Large-scale phishing campaign targeting BPI customers with fake login pages. Additional investigation revealed the campaign also targeted Union Bank and Security Bank customers. The attackers used sophisticated domain spoofing techniques with URLs like bpi-secure-login.ph and unionbank-verify.com to steal credentials.",
+      platform_website: "bpi-secure-login.ph, unionbank-verify.com, securitybank-online.net",
+      estimated_loss: 850000,
+      incident_location: "Online - Multiple fake banking websites and phishing emails sent to 15,000+ customers across Metro Manila and Cebu"
+    },
+    update_reason: "Officer requested additional details about attack scope and financial impact",
+    update_notes: "Updated via mobile app",
+    device_info: {
+      platform: "mobile",
+      app_version: "1.2.0",
+      timestamp: "2025-01-19T10:30:00+08:00"
+    },
+    requires_ai_reassessment: true,
+    ai_reassessment_completed: true,
+    created_at: "2025-01-19T10:30:00+08:00"
+  },
+  {
+    id: "update_002", 
+    complaint_id: "CYB-2025-003",
+    updated_by: "user_bpi_security",
+    updater_name: "BPI Security Team",
+    update_type: "citizen_update",
+    fields_updated: ["suspect_details", "evidence_files"],
+    old_values: {
+      suspect_details: "Unknown attackers using multiple fake domains"
+    },
+    new_values: {
+      suspect_details: "Investigation revealed attackers are using bulletproof hosting services in Eastern Europe. Traced to hosting provider 'SecureNetUA' with servers in Ukraine. Additional evidence includes cryptocurrency wallet addresses used for money laundering: 1A2B3C4D5E6F7G8H9I0J (Bitcoin) and 0x123456789abcdef (Ethereum). Victims reported receiving text messages claiming to be from bank security asking them to verify accounts on fake websites."
+    },
+    update_reason: "Provided additional suspect information and cryptocurrency evidence as requested",
+    update_notes: "Added 3 new evidence files: cryptocurrency transaction logs, fake domain registration details, and victim communication screenshots",
+    device_info: {
+      platform: "web", 
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      timestamp: "2025-01-20T14:45:00+08:00"
+    },
+    requires_ai_reassessment: true,
+    ai_reassessment_completed: true,
+    created_at: "2025-01-20T14:45:00+08:00"
+  },
+
+  // Updates for CYB-2025-009 (Sextortion Case) - Requires More Info
+  {
+    id: "update_003",
+    complaint_id: "CYB-2025-009",
+    updated_by: "user_confidential_009",
+    updater_name: "Maria Santos (Pseudonym)",
+    update_type: "citizen_update",
+    fields_updated: ["suspect_contact", "platform_website", "description", "incident_date_time"],
+    old_values: {
+      suspect_contact: "Unknown Instagram user",
+      platform_website: "Instagram, Telegram",
+      description: "Victim being blackmailed with intimate images shared through social media",
+      incident_date_time: "2025-01-12T08:00:00+08:00"
+    },
+    new_values: {
+      suspect_contact: "Instagram: @blackmail_master2025, Telegram: @darknet_collector, Phone number that contacted victim: +63 917 XXX XXXX (number partially withheld for safety)",
+      platform_website: "Instagram, Telegram, WhatsApp, Facebook Messenger",
+      description: "Victim being blackmailed with intimate images after initially connecting through Instagram dating scam. Suspect convinced victim to share personal photos, then demanded ₱50,000 payment threatening to share images with family and colleagues. Suspect has been escalating threats and has created fake social media accounts impersonating the victim. Recent development: suspect has started contacting victim's workplace colleagues.",
+      incident_date_time: "2025-01-10T19:30:00+08:00"
+    },
+    update_reason: "Officer requested specific contact information and escalation details",
+    update_notes: "Updated via mobile app - added additional platform details and timeline",
+    device_info: {
+      platform: "mobile",
+      app_version: "1.2.0", 
+      timestamp: "2025-01-15T16:20:00+08:00"
+    },
+    requires_ai_reassessment: true,
+    ai_reassessment_completed: true,
+    created_at: "2025-01-15T16:20:00+08:00"
+  },
+  {
+    id: "update_004",
+    complaint_id: "CYB-2025-009", 
+    updated_by: "user_confidential_009",
+    updater_name: "Maria Santos (Pseudonym)",
+    update_type: "citizen_update",
+    fields_updated: ["estimated_loss", "suspect_details", "content_description"],
+    old_values: {
+      estimated_loss: 0,
+      suspect_details: "Unknown social media user",
+      content_description: null
+    },
+    new_values: {
+      estimated_loss: 25000,
+      suspect_details: "Suspect appears to be operating from Metro Manila area based on local slang usage and knowledge of victim's workplace location. Uses multiple fake profiles with stolen photos of attractive men to lure victims. Has threatened to post images on 'revenge porn' websites and send to victim's professional network on LinkedIn. Suspect demonstrated knowledge of victim's daily routine, suggesting possible surveillance or gathering of personal information from social media.",
+      content_description: "Suspect has 15+ compromising images and 3 video recordings obtained through manipulation and false promises of relationship. Content was obtained over 2-week period starting January 5, 2025. Suspect has already created fake social media profiles using victim's photos and personal information."
+    },
+    update_reason: "Provided financial impact assessment and detailed suspect behavior analysis as requested by investigating officer",
+    update_notes: "Updated via mobile app - victim has now paid partial amount under duress",
+    device_info: {
+      platform: "mobile",
+      app_version: "1.2.0",
+      timestamp: "2025-01-18T11:15:00+08:00"
+    },
+    requires_ai_reassessment: true,
+    ai_reassessment_completed: false,
+    created_at: "2025-01-18T11:15:00+08:00"
+  }
 ]
 
