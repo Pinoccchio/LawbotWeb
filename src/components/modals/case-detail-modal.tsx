@@ -734,6 +734,12 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         </>
                       )}
 
+                      {/* Review & Update Status Section */}
+                      {complaint.status === "Requires More Information" && complaint.last_citizen_update && (
+                        <>
+                        </>
+                      )}
+
                       {/* Detailed Update History */}
                       {complaint.status === "Requires More Information" && updateHistory.length > 0 && (
                         <>

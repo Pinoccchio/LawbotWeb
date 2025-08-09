@@ -27,6 +27,7 @@ export function MyCasesView() {
   const [evidenceCounts, setEvidenceCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
   
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("")
@@ -98,6 +99,167 @@ export function MyCasesView() {
       fetchOfficerCases()
     }
   }, [user])
+
+  // Set up real-time subscriptions for automatic updates
+  useEffect(() => {
+    if (!user) return
+
+    console.log('🔄 Setting up real-time subscriptions for My Cases...')
+    
+    // Get current officer ID for filtering subscriptions
+    const getCurrentOfficerId = async () => {
+      try {
+        const officerProfile = await PNPOfficerService.getCurrentOfficerProfile()
+        return officerProfile?.id
+      } catch (error) {
+        console.error('❌ Error getting officer ID for subscriptions:', error)
+        return null
+      }
+    }
+
+    const setupSubscriptions = async () => {
+      const officerId = await getCurrentOfficerId()
+      if (!officerId) {
+        console.log('⚠️ No officer ID available for real-time subscriptions')
+        return
+      }
+
+      console.log('📡 Setting up subscriptions for officer:', officerId)
+
+      // 1. Subscribe to complaints table changes for assigned cases
+      const complaintsSubscription = supabase
+        .channel('my_cases_complaints')
+        .on('presence', { event: 'sync' }, () => {
+          console.log('✅ Real-time connection established')
+          setIsRealtimeConnected(true)
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'complaints',
+            filter: `assigned_officer_id=eq.${officerId}`
+          },
+          async (payload) => {
+            console.log('🔔 Complaints change detected:', payload.eventType, payload.new || payload.old)
+            
+            // Handle different event types
+            switch (payload.eventType) {
+              case 'INSERT':
+                console.log('➕ New case assigned to officer')
+                break
+              case 'UPDATE':
+                console.log('📝 Case data updated (status, citizen updates, etc.)')
+                break
+              case 'DELETE':
+                console.log('➖ Case removed/reassigned from officer')
+                break
+            }
+            
+            // Refresh cases data to get latest information
+            await fetchOfficerCases()
+            
+            // If a status modal is open for a case that was just updated, close it to prevent conflicts
+            if (statusModalOpen && selectedCase) {
+              console.log('🔄 Closing status modal due to real-time update to prevent conflicts')
+              setStatusModalOpen(false)
+              setSelectedCase(null)
+            }
+          }
+        )
+        .subscribe()
+
+      // 2. Subscribe to evidence_files table for evidence count updates
+      const evidenceSubscription = supabase
+        .channel('my_cases_evidence')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'evidence_files'
+          },
+          async (payload) => {
+            console.log('🔔 Evidence file change detected:', payload.eventType)
+            
+            // Check if the evidence change affects one of our cases
+            const complaintId = payload.new?.complaint_id || payload.old?.complaint_id
+            if (complaintId) {
+              const affectsOurCases = officerCases.some(case_ => 
+                case_.complaint.id === complaintId || case_.complaint.complaint_number === complaintId
+              )
+              
+              if (affectsOurCases) {
+                console.log('📎 Evidence change affects our cases, refreshing...')
+                
+                // Update evidence count for the specific case
+                try {
+                  const newCount = await fetchEvidenceCount(complaintId)
+                  setEvidenceCounts(prev => ({
+                    ...prev,
+                    [complaintId]: newCount
+                  }))
+                } catch (error) {
+                  console.error('❌ Error updating evidence count:', error)
+                  // Fallback: refresh all cases
+                  await fetchOfficerCases()
+                }
+              }
+            }
+          }
+        )
+        .subscribe()
+
+      // 3. Subscribe to case_assignments table if it exists (for future use)
+      const assignmentsSubscription = supabase
+        .channel('my_cases_assignments')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'case_assignments'
+          },
+          async (payload) => {
+            console.log('🔔 Case assignment change detected:', payload.eventType)
+            
+            // Check if assignment affects this officer
+            const assignedOfficerId = payload.new?.officer_id || payload.old?.officer_id
+            if (assignedOfficerId === officerId) {
+              console.log('👮 Assignment change affects this officer, refreshing cases...')
+              await fetchOfficerCases()
+            }
+          }
+        )
+        .subscribe()
+
+      // Store subscription references for cleanup
+      return () => {
+        console.log('🔌 Cleaning up real-time subscriptions...')
+        setIsRealtimeConnected(false)
+        supabase.removeChannel(complaintsSubscription)
+        supabase.removeChannel(evidenceSubscription)
+        supabase.removeChannel(assignmentsSubscription)
+      }
+    }
+
+    // Set up subscriptions and store cleanup function
+    let cleanup: (() => void) | undefined
+
+    setupSubscriptions().then(cleanupFn => {
+      cleanup = cleanupFn
+    }).catch(error => {
+      console.error('❌ Error setting up real-time subscriptions:', error)
+    })
+
+    // Cleanup function for useEffect
+    return () => {
+      if (cleanup) {
+        cleanup()
+      }
+    }
+  }, [user, officerCases]) // Include officerCases in dependencies for evidence subscription logic
 
   // Filter cases based on search and filter criteria
   const filteredCases = officerCases.filter((case_) => {
@@ -306,6 +468,7 @@ export function MyCasesView() {
               </div>
               {/* Show detailed update information for updated cases */}
               {hasBeenUpdatedByCitizen(caseData) && renderDetailedUpdateInfo(caseData)}
+              
             </div>
             <div className="flex flex-col space-y-3 ml-6">
               <Button size="sm" className="btn-gradient" onClick={() => handleViewDetails(caseData)}>
@@ -339,6 +502,89 @@ export function MyCasesView() {
     // Open the status update modal directly - like the dashboard
     setSelectedCase(caseData)
     setStatusModalOpen(true)
+  }
+
+  const handleQuickStatusUpdate = async (caseData: any, newStatus: string) => {
+    try {
+      console.log('🚀 Quick status update:', { caseData: caseData.complaint_number || caseData.id, newStatus })
+      
+      // Generate smart remark based on the quick action
+      let remarks = ""
+      if (newStatus === "Resolved") {
+        remarks = "Case resolved after reviewing citizen-provided updates. All requested information was satisfactory."
+      } else if (newStatus === "Under Investigation") {
+        remarks = "Investigation continues with citizen-provided additional information. Updates reviewed and noted."
+      }
+
+      // Get current status to check if we need to clear citizen update indicators
+      const currentStatus = caseData.status
+      const complaintId = caseData.complaint_id || caseData.id
+
+      // Check if we should clear citizen update indicators
+      const isOfficerAcknowledgingUpdates = currentStatus === "Requires More Information" && newStatus !== "Requires More Information"
+      const isSettingToRequiresMoreInfo = newStatus === "Requires More Information" && currentStatus !== "Requires More Information"
+      const shouldClearCitizenUpdates = isOfficerAcknowledgingUpdates || isSettingToRequiresMoreInfo
+
+      // Clear citizen update indicators in both cases to prevent confusion
+      if (shouldClearCitizenUpdates) {
+        if (isOfficerAcknowledgingUpdates) {
+          console.log('🔄 Officer acknowledging citizen updates - clearing update indicators')
+        } else if (isSettingToRequiresMoreInfo) {
+          console.log('🔄 Officer setting status to Requires More Information - clearing old update indicators to prevent confusion')
+        }
+        
+        // Clear citizen update fields since officer has reviewed and acted on them
+        const { error: clearError } = await supabase
+          .from('complaints')
+          .update({
+            status: newStatus,
+            last_citizen_update: null,
+            total_updates: 0,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', complaintId)
+
+        if (clearError) {
+          console.error('❌ Error clearing citizen update fields:', clearError)
+          throw clearError
+        }
+
+        // Also create status history record
+        const { error: historyError } = await supabase
+          .from('status_history')
+          .insert({
+            complaint_id: complaintId,
+            status: newStatus,
+            updated_by: user?.displayName || user?.email || 'Officer',
+            updated_by_user_id: user?.uid,
+            remarks: remarks
+          })
+
+        if (historyError) {
+          console.error('❌ Error creating status history:', historyError)
+          throw historyError
+        }
+
+        console.log('✅ Status updated and citizen update indicators cleared')
+      } else {
+        // Normal status update without clearing citizen update fields
+        await handleStatusUpdate(newStatus, {
+          complaintId: complaintId,
+          remarks: remarks,
+          updatedBy: user?.uid || 'system'
+        })
+      }
+
+      // Show success feedback
+      console.log('✅ Quick status update successful')
+      
+      // Refresh the cases list to show updated status
+      await fetchOfficerCases()
+      
+    } catch (error) {
+      console.error('❌ Quick status update failed:', error)
+      // Could show error toast here
+    }
   }
 
   const handleViewEvidence = (caseData: any) => {

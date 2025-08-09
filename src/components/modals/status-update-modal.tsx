@@ -25,6 +25,22 @@ interface StatusUpdateModalProps {
 }
 
 export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }: StatusUpdateModalProps) {
+  
+  // Enhanced close handler to reset all modal state
+  const handleClose = () => {
+    // Reset all modal state
+    setSubmitSuccess(false)
+    setSubmitError(null)
+    setIsSubmitting(false)
+    setSelectedStatus(caseData?.status || "")
+    setUpdateNotes("")
+    setNotifyStakeholders(true)
+    setUrgencyLevel("normal")
+    setFollowUpDate("")
+    
+    // Call parent close handler
+    onClose()
+  }
   const [selectedStatus, setSelectedStatus] = useState(caseData?.status || "")
   const [updateNotes, setUpdateNotes] = useState("")
   const [notifyStakeholders, setNotifyStakeholders] = useState(true)
@@ -192,6 +208,27 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
         throw new Error('Officer information not loaded. Please wait and try again.')
       }
       
+      // Get current status and complaint ID for tracking officer acknowledgment
+      const currentStatus = caseData?.status
+      const complaintId = caseData?.complaint_id || caseData?.id
+      
+      console.log('🔍 Status change analysis:', {
+        from: currentStatus,
+        to: selectedStatus,
+        complaintId: complaintId
+      })
+      
+      // Check if we should clear citizen update indicators
+      const isOfficerAcknowledgingUpdates = currentStatus === "Requires More Information" && selectedStatus !== "Requires More Information"
+      const isSettingToRequiresMoreInfo = selectedStatus === "Requires More Information" && currentStatus !== "Requires More Information"
+      const shouldClearCitizenUpdates = isOfficerAcknowledgingUpdates || isSettingToRequiresMoreInfo
+      
+      if (isOfficerAcknowledgingUpdates) {
+        console.log('🔄 Officer acknowledging citizen updates - will clear update indicators')
+      } else if (isSettingToRequiresMoreInfo) {
+        console.log('🔄 Officer setting status to Requires More Information - clearing old update indicators to prevent confusion')
+      }
+      
       // Create update data object
       const updateData = {
         status: selectedStatus,
@@ -201,9 +238,39 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
         followUpDate,
         assignedOfficer: currentOfficer.id,
         timestamp: new Date().toISOString(),
+        // Additional data for database update if needed
+        clearCitizenUpdates: shouldClearCitizenUpdates,
+        complaintId: complaintId
       }
       
       console.log('📋 Submitting update data:', updateData)
+      
+      // Clear citizen update indicators if needed to prevent confusion
+      if (shouldClearCitizenUpdates && complaintId) {
+        console.log('🔄 Clearing citizen update indicators in database...')
+        
+        try {
+          const { error: clearError } = await supabase
+            .from('complaints')
+            .update({
+              status: selectedStatus,
+              last_citizen_update: null,
+              total_updates: 0,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', complaintId)
+          
+          if (clearError) {
+            console.error('❌ Error clearing citizen update indicators:', clearError)
+            // Don't throw error here - still proceed with status update
+          } else {
+            console.log('✅ Citizen update indicators cleared successfully')
+          }
+        } catch (dbError) {
+          console.error('❌ Database error clearing indicators:', dbError)
+          // Don't throw error here - still proceed with status update
+        }
+      }
       
       // Call the parent's status update handler
       await onStatusUpdate(selectedStatus, updateData)
@@ -211,8 +278,10 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       console.log('✅ Status update submitted successfully')
       setSubmitSuccess(true)
       
-      // Don't close automatically - show success message instead
-      // User can manually close by clicking the close button
+      // Show success message briefly, then auto-close modal for better UX
+      setTimeout(() => {
+        handleClose()
+      }, 1500) // Close after 1.5 seconds
     } catch (error) {
       console.error('❌ Error submitting status update:', error)
       
@@ -244,7 +313,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
         <CardHeader className="relative border-b bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-4 top-4 h-8 w-8 p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600">
+          <Button variant="ghost" size="sm" onClick={handleClose} className="absolute right-4 top-4 h-8 w-8 p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600">
             <X className="h-4 w-4" />
           </Button>
           <div className="animate-fade-in-up">
@@ -592,7 +661,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isSubmitting}
                 className="btn-modern border-lawbot-slate-300 text-lawbot-slate-600 hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800 px-6 py-3 disabled:opacity-50"
               >
