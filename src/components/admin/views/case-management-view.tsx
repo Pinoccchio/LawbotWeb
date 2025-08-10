@@ -523,6 +523,7 @@ export function CaseManagementView() {
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}
+        mode="single-case"
         caseData={selectedCase}
       />
     </div>

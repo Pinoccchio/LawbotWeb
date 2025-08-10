@@ -2999,6 +2999,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
           setEvidenceModalOpen(false)
           setSelectedEvidence(null)
         }}
+        mode="single-case"
         caseData={{ 
           id: complaint.complaint_number || complaint.id, 
           title: `Evidence: ${selectedEvidence?.file_name || "Unknown"}`,

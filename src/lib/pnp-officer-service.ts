@@ -390,16 +390,8 @@ export class PNPOfficerService {
       const investigating = cases.filter(c => c.complaint.status === 'Under Investigation').length
       const needsInfo = cases.filter(c => c.complaint.status === 'Requires More Information').length
       
-      // Generate weekly activity (simplified)
-      const weeklyActivity = [
-        { day: 'Mon', cases: Math.floor(Math.random() * 3) + 1 },
-        { day: 'Tue', cases: Math.floor(Math.random() * 4) + 1 },
-        { day: 'Wed', cases: Math.floor(Math.random() * 3) + 1 },
-        { day: 'Thu', cases: Math.floor(Math.random() * 4) + 2 },
-        { day: 'Fri', cases: Math.floor(Math.random() * 3) + 1 },
-        { day: 'Sat', cases: Math.floor(Math.random() * 2) },
-        { day: 'Sun', cases: Math.floor(Math.random() * 2) }
-      ]
+      // Calculate real weekly activity from database
+      const weeklyActivity = await this.calculateWeeklyActivity(targetOfficerId)
       
       console.log('✅ Officer statistics calculated:', {
         totalCases: totalAllCases,
@@ -413,7 +405,7 @@ export class PNPOfficerService {
         active_cases: activeCases,
         resolved_cases: resolvedCount,
         success_rate: successRate,
-        avg_resolution_time: 5.2, // TODO: Calculate from actual data
+        avg_resolution_time: await this.calculateAverageResolutionTime(targetOfficerId),
         weekly_activity: weeklyActivity,
         monthly_progress: {
           resolved: resolvedCount,
@@ -447,15 +439,7 @@ export class PNPOfficerService {
       resolved_cases: 0,
       success_rate: 0,
       avg_resolution_time: 0,
-      weekly_activity: [
-        { day: 'Mon', cases: 0 },
-        { day: 'Tue', cases: 0 },
-        { day: 'Wed', cases: 0 },
-        { day: 'Thu', cases: 0 },
-        { day: 'Fri', cases: 0 },
-        { day: 'Sat', cases: 0 },
-        { day: 'Sun', cases: 0 }
-      ],
+      weekly_activity: this.getDefaultWeeklyActivity(),
       monthly_progress: {
         resolved: 0,
         target: 0,
@@ -473,6 +457,149 @@ export class PNPOfficerService {
         resolved: 0,
         dismissed: 0
       }
+    }
+  }
+
+  // Calculate real weekly activity from database
+  private static async calculateWeeklyActivity(officerId: string): Promise<Array<{ day: string; cases: number }>> {
+    try {
+      console.log('📊 Calculating real weekly activity for officer:', officerId)
+      
+      // Get the start of this week (Monday)
+      const now = new Date()
+      const startOfWeek = new Date(now)
+      const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // Convert to Monday-based week
+      startOfWeek.setDate(now.getDate() - daysToSubtract)
+      startOfWeek.setHours(0, 0, 0, 0)
+      
+      // Get status history for this week for the officer's cases
+      const { data: officerComplaints, error: complaintsError } = await supabase
+        .from('complaints')
+        .select('id')
+        .eq('assigned_officer_id', officerId)
+      
+      if (complaintsError || !officerComplaints) {
+        console.log('⚠️ Could not fetch officer complaints for weekly activity')
+        return this.getDefaultWeeklyActivity()
+      }
+      
+      const complaintIds = officerComplaints.map(c => c.id)
+      
+      if (complaintIds.length === 0) {
+        console.log('ℹ️ No complaints found for officer, returning zero activity')
+        return this.getDefaultWeeklyActivity()
+      }
+      
+      // Get status history entries for this week
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 7)
+      
+      const { data: statusHistory, error: historyError } = await supabase
+        .from('status_history')
+        .select('timestamp')
+        .in('complaint_id', complaintIds)
+        .gte('timestamp', startOfWeek.toISOString())
+        .lt('timestamp', endOfWeek.toISOString())
+        .order('timestamp', { ascending: true })
+      
+      if (historyError) {
+        console.error('❌ Error fetching weekly status history:', historyError)
+        return this.getDefaultWeeklyActivity()
+      }
+      
+      // Initialize weekly activity counters
+      const weeklyActivity = [
+        { day: 'Mon', cases: 0 },
+        { day: 'Tue', cases: 0 },
+        { day: 'Wed', cases: 0 },
+        { day: 'Thu', cases: 0 },
+        { day: 'Fri', cases: 0 },
+        { day: 'Sat', cases: 0 },
+        { day: 'Sun', cases: 0 }
+      ]
+      
+      // Count activities by day
+      if (statusHistory && statusHistory.length > 0) {
+        statusHistory.forEach((activity: any) => {
+          const activityDate = new Date(activity.timestamp)
+          const dayOfWeek = activityDate.getDay()
+          
+          // Convert Sunday (0) to index 6, Monday (1) to index 0, etc.
+          const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+          
+          if (dayIndex >= 0 && dayIndex < 7) {
+            weeklyActivity[dayIndex].cases++
+          }
+        })
+        
+        console.log('✅ Weekly activity calculated from real data:', weeklyActivity)
+      } else {
+        console.log('ℹ️ No status history found for this week')
+      }
+      
+      return weeklyActivity
+    } catch (error) {
+      console.error('❌ Error calculating weekly activity:', error)
+      return this.getDefaultWeeklyActivity()
+    }
+  }
+  
+  // Get default weekly activity structure
+  private static getDefaultWeeklyActivity(): Array<{ day: string; cases: number }> {
+    return [
+      { day: 'Mon', cases: 0 },
+      { day: 'Tue', cases: 0 },
+      { day: 'Wed', cases: 0 },
+      { day: 'Thu', cases: 0 },
+      { day: 'Fri', cases: 0 },
+      { day: 'Sat', cases: 0 },
+      { day: 'Sun', cases: 0 }
+    ]
+  }
+
+  // Calculate average resolution time from database
+  private static async calculateAverageResolutionTime(officerId: string): Promise<number> {
+    try {
+      console.log('📊 Calculating average resolution time for officer:', officerId)
+      
+      // Get resolved cases for this officer with creation and resolution dates
+      const { data: resolvedCases, error } = await supabase
+        .from('complaints')
+        .select('created_at, updated_at')
+        .eq('assigned_officer_id', officerId)
+        .in('status', ['Resolved', 'Dismissed'])
+        .order('updated_at', { ascending: false })
+        .limit(50) // Limit to recent 50 cases for performance
+      
+      if (error || !resolvedCases || resolvedCases.length === 0) {
+        console.log('ℹ️ No resolved cases found for resolution time calculation')
+        return 0
+      }
+      
+      // Calculate resolution times in days
+      const resolutionTimes = resolvedCases.map(case_ => {
+        const createdDate = new Date(case_.created_at)
+        const resolvedDate = new Date(case_.updated_at)
+        const timeDiffMs = resolvedDate.getTime() - createdDate.getTime()
+        const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24) // Convert to days
+        return Math.max(0, timeDiffDays) // Ensure non-negative
+      }).filter(time => time > 0) // Filter out invalid times
+      
+      if (resolutionTimes.length === 0) {
+        console.log('ℹ️ No valid resolution times found')
+        return 0
+      }
+      
+      // Calculate average
+      const averageResolutionTime = resolutionTimes.reduce((sum, time) => sum + time, 0) / resolutionTimes.length
+      const roundedAverage = Math.round(averageResolutionTime * 10) / 10 // Round to 1 decimal place
+      
+      console.log(`✅ Average resolution time calculated: ${roundedAverage} days (from ${resolutionTimes.length} cases)`)
+      return roundedAverage
+    } catch (error) {
+      console.error('❌ Error calculating average resolution time:', error)
+      return 0
     }
   }
 
@@ -1309,6 +1436,124 @@ export class PNPOfficerService {
       // Don't throw error - notification failure shouldn't break case update workflow
       console.log('⚠️ FCM notification exception, continuing with case update')
       return false
+    }
+  }
+
+  // Get recent evidence files for cases assigned to officer
+  static async getOfficerRecentEvidence(officerId: string, limit: number = 5) {
+    try {
+      console.log('📊 Attempting to fetch recent evidence for officer:', officerId)
+      
+      const { data, error } = await supabase.rpc('get_officer_recent_evidence', {
+        p_officer_id: officerId,
+        p_limit: limit
+      })
+      
+      if (error) {
+        console.error('❌ RPC function error:', error)
+        console.log('📊 Database function may not exist, returning empty array')
+        return []
+      }
+      
+      console.log('✅ Recent evidence RPC successful:', data?.length || 0, 'files')
+      return data || []
+    } catch (error) {
+      console.error('❌ Exception fetching recent evidence:', error)
+      console.log('📊 Using fallback: empty evidence array')
+      return []
+    }
+  }
+
+  // Get weekly activity for officer
+  static async getOfficerWeeklyActivity(officerId: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_officer_weekly_activity', {
+        p_officer_id: officerId
+      })
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching weekly activity:', error)
+      return []
+    }
+  }
+
+  // Get performance metrics for officer
+  static async getOfficerPerformanceMetrics(officerId: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_officer_performance_metrics', {
+        p_officer_id: officerId
+      })
+      
+      if (error) throw error
+      return data?.[0] || {
+        total_cases: 0,
+        resolved_cases: 0,
+        pending_cases: 0,
+        under_investigation: 0,
+        requires_more_info: 0,
+        dismissed_cases: 0,
+        avg_resolution_days: 0,
+        high_priority_cases: 0,
+        medium_priority_cases: 0,
+        low_priority_cases: 0
+      }
+    } catch (error) {
+      console.error('Error fetching performance metrics:', error)
+      return {
+        total_cases: 0,
+        resolved_cases: 0,
+        pending_cases: 0,
+        under_investigation: 0,
+        requires_more_info: 0,
+        dismissed_cases: 0,
+        avg_resolution_days: 0,
+        high_priority_cases: 0,
+        medium_priority_cases: 0,
+        low_priority_cases: 0
+      }
+    }
+  }
+
+  // Get upcoming tasks for officer
+  static async getOfficerUpcomingTasks(officerId: string, limit: number = 5) {
+    try {
+      const { data, error } = await supabase.rpc('get_officer_upcoming_tasks', {
+        p_officer_id: officerId,
+        p_limit: limit
+      })
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching upcoming tasks:', error)
+      return []
+    }
+  }
+
+  // Get notification summary for officer
+  static async getOfficerNotificationSummary(officerId: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_officer_notification_summary', {
+        p_officer_id: officerId
+      })
+      
+      if (error) throw error
+      return data?.[0] || {
+        new_cases: 0,
+        pending_reviews: 0,
+        high_priority_alerts: 0,
+        total_unread: 0
+      }
+    } catch (error) {
+      console.error('Error fetching notification summary:', error)
+      return {
+        new_cases: 0,
+        pending_reviews: 0,
+        high_priority_alerts: 0,
+        total_unread: 0
+      }
     }
   }
 }

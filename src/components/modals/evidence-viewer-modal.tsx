@@ -23,7 +23,8 @@ import {
   ZoomOut,
   Maximize2,
   Move,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +39,7 @@ import EvidenceService, { EvidenceFile } from "@/lib/evidence-service"
 interface EvidenceViewerModalProps {
   isOpen: boolean
   onClose: () => void
+  mode?: 'single-case' | 'multi-case'  // Context for interface complexity
   caseData: {
     id: string
     title: string
@@ -46,10 +48,13 @@ interface EvidenceViewerModalProps {
   } | null
 }
 
-export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewerModalProps) {
+export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', caseData }: EvidenceViewerModalProps) {
   const [selectedFile, setSelectedFile] = useState<EvidenceFile | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
+  const [sortBy, setSortBy] = useState("date")
+  const [sortOrder, setSortOrder] = useState("desc")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
@@ -61,6 +66,13 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
       fetchEvidenceFiles()
     }
   }, [isOpen, caseData])
+
+  // Refetch when sorting changes
+  useEffect(() => {
+    if (isOpen && caseData && evidenceFiles.length > 0) {
+      fetchEvidenceFiles()
+    }
+  }, [sortBy, sortOrder])
 
   const fetchEvidenceFiles = async () => {
     // If we have a specific evidence file, use it
@@ -82,7 +94,11 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
       console.log('🔄 Fetching evidence files for complaint:', complaintId)
       console.log('📋 Case data received:', caseData)
       
-      const files = await EvidenceService.getEvidenceFiles({ caseId: complaintId })
+      const files = await EvidenceService.getEvidenceFiles({ 
+        caseId: complaintId,
+        sortBy: sortBy as 'date' | 'name' | 'size' | 'type',
+        sortOrder: sortOrder as 'asc' | 'desc'
+      })
       setEvidenceFiles(files)
       console.log('✅ Evidence files loaded:', files.length)
       
@@ -109,18 +125,50 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
 
   if (!isOpen || !caseData) return null
 
-  // Filter evidence files based on search and filter
-  const filteredFiles = evidenceFiles.filter((file) => {
-    const matchesSearch = file.file_name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === "all" || 
-      (filterType === "image" && file.file_type?.startsWith('image/')) ||
-      (filterType === "document" && (file.file_type?.includes('pdf') || file.file_type?.includes('document'))) ||
-      (filterType === "audio" && file.file_type?.startsWith('audio/')) ||
-      (filterType === "video" && file.file_type?.startsWith('video/')) ||
-      (filterType === "archive" && (file.file_type?.includes('zip') || file.file_type?.includes('rar')))
+  // Filter evidence files - only apply filters in multi-case mode
+  const filteredFiles = mode === 'multi-case' ? evidenceFiles.filter((file) => {
+    const matchesSearch = searchTerm === "" || file.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Enhanced type matching logic
+    let matchesType = false
+    const fileType = file.file_type?.toLowerCase() || ''
+    const fileName = file.file_name?.toLowerCase() || ''
+    
+    if (filterType === "all") {
+      matchesType = true
+    } else if (filterType === "image") {
+      // Check both MIME type and file extension for images
+      matchesType = fileType.startsWith('image/') || 
+                   fileName.endsWith('.jpg') || 
+                   fileName.endsWith('.jpeg') || 
+                   fileName.endsWith('.png') || 
+                   fileName.endsWith('.gif') || 
+                   fileName.endsWith('.webp') || 
+                   fileName.endsWith('.bmp')
+    } else if (filterType === "video") {
+      // Check both MIME type and file extension for videos
+      matchesType = fileType.startsWith('video/') || 
+                   fileName.endsWith('.mp4') || 
+                   fileName.endsWith('.mov') || 
+                   fileName.endsWith('.avi') || 
+                   fileName.endsWith('.mkv') || 
+                   fileName.endsWith('.webm')
+    }
+    
+    // Debug logging for multi-case filtering
+    if (filterType !== "all") {
+      console.log('🔍 Multi-case filter check:', {
+        fileName: file.file_name,
+        fileType: file.file_type,
+        filterType,
+        matchesType,
+        matchesSearch,
+        willShow: matchesSearch && matchesType
+      })
+    }
     
     return matchesSearch && matchesType
-  })
+  }) : evidenceFiles  // Single-case mode: show all files without filtering
 
   const getFileIcon = (fileType: string) => {
     if (fileType?.startsWith('image/')) {
@@ -146,19 +194,35 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
 
   // Get file category for preview
   const getFileCategory = (fileType: string): 'image' | 'video' | 'pdf' | 'audio' | 'document' | 'other' => {
-    if (!fileType) return 'other'
+    if (!fileType) {
+      console.log('🔍 getFileCategory: Empty fileType provided')
+      return 'other'
+    }
     
     const lowercaseType = fileType.toLowerCase()
+    console.log('🔍 getFileCategory: Processing fileType:', fileType, '-> lowercase:', lowercaseType)
     
     // Image types
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff']
     if (fileType.startsWith('image/') || imageExtensions.some(ext => lowercaseType === ext || lowercaseType.endsWith(`.${ext}`))) {
+      console.log('✅ getFileCategory: Identified as image')
       return 'image'
     }
     
-    // Video types
+    // Video types - Enhanced detection for MP4 and video MIME types
     const videoExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'mpg', 'mpeg', 'wmv', '3gp']
-    if (fileType.startsWith('video/') || videoExtensions.some(ext => lowercaseType === ext || lowercaseType.endsWith(`.${ext}`))) {
+    const isVideoMime = fileType.startsWith('video/')
+    const isVideoExtension = videoExtensions.some(ext => lowercaseType === ext || lowercaseType.endsWith(`.${ext}`))
+    
+    console.log('🔍 getFileCategory: Video detection -', {
+      fileType,
+      isVideoMime,
+      isVideoExtension,
+      videoExtensions
+    })
+    
+    if (isVideoMime || isVideoExtension) {
+      console.log('✅ getFileCategory: Identified as video')
       return 'video'
     }
     
@@ -180,6 +244,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
       return 'document'
     }
     
+    console.log('⚠️ getFileCategory: Could not categorize fileType:', fileType, '-> defaulting to "other"')
     return 'other'
   }
   
@@ -267,36 +332,113 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
 
         <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="p-6 space-y-6">
-            {/* Search and Filter */}
-            <Card className="card-modern bg-gradient-to-r from-lawbot-blue-50/50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-lawbot-slate-400" />
-                    <Input
-                      placeholder="🔍 Search evidence files..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12"
-                    />
+            {mode === 'multi-case' ? (
+              // Full-featured interface for multi-case evidence viewing
+              <Card className="card-modern bg-gradient-to-r from-lawbot-blue-50/50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold text-lawbot-slate-900 dark:text-white">
+                    📊 Evidence Search & Filter
+                  </CardTitle>
+                  <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Find specific evidence files across your cases with advanced filtering
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-lawbot-slate-400" />
+                      <Input
+                        placeholder="Search by filename or case number..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-12 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12"
+                      />
+                    </div>
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-48 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12">
+                        <Filter className="mr-2 h-4 w-4" />
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">📋 All Types</SelectItem>
+                        <SelectItem value="image">🖼️ Photos</SelectItem>
+                        <SelectItem value="video">🎬 Videos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-48 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">📅 Upload Date</SelectItem>
+                        <SelectItem value="name">🔤 File Name</SelectItem>
+                        <SelectItem value="size">💾 File Size</SelectItem>
+                        <SelectItem value="type">🏷️ File Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      className="h-12 px-4 border-lawbot-slate-300 dark:border-lawbot-slate-600 hover:border-lawbot-blue-500 rounded-xl"
+                      title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+                    >
+                      {sortOrder === 'asc' ? '⬆️' : '⬇️'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchEvidenceFiles()}
+                      className="h-12 px-4 border-lawbot-slate-300 dark:border-lawbot-slate-600 hover:border-lawbot-blue-500 rounded-xl"
+                      title="Refresh"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : '🔄'}
+                      <span className="ml-1 hidden sm:inline">Refresh</span>
+                    </Button>
+                    <div className="flex border border-lawbot-slate-300 dark:border-lawbot-slate-600 rounded-xl overflow-hidden">
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        onClick={() => setViewMode('grid')}
+                        className="h-12 px-4 rounded-none border-r border-lawbot-slate-300 dark:border-lawbot-slate-600"
+                        title="Grid View"
+                      >
+                        📊 <span className="ml-1 hidden sm:inline">Grid View</span>
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'ghost'}
+                        onClick={() => setViewMode('list')}
+                        className="h-12 px-4 rounded-none"
+                        title="List View"
+                      >
+                        📄 <span className="ml-1 hidden sm:inline">List View</span>
+                      </Button>
+                    </div>
                   </div>
-                  <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-56 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 rounded-xl h-12">
-                      <Filter className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">📋 All Types</SelectItem>
-                      <SelectItem value="image">🖼️ Images</SelectItem>
-                      <SelectItem value="document">📄 Documents</SelectItem>
-                      <SelectItem value="audio">🎵 Audio</SelectItem>
-                      <SelectItem value="video">🎬 Video</SelectItem>
-                      <SelectItem value="archive">📦 Archives</SelectItem>
-                    </SelectContent>
-                  </Select>
+                </CardContent>
+              </Card>
+            ) : (
+              // Simplified interface for single-case evidence viewing
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-lawbot-slate-900 dark:text-white">
+                    📁 Evidence Files
+                  </h3>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    {caseData ? `Case #${caseData.id} - ${caseData.title}` : 'Evidence files for this case'}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <Button
+                  variant="outline"
+                  onClick={() => fetchEvidenceFiles()}
+                  className="h-10 px-4 border-lawbot-slate-300 dark:border-lawbot-slate-600 hover:border-lawbot-blue-500 rounded-xl"
+                  title="Refresh"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : '🔄'}
+                  <span className="ml-1">Refresh</span>
+                </Button>
+              </div>
+            )}
 
             {/* Evidence Files Grid */}
             <div className="grid lg:grid-cols-2 gap-6">

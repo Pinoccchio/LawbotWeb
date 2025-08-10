@@ -220,6 +220,83 @@ export function EvidenceViewerView() {
     setSelectedEvidence(null)
   }
 
+  // Client-side filtering for immediate response
+  const filteredFiles = evidenceFiles.filter(file => {
+    // Search filter - check file name and case number
+    const matchesSearch = !filters.searchTerm || 
+      file.file_name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      file.complaint?.complaint_number?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      file.complaint?.title?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+    
+    // File type filter - enhanced matching
+    let matchesType = true
+    if (filters.fileType !== 'all') {
+      const fileType = file.file_type?.toLowerCase() || ''
+      const fileName = file.file_name?.toLowerCase() || ''
+      
+      switch (filters.fileType) {
+        case 'image':
+          matchesType = fileType.startsWith('image/') || 
+                      fileName.endsWith('.jpg') || 
+                      fileName.endsWith('.jpeg') || 
+                      fileName.endsWith('.png') || 
+                      fileName.endsWith('.gif') || 
+                      fileName.endsWith('.webp') || 
+                      fileName.endsWith('.bmp')
+          break
+        case 'video':
+          matchesType = fileType.startsWith('video/') || 
+                      fileName.endsWith('.mp4') || 
+                      fileName.endsWith('.mov') || 
+                      fileName.endsWith('.avi') || 
+                      fileName.endsWith('.mkv') || 
+                      fileName.endsWith('.webm')
+          break
+        case 'document':
+          matchesType = fileType.includes('pdf') || 
+                      fileType.includes('document') || 
+                      fileType.includes('msword') ||
+                      fileName.endsWith('.pdf') || 
+                      fileName.endsWith('.doc') || 
+                      fileName.endsWith('.docx')
+          break
+        case 'audio':
+          matchesType = fileType.startsWith('audio/') || 
+                      fileName.endsWith('.mp3') || 
+                      fileName.endsWith('.wav') || 
+                      fileName.endsWith('.ogg')
+          break
+        default:
+          matchesType = true
+      }
+    }
+    
+    return matchesSearch && matchesType
+  })
+
+  // Client-side sorting if needed (server should handle this, but fallback)
+  const sortedFilteredFiles = [...filteredFiles].sort((a, b) => {
+    let comparison = 0
+    
+    switch (filters.sortBy) {
+      case 'name':
+        comparison = a.file_name.localeCompare(b.file_name)
+        break
+      case 'size':
+        comparison = a.file_size - b.file_size
+        break
+      case 'type':
+        comparison = (a.file_type || '').localeCompare(b.file_type || '')
+        break
+      case 'date':
+      default:
+        comparison = new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+        break
+    }
+    
+    return filters.sortOrder === 'asc' ? comparison : -comparison
+  })
+
   // Helper function to get file icon and color
   const getFileDisplay = (file: EvidenceFile) => {
     const isImage = file.file_type?.startsWith('image/')
@@ -327,10 +404,8 @@ export function EvidenceViewerView() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="image">🖼️ Images</SelectItem>
-                <SelectItem value="document">📄 Documents</SelectItem>
-                <SelectItem value="video">🎥 Video</SelectItem>
-                <SelectItem value="audio">🎧 Audio</SelectItem>
+                <SelectItem value="image">📷 Photos</SelectItem>
+                <SelectItem value="video">🎥 Videos</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filters.sortBy} onValueChange={(value) => setFilters({ ...filters, sortBy: value as any })}>
@@ -367,16 +442,18 @@ export function EvidenceViewerView() {
         </TabsList>
 
         <TabsContent value="grid">
-          {evidenceFiles.length === 0 ? (
+          {sortedFilteredFiles.length === 0 ? (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No evidence files found. Files will appear here when uploaded to your assigned cases.
+                {evidenceFiles.length === 0 
+                  ? "No evidence files found. Files will appear here when uploaded to your assigned cases."
+                  : "No evidence files match your current search and filter criteria."}
               </AlertDescription>
             </Alert>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {evidenceFiles.map((file, index) => {
+              {sortedFilteredFiles.map((file, index) => {
                 const display = getFileDisplay(file)
                 return (
                   <Card key={file.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
@@ -469,16 +546,18 @@ export function EvidenceViewerView() {
               </div>
             </CardHeader>
             <CardContent>
-              {evidenceFiles.length === 0 ? (
+              {sortedFilteredFiles.length === 0 ? (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    No evidence files found. Files will appear here when uploaded to your assigned cases.
+                    {evidenceFiles.length === 0 
+                      ? "No evidence files found. Files will appear here when uploaded to your assigned cases."
+                      : "No evidence files match your current search and filter criteria."}
                   </AlertDescription>
                 </Alert>
               ) : (
                 <div className="space-y-4">
-                  {evidenceFiles.map((file) => {
+                  {sortedFilteredFiles.map((file) => {
                     const display = getFileDisplay(file)
                     return (
                       <div
@@ -586,6 +665,7 @@ export function EvidenceViewerView() {
       <EvidenceViewerModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        mode="single-case"
         caseData={{ 
           id: selectedEvidence?.complaint?.complaint_number || "Unknown", 
           title: `Evidence: ${selectedEvidence?.file_name || "Unknown"}`,

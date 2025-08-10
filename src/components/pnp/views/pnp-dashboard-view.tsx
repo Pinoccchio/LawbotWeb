@@ -26,6 +26,12 @@ export function PNPDashboardView() {
   const [officerStats, setOfficerStats] = useState<PNPOfficerStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [evidenceCounts, setEvidenceCounts] = useState<Record<string, number>>({})
+  // const [recentEvidence, setRecentEvidence] = useState<any[]>([]) // Removed - RPC not available
+  // RPC-dependent state removed
+  // const [weeklyActivity, setWeeklyActivity] = useState<any[]>([])
+  // const [performanceMetrics, setPerformanceMetrics] = useState<any[]>([])
+  // const [upcomingTasks, setUpcomingTasks] = useState<any[]>([])
+  // const [notificationSummary, setNotificationSummary] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,6 +96,14 @@ export function PNPDashboardView() {
       setRecentActivity(activity)
       console.log('✅ Recent activity loaded:', activity.length)
       
+      // Skip recent evidence loading (RPC function not available)
+      console.log('📊 Skipping recent evidence - RPC function not available')
+      // setRecentEvidence([]) // Removed
+      
+      // Skip other RPC-dependent features (functions not available)
+      console.log('📊 Skipping RPC-dependent features - functions not available')
+      // All RPC-dependent setters removed
+      
     } catch (error) {
       console.error('❌ Error fetching officer data:', error)
       setError(error instanceof Error ? error.message : 'Failed to load officer data')
@@ -118,8 +132,23 @@ export function PNPDashboardView() {
     setEvidenceModalOpen(true)
   }
 
-  const handleQuickAction = (action: string) => {
-    alert(`${action} functionality will be implemented here`)
+  const handleQuickAction = async (action: string) => {
+    switch(action) {
+      case 'view-tasks':
+        // Navigate to tasks view or show tasks modal
+        console.log('Tasks feature not available (RPC function missing)')
+        break
+      case 'view-notifications':
+        // Navigate to notifications
+        console.log('Notifications feature not available (RPC function missing)')
+        break
+      case 'weekly-report':
+        // Generate weekly activity report
+        console.log('Weekly activity feature not available (RPC function missing)')
+        break
+      default:
+        console.log(`Action ${action} triggered`)
+    }
   }
 
   const handleStatusUpdate = async (newStatus: string, updateData: any) => {
@@ -443,7 +472,7 @@ export function PNPDashboardView() {
       </Card>
 
       {/* Enhanced Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="card-modern bg-gradient-to-br from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800 animate-slide-in-left">
           <CardHeader>
             <div className="flex items-center space-x-3">
@@ -459,54 +488,45 @@ export function PNPDashboardView() {
           <CardContent>
             <div className="space-y-3">
               {officerCases
-                .filter((c) => c.complaint?.priority === "high")
+                .filter((c) => c.complaint?.priority === "high" || c.complaint?.priority === "urgent")
                 .slice(0, 3)
                 .map((case_, index) => (
                   <div key={case_.id} className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-red-200 dark:border-lawbot-red-800 rounded-xl hover:shadow-md transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${(index + 10) * 100}ms` }}>
-                    <div>
+                    <div className="flex-1 min-w-0 mr-2">
                       <p className="font-bold text-sm text-lawbot-blue-600 dark:text-lawbot-blue-400">{case_.complaint?.complaint_number || case_.id}</p>
-                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate max-w-32">{case_.complaint?.title || 'Untitled Case'}</p>
+                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate">{case_.complaint?.title || 'Untitled Case'}</p>
+                      <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">
+                        🎯 Risk: {case_.complaint?.ai_risk_score || case_.complaint?.risk_score || 0}
+                      </p>
                     </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800 text-xs font-bold">
-                      🚨 Urgent
-                    </Badge>
+                    <div className="flex flex-col items-end">
+                      <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800 text-xs font-bold">
+                        🚨 {case_.complaint?.priority === 'urgent' ? 'Urgent' : 'High'}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-xs mt-1 p-1 h-auto text-lawbot-blue-600 hover:text-lawbot-blue-700"
+                        onClick={() => handleViewDetails(case_.complaint)}
+                      >
+                        View →
+                      </Button>
+                    </div>
                   </div>
                 ))}
+              {officerCases.filter((c) => c.complaint?.priority === "high" || c.complaint?.priority === "urgent").length === 0 && (
+                <div className="text-center py-4">
+                  <AlertTriangle className="h-8 w-8 text-lawbot-slate-400 mx-auto mb-2" />
+                  <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                    No high priority cases
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800 animate-scale-in" style={{ animationDelay: '100ms' }}>
-          <CardHeader>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lawbot-slate-900 dark:text-white">Recent Evidence</CardTitle>
-                <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Latest evidence files uploaded</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3].map((i, index) => (
-                <div key={i} className="flex items-center space-x-3 p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-md transition-all duration-200 animate-fade-in-up" style={{ animationDelay: `${(index + 13) * 100}ms` }}>
-                  <div className="w-10 h-10 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 rounded-lg flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm text-lawbot-slate-900 dark:text-white">📄 Evidence_{i}.pdf</p>
-                    <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">CYB-2025-00{i}</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleViewEvidence(officerCases[0])}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Recent Evidence section removed - RPC function not available */}
 
         <Card className="card-modern bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800 animate-slide-in-right" style={{ animationDelay: '200ms' }}>
           <CardHeader>
@@ -522,26 +542,78 @@ export function PNPDashboardView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📊 My Cases Resolved</span>
-                <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerProfile?.resolved_cases || 0}/{officerProfile?.total_cases || 0}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">⏱️ My Success Rate</span>
-                <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerProfile?.success_rate || 0}%</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🏢 Unit Active Cases</span>
-                <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerProfile?.unit?.active_cases || 0}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🎯 Unit Success Rate</span>
-                <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerProfile?.unit?.success_rate || 0}%</span>
-              </div>
+              {false ? (
+                [].map((metric, index) => {
+                  const getTrendIcon = (direction: string) => {
+                    if (direction === 'up') return '📈'
+                    if (direction === 'down') return '📉'
+                    return '➡️'
+                  }
+                  
+                  const getTrendColor = (direction: string, metricName: string) => {
+                    // For resolution time, down is good
+                    if (metricName.includes('Resolution Time')) {
+                      if (direction === 'down') return 'text-lawbot-emerald-600'
+                      if (direction === 'up') return 'text-lawbot-red-600'
+                    }
+                    // For other metrics, up is good
+                    if (direction === 'up') return 'text-lawbot-emerald-600'
+                    if (direction === 'down') return 'text-lawbot-red-600'
+                    return 'text-lawbot-slate-600'
+                  }
+                  
+                  return (
+                    <div key={index} className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
+                          {metric.metric_name === 'Cases Resolved' ? '✅' : 
+                           metric.metric_name === 'New Cases' ? '📋' : 
+                           metric.metric_name === 'Avg Resolution Time' ? '⏱️' : '📊'} 
+                          {metric.metric_name}
+                        </span>
+                        <span className={`text-xs ${getTrendColor(metric.trend_direction, metric.metric_name)}`}>
+                          {getTrendIcon(metric.trend_direction)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                          {metric.current_value}
+                          {metric.metric_name === 'Avg Resolution Time' ? ' days' : ''}
+                        </span>
+                        {metric.percentage_change !== 0 && (
+                          <p className={`text-xs ${getTrendColor(metric.trend_direction, metric.metric_name)}`}>
+                            {metric.percentage_change > 0 ? '+' : ''}{metric.percentage_change}%
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                // Fallback to basic stats if no performance metrics
+                <>
+                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📊 My Cases</span>
+                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.total_cases || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">✅ Resolved</span>
+                    <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerStats?.resolved_cases || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🎯 Success Rate</span>
+                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.success_rate || 0}%</span>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Upcoming Tasks section removed - RPC function not available */}
+
+      {/* Notification Summary section removed - RPC function not available */}
 
       {/* Modals */}
       <CaseDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} caseData={selectedCase} />
@@ -554,6 +626,7 @@ export function PNPDashboardView() {
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}
+        mode="single-case"
         caseData={selectedCase}
       />
     </div>

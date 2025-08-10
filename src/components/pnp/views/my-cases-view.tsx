@@ -976,6 +976,7 @@ export function MyCasesView() {
       <EvidenceViewerModal
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}
+        mode="single-case"
         caseData={selectedCase ? {
           id: selectedCase.complaint?.complaint_number || selectedCase.complaint_number,
           complaint_id: selectedCase.complaint?.id || selectedCase.complaint_id || selectedCase.id,
