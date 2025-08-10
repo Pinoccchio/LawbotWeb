@@ -587,12 +587,12 @@ export class PNPOfficerService {
           urgency_level: updateData?.urgencyLevel || 'normal',
           follow_up_date: updateData?.followUpDate || null,
           assigned_officer_id: null, // Set to null to avoid foreign key constraint issues
-          // Notification preferences
-          notify_complainant: updateData?.notifyStakeholders !== false,
-          notify_supervisors: updateData?.notifyStakeholders !== false,
-          notify_officers: updateData?.notifyStakeholders !== false,
-          email_notification: true, // Default to true
-          sms_notification: updateData?.urgencyLevel === 'urgent', // SMS only for urgent
+          // Automatic notification preferences - always notify
+          notify_complainant: true, // Always notify the complainant
+          notify_supervisors: true, // Always notify supervisors  
+          notify_officers: true, // Always notify assigned officers
+          email_notification: true, // Always send email notifications
+          sms_notification: updateData?.urgencyLevel === 'urgent' || updateData?.urgencyLevel === 'high', // SMS for urgent/high priority
           timestamp: new Date().toISOString()
         }
         
@@ -685,6 +685,16 @@ export class PNPOfficerService {
           }
         }
       }
+      
+      // Automatically send FCM push notification to the case owner
+      // This notification is sent regardless of officer preferences - all status changes notify users
+      console.log('📱 Automatically sending FCM notification for status change...')
+      await this.sendCaseStatusNotification(
+        actualComplaintId,
+        complaintId, // This might be complaint_number or UUID
+        newStatus,
+        updateData
+      );
       
       console.log('✅ Case status updated successfully')
       return true
@@ -1214,6 +1224,90 @@ export class PNPOfficerService {
       return true
     } catch (error) {
       console.error('❌ Error deleting evidence file:', error)
+      return false
+    }
+  }
+
+  /**
+   * Send FCM push notification to case owner when status changes
+   */
+  static async sendCaseStatusNotification(
+    complaintId: string,
+    caseNumber: string,
+    newStatus: string,
+    updateData?: any
+  ): Promise<boolean> {
+    try {
+      console.log(`📱 Sending FCM notification for case ${caseNumber} status change to: ${newStatus}`)
+
+      // Get complaint details and user_id
+      const { data: complaint, error: complaintError } = await supabase
+        .from('complaints')
+        .select('user_id, complaint_number, status')
+        .eq('id', complaintId)
+        .single()
+
+      if (complaintError || !complaint) {
+        console.error('❌ Error getting complaint details for FCM:', complaintError)
+        return false
+      }
+
+      console.log('📋 Current complaint status from database:', complaint.status)
+      console.log('📋 Old status from updateData:', updateData?.oldStatus)
+      console.log('📋 New status for notification:', newStatus)
+
+      // Get current officer profile for officer name
+      const currentOfficer = await this.getCurrentOfficerProfile()
+      if (!currentOfficer) {
+        console.error('❌ No current officer profile found for FCM notification')
+        return false
+      }
+
+      // Prepare notification data
+      const notificationPayload = {
+        userId: complaint.user_id,
+        caseNumber: complaint.complaint_number || caseNumber,
+        oldStatus: updateData?.oldStatus || complaint.status, // Use the actual current status from database as fallback
+        newStatus: newStatus,
+        officerName: currentOfficer.full_name,
+        message: updateData?.update_request_message || updateData?.remarks || updateData?.notes || undefined,
+        notificationType: 'status_update' as const
+      }
+
+      console.log('📤 Sending FCM notification payload:', notificationPayload)
+
+      // Call the FCM API endpoint
+      const response = await fetch('/api/notifications/send-push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notificationPayload)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ FCM API error response:', errorData)
+        
+        // Don't throw error - notification failure shouldn't break case update
+        console.log('⚠️ FCM notification failed, but case update will continue')
+        return false
+      }
+
+      const result = await response.json()
+      if (result.success) {
+        console.log('✅ FCM push notification sent successfully:', result.message)
+        return result.notificationSent || false
+      } else {
+        console.error('❌ FCM notification failed:', result.message)
+        return false
+      }
+
+    } catch (error) {
+      console.error('❌ Exception sending FCM notification:', error)
+      
+      // Don't throw error - notification failure shouldn't break case update workflow
+      console.log('⚠️ FCM notification exception, continuing with case update')
       return false
     }
   }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle, RefreshCw } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle, RefreshCw, Bell } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AddOfficerModal } from "@/components/admin/modals/add-officer-modal"
 import { EditOfficerModal } from "@/components/admin/modals/edit-officer-modal"
 import { DeleteOfficerModal } from "@/components/admin/modals/delete-officer-modal"
+import { UserProfileModal } from "@/components/admin/modals/user-profile-modal"
+import { UserEditModal } from "@/components/admin/modals/user-edit-modal"
+import { TestPushNotificationModal } from "@/components/admin/modals/test-push-notification-modal"
 import { supabase } from "@/lib/supabase"
+import UserService, { UserProfile, UserStats } from "@/lib/user-service"
 
 export function UserManagementView() {
   const [isAddOfficerModalOpen, setIsAddOfficerModalOpen] = useState(false)
@@ -24,33 +28,17 @@ export function UserManagementView() {
   const [officerSearchTerm, setOfficerSearchTerm] = useState("")
   const [clientSearchTerm, setClientSearchTerm] = useState("")
   
-  const mockClients = [
-    { id: 1, name: "John Doe", email: "john.doe@email.com", phone: "+63 912 345 6789", cases: 2, status: "active" },
-    {
-      id: 2,
-      name: "Maria Santos",
-      email: "maria.santos@email.com",
-      phone: "+63 923 456 7890",
-      cases: 1,
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Robert Chen",
-      email: "robert.chen@email.com",
-      phone: "+63 934 567 8901",
-      cases: 3,
-      status: "inactive",
-    },
-    {
-      id: 4,
-      name: "Lisa Garcia",
-      email: "lisa.garcia@email.com",
-      phone: "+63 945 678 9012",
-      cases: 1,
-      status: "active",
-    },
-  ]
+  // Real client data state
+  const [clientUsers, setClientUsers] = useState<UserProfile[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [clientError, setClientError] = useState<string | null>(null)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  
+  // User modal state
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false)
+  const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false)
+  const [isTestNotificationModalOpen, setIsTestNotificationModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
 
   // Fetch PNP officers from Supabase with enhanced availability data
   const fetchPnpOfficers = async () => {
@@ -107,9 +95,36 @@ export function UserManagementView() {
     }
   }
 
-  // Load officers on component mount
+  // Fetch real client users from Supabase
+  const fetchClientUsers = async () => {
+    setIsLoadingClients(true)
+    setClientError(null)
+    
+    try {
+      console.log('🔄 Fetching client users for User Management view...')
+      
+      // Fetch all client users with case counts
+      const users = await UserService.getAllClientUsers()
+      setClientUsers(users)
+      console.log('✅ Client users loaded:', users.length)
+      
+      // Fetch user statistics
+      const stats = await UserService.getUserStats()
+      setUserStats(stats)
+      console.log('✅ User statistics loaded:', stats)
+      
+    } catch (error) {
+      console.error('❌ Error fetching client users:', error)
+      setClientError(error instanceof Error ? error.message : 'Failed to load client users')
+    } finally {
+      setIsLoadingClients(false)
+    }
+  }
+
+  // Load officers and clients on component mount
   useEffect(() => {
     fetchPnpOfficers()
+    fetchClientUsers()
   }, [])
 
   const handleOfficerCreated = () => {
@@ -136,9 +151,12 @@ export function UserManagementView() {
   )
 
   // Filter clients based on search term
-  const filteredClients = mockClients.filter(client =>
-    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  const filteredClients = clientUsers.filter(client =>
+    client.full_name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.phone_number.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.firebase_uid.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.user_status.toLowerCase().includes(clientSearchTerm.toLowerCase())
   )
 
   // Handle edit officer
@@ -163,6 +181,29 @@ export function UserManagementView() {
 
   const handleDeleteSuccess = () => {
     fetchPnpOfficers() // Refresh the list
+  }
+
+  // Handle user modal actions
+  const handleViewUserProfile = (user: UserProfile) => {
+    console.log('View user profile:', user.firebase_uid)
+    setSelectedUser(user)
+    setIsUserProfileModalOpen(true)
+  }
+
+  const handleEditUser = (user: UserProfile) => {
+    console.log('Edit user:', user.firebase_uid)
+    setSelectedUser(user)
+    setIsUserEditModalOpen(true)
+  }
+
+  const handleUserUpdated = () => {
+    fetchClientUsers() // Refresh the client users list
+  }
+
+  const handleTestNotification = (user: UserProfile) => {
+    console.log('Test notification for user:', user.firebase_uid)
+    setSelectedUser(user)
+    setIsTestNotificationModalOpen(true)
   }
 
   // Use filtered data for display
@@ -283,7 +324,7 @@ export function UserManagementView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Client Accounts</p>
-                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{mockClients.length}</p>
+                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{userStats?.total_users || 0}</p>
                 <p className="text-xs text-lawbot-purple-500 dark:text-lawbot-purple-400">Mobile app users</p>
               </div>
               <div className="p-3 bg-lawbot-purple-500 rounded-lg">
@@ -593,14 +634,25 @@ export function UserManagementView() {
                     Monitor and manage client accounts from mobile app
                   </CardDescription>
                 </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
-                  <Input 
-                    placeholder="Search clients..." 
-                    value={clientSearchTerm}
-                    onChange={(e) => setClientSearchTerm(e.target.value)}
-                    className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
-                  />
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
+                    <Input 
+                      placeholder="Search clients..." 
+                      value={clientSearchTerm}
+                      onChange={(e) => setClientSearchTerm(e.target.value)}
+                      className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fetchClientUsers()}
+                    disabled={isLoadingClients}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingClients ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -618,81 +670,195 @@ export function UserManagementView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClients.map((client, index) => (
-                      <TableRow 
-                        key={client.id} 
-                        className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-10 w-10 ring-2 ring-lawbot-purple-200 dark:ring-lawbot-purple-800">
-                              <AvatarFallback className="bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 text-white font-semibold">
-                                {client.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-semibold text-lawbot-slate-900 dark:text-white">{client.name}</p>
-                              <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
-                                👤 CLI-{client.id.toString().padStart(3, "0")}
-                              </p>
-                            </div>
+                    {isLoadingClients ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex items-center justify-center space-x-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <span>Loading client users...</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                              <Mail className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                              {client.email}
-                            </div>
-                            <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                              <Phone className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
-                              {client.phone}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                              {client.cases}
-                            </span>
-                            <span className="text-xs text-lawbot-slate-500">reports</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              client.status === "active"
-                                ? "bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800"
-                                : "bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-900/20 dark:to-lawbot-slate-800/20 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800"
-                            }
-                          >
-                            {client.status === "active" ? "✅" : "💤"} {client.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                            🕒 2 days ago
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20">
-                              <User className="h-4 w-4 text-lawbot-blue-500" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-emerald-50 dark:hover:bg-lawbot-emerald-900/20">
-                              <Edit className="h-4 w-4 text-lawbot-emerald-500" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="btn-icon hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20">
-                              <Trash2 className="h-4 w-4 text-lawbot-red-500" />
+                      </TableRow>
+                    ) : clientError ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="text-red-500">
+                            <AlertTriangle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>Error loading client users: {clientError}</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-2"
+                              onClick={fetchClientUsers}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Try Again
                             </Button>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : filteredClients.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="text-gray-500">
+                            <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>No client users found</p>
+                            <p className="text-sm">Users will appear here once they register via the mobile app</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredClients.map((client, index) => (
+                        <TableRow 
+                          key={client.firebase_uid} 
+                          className="hover:bg-lawbot-slate-50 dark:hover:bg-lawbot-slate-800/50 transition-colors duration-200 animate-fade-in-up border-lawbot-slate-100 dark:border-lawbot-slate-800"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          {/* Client Info */}
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-10 w-10 ring-2 ring-lawbot-purple-200 dark:ring-lawbot-purple-800">
+                                <AvatarImage src={client.profile_picture_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 text-white font-semibold">
+                                  {client.full_name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-lawbot-slate-900 dark:text-white">{client.full_name}</p>
+                                <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-mono">
+                                  🆔 {client.firebase_uid.substring(0, 8)}...
+                                </p>
+                                {client.fcm_token && (
+                                  <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 text-xs">
+                                    📱 FCM Ready
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Contact Info */}
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                <Mail className="h-4 w-4 mr-2 text-lawbot-blue-500" />
+                                <span className="truncate max-w-[180px]" title={client.email}>
+                                  {client.email}
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                                <Phone className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
+                                {client.phone_number}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Cases Submitted */}
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-4">
+                                <div className="text-center">
+                                  <div className="text-lg font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                                    {client.cases}
+                                  </div>
+                                  <div className="text-xs text-lawbot-slate-500">Total</div>
+                                </div>
+                                {client.active_cases > 0 && (
+                                  <div className="text-center">
+                                    <div className="text-sm font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                                      {client.active_cases}
+                                    </div>
+                                    <div className="text-xs text-lawbot-slate-500">Active</div>
+                                  </div>
+                                )}
+                                {client.resolved_cases > 0 && (
+                                  <div className="text-center">
+                                    <div className="text-sm font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                                      {client.resolved_cases}
+                                    </div>
+                                    <div className="text-xs text-lawbot-slate-500">Resolved</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          {/* Account Status */}
+                          <TableCell>
+                            <Badge
+                              className={
+                                client.user_status === "active"
+                                  ? "bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800"
+                                  : client.user_status === "suspended"
+                                  ? "bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 dark:text-lawbot-amber-300 dark:border-lawbot-amber-800"
+                                  : "bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800"
+                              }
+                            >
+                              {client.user_status === "active" ? "✅" : 
+                               client.user_status === "suspended" ? "⚠️" : "❌"} 
+                              {client.user_status}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Last Activity */}
+                          <TableCell>
+                            <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                              {(() => {
+                                const lastActive = new Date(client.last_active)
+                                const now = new Date()
+                                const diffTime = Math.abs(now.getTime() - lastActive.getTime())
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                                
+                                if (diffDays === 1) {
+                                  return "🕒 1 day ago"
+                                } else if (diffDays <= 7) {
+                                  return `🕒 ${diffDays} days ago`
+                                } else {
+                                  return `📅 ${lastActive.toLocaleDateString()}`
+                                }
+                              })()}
+                            </div>
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20"
+                                title="View profile details"
+                                onClick={() => handleViewUserProfile(client)}
+                              >
+                                <User className="h-4 w-4 text-lawbot-blue-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="btn-icon hover:bg-lawbot-emerald-50 dark:hover:bg-lawbot-emerald-900/20"
+                                title="Edit user information"
+                                onClick={() => handleEditUser(client)}
+                              >
+                                <Edit className="h-4 w-4 text-lawbot-emerald-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="btn-icon hover:bg-lawbot-purple-50 dark:hover:bg-lawbot-purple-900/20"
+                                title="Test push notification"
+                                onClick={() => handleTestNotification(client)}
+                                disabled={!client.fcm_token || client.user_status !== 'active'}
+                              >
+                                <Bell className="h-4 w-4 text-lawbot-purple-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -852,6 +1018,37 @@ export function UserManagementView() {
         }}
         onSuccess={handleDeleteSuccess}
         officer={selectedOfficer}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isUserProfileModalOpen}
+        onClose={() => {
+          setIsUserProfileModalOpen(false)
+          setSelectedUser(null)
+        }}
+        user={selectedUser}
+      />
+
+      {/* User Edit Modal */}
+      <UserEditModal
+        isOpen={isUserEditModalOpen}
+        onClose={() => {
+          setIsUserEditModalOpen(false)
+          setSelectedUser(null)
+        }}
+        onUserUpdated={handleUserUpdated}
+        user={selectedUser}
+      />
+
+      {/* Test Push Notification Modal */}
+      <TestPushNotificationModal
+        isOpen={isTestNotificationModalOpen}
+        onClose={() => {
+          setIsTestNotificationModalOpen(false)
+          setSelectedUser(null)
+        }}
+        user={selectedUser}
       />
 
     </div>

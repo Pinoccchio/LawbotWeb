@@ -9,6 +9,175 @@ interface ComplaintUpdate {
 }
 
 class ComplaintService {
+  /**
+   * Get all complaints with pagination and filtering
+   */
+  async getAllComplaints(options: { limit?: number; offset?: number; status?: string } = {}) {
+    try {
+      const { limit = 50, offset = 0, status } = options
+      
+      console.log('🔍 Fetching complaints with options:', options)
+      
+      let query = supabase
+        .from('complaints')
+        .select(`
+          *,
+          evidence_files(
+            id,
+            file_name,
+            file_type,
+            file_size
+          ),
+          status_history(
+            id,
+            status,
+            updated_by,
+            timestamp,
+            remarks
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (status) {
+        query = query.eq('status', status)
+      }
+
+      const { data, error, count } = await query
+
+      if (error) {
+        console.error('❌ Error fetching complaints:', error)
+        return { data: [], error, count: 0 }
+      }
+
+      console.log(`✅ Successfully fetched ${data?.length || 0} complaints`)
+      
+      return { 
+        data: data || [], 
+        error: null, 
+        count: count || 0 
+      }
+    } catch (error) {
+      console.error('❌ Exception in getAllComplaints:', error)
+      return { 
+        data: [], 
+        error: error instanceof Error ? error : new Error('Unknown error'), 
+        count: 0 
+      }
+    }
+  }
+
+  /**
+   * Get complaint statistics
+   */
+  async getComplaintStats() {
+    try {
+      console.log('🔍 Calculating complaint statistics...')
+      
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('status, priority, created_at, ai_risk_score')
+      
+      if (error) {
+        console.error('❌ Error fetching complaint stats:', error)
+        return this.getDefaultStats()
+      }
+
+      // Calculate statistics
+      const total = data?.length || 0
+      const pending = data?.filter(c => c.status === 'Pending').length || 0
+      const investigating = data?.filter(c => c.status === 'Under Investigation').length || 0
+      const moreInfo = data?.filter(c => c.status === 'Requires More Information').length || 0
+      const resolved = data?.filter(c => c.status === 'Resolved').length || 0
+      const dismissed = data?.filter(c => c.status === 'Dismissed').length || 0
+
+      // Priority distribution
+      const high = data?.filter(c => c.priority === 'high' || c.priority === 'urgent').length || 0
+      const medium = data?.filter(c => c.priority === 'medium').length || 0
+      const low = data?.filter(c => c.priority === 'low').length || 0
+
+      // Calculate averages
+      const avgRiskScore = data?.length ? 
+        data.reduce((sum, c) => sum + (c.ai_risk_score || 0), 0) / data.length : 0
+
+      const stats = {
+        total,
+        pending,
+        investigating,
+        moreInfo,
+        resolved,
+        dismissed,
+        highPriority: high,
+        mediumPriority: medium,
+        lowPriority: low,
+        avgRiskScore: Math.round(avgRiskScore),
+        resolutionRate: total > 0 ? Math.round(((resolved + dismissed) / total) * 100) : 0
+      }
+
+      console.log('✅ Complaint statistics calculated:', stats)
+      return stats
+    } catch (error) {
+      console.error('❌ Exception calculating complaint stats:', error)
+      return this.getDefaultStats()
+    }
+  }
+
+  /**
+   * Get status distribution for charts
+   */
+  async getStatusDistribution() {
+    try {
+      console.log('🔍 Getting status distribution...')
+      
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('status')
+      
+      if (error) {
+        console.error('❌ Error fetching status distribution:', error)
+        return []
+      }
+
+      // Count by status
+      const statusCounts = data?.reduce((acc: Record<string, number>, complaint) => {
+        const status = complaint.status || 'Unknown'
+        acc[status] = (acc[status] || 0) + 1
+        return acc
+      }, {})
+
+      // Convert to array format for charts
+      const distribution = Object.entries(statusCounts || {}).map(([status, count]) => ({
+        name: status,
+        value: count,
+        percentage: data?.length ? Math.round((count / data.length) * 100) : 0
+      }))
+
+      console.log('✅ Status distribution calculated:', distribution)
+      return distribution
+    } catch (error) {
+      console.error('❌ Exception getting status distribution:', error)
+      return []
+    }
+  }
+
+  /**
+   * Default stats fallback
+   */
+  private getDefaultStats() {
+    return {
+      total: 0,
+      pending: 0,
+      investigating: 0,
+      moreInfo: 0,
+      resolved: 0,
+      dismissed: 0,
+      highPriority: 0,
+      mediumPriority: 0,
+      lowPriority: 0,
+      avgRiskScore: 0,
+      resolutionRate: 0
+    }
+  }
   async updateComplaint(complaintId: string, updateData: ComplaintUpdate, firebaseUid: string) {
     try {
       // Call the database function to apply updates

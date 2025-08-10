@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import PNPOfficerService from "@/lib/pnp-officer-service"
 import { supabase } from "@/lib/supabase"
@@ -34,7 +33,6 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     setIsSubmitting(false)
     setSelectedStatus(caseData?.status || "")
     setUpdateNotes("")
-    setNotifyStakeholders(true)
     setUrgencyLevel("normal")
     setFollowUpDate("")
     
@@ -43,7 +41,6 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   }
   const [selectedStatus, setSelectedStatus] = useState(caseData?.status || "")
   const [updateNotes, setUpdateNotes] = useState("")
-  const [notifyStakeholders, setNotifyStakeholders] = useState(true)
   const [urgencyLevel, setUrgencyLevel] = useState("normal")
   const [followUpDate, setFollowUpDate] = useState("")
   const [currentOfficer, setCurrentOfficer] = useState<{ id: string; name: string; unit: string; badge: string } | null>(null)
@@ -94,8 +91,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       
       setSelectedStatus(caseData.status || "Pending")
       setUpdateNotes("")
-      setNotifyStakeholders(true)
-      setUrgencyLevel("normal")
+        setUrgencyLevel("normal")
       setFollowUpDate("")
       setIsSubmitting(false)
       setSubmitError(null)
@@ -232,8 +228,8 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       // Create update data object
       const updateData = {
         status: selectedStatus,
+        oldStatus: caseData.status, // Pass the current status as old status for FCM notification
         notes: updateNotes,
-        notifyStakeholders,
         urgencyLevel,
         followUpDate,
         assignedOfficer: currentOfficer.id,
@@ -585,43 +581,22 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
               </div>
             </div>
 
-            {/* Notification Options */}
-            <div className="space-y-4 animate-fade-in-up" style={{ animationDelay: '1000ms' }}>
+            {/* Automatic Notification Reminder */}
+            <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800 animate-fade-in-up" style={{ animationDelay: '1000ms' }}>
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-purple-500 rounded-lg">
+                <div className="p-2 bg-lawbot-blue-500 rounded-lg">
                   <Send className="h-4 w-4 text-white" />
                 </div>
-                <Label className="text-base font-bold text-lawbot-slate-900 dark:text-white">📢 Notification Settings</Label>
-              </div>
-              <div className="p-4 bg-gradient-to-r from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-800 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg">
-                    <Checkbox
-                      id="notifyStakeholders"
-                      checked={notifyStakeholders}
-                      onCheckedChange={(checked) => setNotifyStakeholders(checked === true)}
-                      className="border-lawbot-blue-300 text-lawbot-blue-600"
-                    />
-                    <Label htmlFor="notifyStakeholders" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      📧 Notify all stakeholders (complainant, supervisors, assigned officers)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg">
-                    <Checkbox id="emailNotification" defaultChecked className="border-lawbot-blue-300 text-lawbot-blue-600" />
-                    <Label htmlFor="emailNotification" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      ✉️ Send email notifications
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-700 rounded-lg">
-                    <Checkbox id="smsNotification" className="border-lawbot-blue-300 text-lawbot-blue-600" />
-                    <Label htmlFor="smsNotification" className="text-sm font-medium text-lawbot-slate-900 dark:text-white">
-                      📱 Send SMS notifications (urgent cases only)
-                    </Label>
-                  </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-lawbot-blue-800 dark:text-lawbot-blue-300">
+                    📱 Automatic Notification
+                  </p>
+                  <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
+                    The complainant will automatically receive a push notification about this status update. No manual configuration needed.
+                  </p>
                 </div>
               </div>
             </div>
-
 
             {/* Action Buttons */}
             {/* Success Display */}
