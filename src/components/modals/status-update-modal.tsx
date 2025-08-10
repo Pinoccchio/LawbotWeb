@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { X, CheckCircle, Clock, AlertTriangle, FileText, Send, Calendar, Edit, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,9 +25,21 @@ interface StatusUpdateModalProps {
 
 export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }: StatusUpdateModalProps) {
   
+  // Ref to track timeout for cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   // Enhanced close handler to reset all modal state
   const handleClose = () => {
-    // Reset all modal state
+    console.log('🔒 Closing status update modal and resetting all state')
+    
+    // Clear any pending timeouts to prevent conflicts
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+      console.log('⏹️ Cleared pending timeout')
+    }
+    
+    // Reset all modal state completely
     setSubmitSuccess(false)
     setSubmitError(null)
     setIsSubmitting(false)
@@ -38,6 +50,8 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
     
     // Call parent close handler
     onClose()
+    
+    console.log('✅ Modal state reset complete, modal closed')
   }
   const [selectedStatus, setSelectedStatus] = useState(caseData?.status || "")
   const [updateNotes, setUpdateNotes] = useState("")
@@ -117,6 +131,16 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       console.log('📋 Template categories:', Object.keys(categorized))
     }
   }, [selectedStatus, caseData])
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        console.log('🧹 Cleanup: Cleared timeout on component unmount')
+      }
+    }
+  }, [])
 
   if (!isOpen || !caseData) return null
 
@@ -274,10 +298,10 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       console.log('✅ Status update submitted successfully')
       setSubmitSuccess(true)
       
-      // Show success message briefly, then auto-close modal for better UX
-      setTimeout(() => {
+      // Show success message briefly, then close modal immediately
+      timeoutRef.current = setTimeout(() => {
         handleClose()
-      }, 1500) // Close after 1.5 seconds
+      }, 500) // Close after 0.5 seconds for quick feedback
     } catch (error) {
       console.error('❌ Error submitting status update:', error)
       

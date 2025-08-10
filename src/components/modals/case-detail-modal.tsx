@@ -9,6 +9,7 @@ import {
   Mail,
   FileText,
   Download,
+  Upload,
   Eye,
   Clock,
   AlertTriangle,
@@ -37,6 +38,8 @@ import { supabase } from "@/lib/supabase"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EditComplaintModal } from "@/components/modals/edit-complaint-modal"
+import { CaseAnalyticsModal } from "@/components/modals/case-analytics-modal"
+import { toast } from "@/components/ui/use-toast"
 
 interface CaseDetailModalProps {
   isOpen: boolean
@@ -57,6 +60,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false)
   const [aiSummary, setAiSummary] = useState<string>('')
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
   const [aiActionItems, setAiActionItems] = useState<{high: string[], medium: string[], low: string[]}>({
@@ -504,14 +508,460 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       const email = userProfile?.email || complaint.email
       window.open(`mailto:${email}?subject=Regarding Case ${complaint.complaint_number}`, '_blank')
     } else {
-      alert('No contact information available for this complainant.')
+      toast({
+        title: "📞 Contact Information Unavailable",
+        description: "No contact information is available for this complainant.",
+        variant: "destructive"
+      })
     }
   }
 
-  // Handle generate report
-  const handleGenerateReport = () => {
-    // For now, just show an alert. In production, this would generate a PDF report
-    alert(`Report generation for Case ${complaint.complaint_number} is being prepared. This feature will be available soon.`)
+  // Handle generate report with professional PDF output
+  const handleGenerateReport = async () => {
+    try {
+      const complaint = complaintDetails || caseData.complaint || caseData
+      const complaintNumber = complaint.complaint_number || 'Unknown'
+      
+      console.log('🔄 Generating professional PDF case report for:', complaintNumber)
+      
+      // Generate and download PDF report
+      await generatePDFCaseReport(complaint)
+      
+      console.log('✅ PDF case report generated successfully')
+    } catch (error) {
+      console.error('❌ Error generating PDF case report:', error)
+      toast({
+        title: "❌ Report Generation Failed",
+        description: "Failed to generate case report. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Generate professional PDF case report
+  const generatePDFCaseReport = async (complaint: any) => {
+    try {
+      // Get current officer info
+      const currentOfficer = await PNPOfficerService.getCurrentOfficerProfile()
+      const reportDate = new Date().toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+
+      // Create HTML content for PDF
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>PNP Cybercrime Investigation Report</title>
+          <style>
+            body {
+              font-family: 'Times New Roman', serif;
+              line-height: 1.6;
+              margin: 0;
+              padding: 20mm;
+              color: #333;
+              background: white;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 3px solid #0066cc;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .pnp-logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #0066cc;
+              margin-bottom: 10px;
+            }
+            .report-title {
+              font-size: 20px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 5px;
+            }
+            .confidential {
+              color: #d32f2f;
+              font-weight: bold;
+              font-size: 14px;
+              margin-top: 10px;
+            }
+            .section {
+              margin-bottom: 25px;
+              break-inside: avoid;
+            }
+            .section-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #0066cc;
+              border-bottom: 2px solid #0066cc;
+              padding-bottom: 5px;
+              margin-bottom: 15px;
+              text-transform: uppercase;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+              margin-bottom: 15px;
+            }
+            .info-item {
+              background: #f8f9fa;
+              padding: 10px;
+              border-left: 4px solid #0066cc;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #555;
+              font-size: 12px;
+              text-transform: uppercase;
+            }
+            .info-value {
+              color: #333;
+              margin-top: 2px;
+            }
+            .description-box {
+              background: #f8f9fa;
+              border: 1px solid #dee2e6;
+              padding: 15px;
+              border-radius: 4px;
+              margin: 10px 0;
+            }
+            .evidence-item {
+              background: #f0f9ff;
+              border: 1px solid #b3d9ff;
+              padding: 10px;
+              margin: 8px 0;
+              border-radius: 4px;
+            }
+            .status-item {
+              background: #f0f9f0;
+              border: 1px solid #b3d9b3;
+              padding: 10px;
+              margin: 8px 0;
+              border-radius: 4px;
+            }
+            .ai-analysis {
+              background: #fff3e0;
+              border: 1px solid #ffcc80;
+              padding: 15px;
+              border-radius: 4px;
+              margin: 10px 0;
+            }
+            .priority-high { color: #d32f2f; font-weight: bold; }
+            .priority-medium { color: #f57c00; font-weight: bold; }
+            .priority-low { color: #388e3c; font-weight: bold; }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #0066cc;
+              font-size: 12px;
+              color: #666;
+            }
+            .signature-section {
+              margin-top: 30px;
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 50px;
+            }
+            .signature-box {
+              text-align: center;
+              border-top: 1px solid #333;
+              padding-top: 5px;
+              margin-top: 50px;
+            }
+            @media print {
+              body { margin: 0; padding: 15mm; }
+              .section { break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="pnp-logo">🇵🇭 PHILIPPINE NATIONAL POLICE</div>
+            <div class="report-title">CYBERCRIME INVESTIGATION REPORT</div>
+            <div class="confidential">⚠️ CONFIDENTIAL - FOR OFFICIAL USE ONLY</div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Report Generated</div>
+              <div class="info-value">${reportDate}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Case Number</div>
+              <div class="info-value">${complaint.complaint_number || 'N/A'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Investigating Officer</div>
+              <div class="info-value">${currentOfficer?.full_name || 'Unknown'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Unit</div>
+              <div class="info-value">${currentOfficer?.unit?.unit_name || 'Unknown'}</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">📋 Case Overview</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Crime Type</div>
+                <div class="info-value">${complaint.crime_type || 'Not specified'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">${complaint.status || 'Unknown'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Priority</div>
+                <div class="info-value ${complaint.priority === 'high' ? 'priority-high' : complaint.priority === 'medium' ? 'priority-medium' : 'priority-low'}">${(complaint.priority || 'Medium').toUpperCase()}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Risk Score</div>
+                <div class="info-value">${complaint.ai_risk_score || complaint.risk_score || 'N/A'}/100</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Incident Date</div>
+                <div class="info-value">${complaint.incident_date_time ? new Date(complaint.incident_date_time).toLocaleDateString('en-PH') : 'Not specified'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Location</div>
+                <div class="info-value">${complaint.incident_location || 'Not specified'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">👤 Complainant Information</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Full Name</div>
+                <div class="info-value">${complaint.full_name || 'Not provided'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">${complaint.email || 'Not provided'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Phone Number</div>
+                <div class="info-value">${complaint.phone_number || 'Not provided'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">📄 Incident Description</div>
+            <div class="description-box">
+              ${complaint.description || 'No description provided.'}
+            </div>
+          </div>
+
+          ${complaint.estimated_loss && complaint.estimated_loss > 0 ? `
+            <div class="section">
+              <div class="section-title">💰 Financial Impact</div>
+              <div class="info-item">
+                <div class="info-label">Estimated Loss</div>
+                <div class="info-value">₱${complaint.estimated_loss.toLocaleString()}</div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${complaint.platform_website || complaint.account_reference ? `
+            <div class="section">
+              <div class="section-title">🌐 Platform Information</div>
+              <div class="info-grid">
+                ${complaint.platform_website ? `
+                  <div class="info-item">
+                    <div class="info-label">Platform/Website</div>
+                    <div class="info-value">${complaint.platform_website}</div>
+                  </div>
+                ` : ''}
+                ${complaint.account_reference ? `
+                  <div class="info-item">
+                    <div class="info-label">Account Reference</div>
+                    <div class="info-value">${complaint.account_reference}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+
+          ${complaint.suspect_name || complaint.suspect_contact || complaint.suspect_details ? `
+            <div class="section">
+              <div class="section-title">🎯 Suspect Information</div>
+              <div class="info-grid">
+                ${complaint.suspect_name ? `
+                  <div class="info-item">
+                    <div class="info-label">Suspect Name</div>
+                    <div class="info-value">${complaint.suspect_name}</div>
+                  </div>
+                ` : ''}
+                ${complaint.suspect_relationship ? `
+                  <div class="info-item">
+                    <div class="info-label">Relationship to Victim</div>
+                    <div class="info-value">${complaint.suspect_relationship}</div>
+                  </div>
+                ` : ''}
+                ${complaint.suspect_contact ? `
+                  <div class="info-item">
+                    <div class="info-label">Suspect Contact</div>
+                    <div class="info-value">${complaint.suspect_contact}</div>
+                  </div>
+                ` : ''}
+              </div>
+              ${complaint.suspect_details ? `
+                <div class="description-box">
+                  <strong>Additional Details:</strong><br>
+                  ${complaint.suspect_details}
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          ${evidenceFiles.length > 0 ? `
+            <div class="section">
+              <div class="section-title">📎 Evidence Files (${evidenceFiles.length})</div>
+              ${evidenceFiles.map((file, index) => `
+                <div class="evidence-item">
+                  <strong>Evidence ${index + 1}:</strong> ${file.file_name}<br>
+                  <small>Type: ${file.file_type} | Size: ${(file.file_size / 1024).toFixed(1)} KB | Uploaded: ${new Date(file.created_at).toLocaleDateString('en-PH')}</small>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${statusHistory.length > 0 ? `
+            <div class="section">
+              <div class="section-title">📈 Status History</div>
+              ${statusHistory.map(status => `
+                <div class="status-item">
+                  <strong>${new Date(status.timestamp).toLocaleDateString('en-PH')}</strong> - ${status.status}<br>
+                  <small>Updated by: ${status.updated_by}</small>
+                  ${status.remarks ? `<br><em>${status.remarks}</em>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${aiSummary ? `
+            <div class="section">
+              <div class="section-title">🤖 AI Analysis Summary</div>
+              <div class="ai-analysis">
+                ${aiSummary}
+              </div>
+            </div>
+          ` : ''}
+
+          ${aiActionItems.high.length > 0 || aiActionItems.medium.length > 0 || aiActionItems.low.length > 0 ? `
+            <div class="section">
+              <div class="section-title">💡 AI Recommendations</div>
+              ${aiActionItems.high.length > 0 ? `
+                <div><strong class="priority-high">🔴 HIGH PRIORITY ACTIONS:</strong></div>
+                <ul>
+                  ${aiActionItems.high.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+              ` : ''}
+              ${aiActionItems.medium.length > 0 ? `
+                <div><strong class="priority-medium">🟡 MEDIUM PRIORITY ACTIONS:</strong></div>
+                <ul>
+                  ${aiActionItems.medium.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+              ` : ''}
+              ${aiActionItems.low.length > 0 ? `
+                <div><strong class="priority-low">🟢 LOW PRIORITY ACTIONS:</strong></div>
+                <ul>
+                  ${aiActionItems.low.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          <div class="signature-section">
+            <div>
+              <div class="signature-box">
+                <strong>Investigating Officer</strong><br>
+                ${currentOfficer?.full_name || 'Unknown'}<br>
+                Badge #${currentOfficer?.badge_number || 'N/A'}
+              </div>
+            </div>
+            <div>
+              <div class="signature-box">
+                <strong>Date</strong><br>
+                ${reportDate}
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <strong>⚠️ CONFIDENTIALITY NOTICE</strong>
+            </div>
+            <p style="text-align: justify; margin: 0;">
+              This report contains sensitive information related to an ongoing cybercrime investigation. 
+              Distribution is restricted to authorized personnel only. Unauthorized disclosure is prohibited 
+              under the Data Privacy Act of 2012 and other relevant Philippine laws.
+            </p>
+            <div style="text-align: center; margin-top: 15px;">
+              <strong>© Philippine National Police - Cybercrime Investigation Division</strong>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+
+      // Create PDF using browser print functionality
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        
+        // Wait for content to load then trigger print with error handling
+        printWindow.addEventListener('load', () => {
+          setTimeout(() => {
+            try {
+              // Check if window is still available before printing
+              if (printWindow && !printWindow.closed) {
+                printWindow.print()
+                // Close after printing
+                printWindow.addEventListener('afterprint', () => {
+                  if (printWindow && !printWindow.closed) {
+                    printWindow.close()
+                  }
+                })
+                // Fallback close after 10 seconds
+                setTimeout(() => {
+                  if (printWindow && !printWindow.closed) {
+                    printWindow.close()
+                  }
+                }, 10000)
+              }
+            } catch (error) {
+              console.error('Print error:', error)
+              if (printWindow && !printWindow.closed) {
+                printWindow.close()
+              }
+            }
+          }, 500)
+        })
+      }
+
+      // Show success toast notification
+      toast({
+        title: "📄 Report Generated Successfully!",
+        description: `Professional case report for ${complaint.complaint_number || 'N/A'} is ready for download/printing.`,
+        variant: "default"
+      })
+
+    } catch (error) {
+      console.error('❌ Error generating PDF case report:', error)
+      throw error
+    }
   }
 
   // Handle download evidence
@@ -556,13 +1006,505 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
           document.body.removeChild(link)
         }
       } else {
-        alert('Failed to generate download link. Please try again.')
+        toast({
+          title: "❌ Download Link Failed",
+          description: "Failed to generate download link. Please try again.",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('❌ Error downloading evidence:', error)
-      alert('Error downloading evidence file. Please try again.')
+      toast({
+        title: "❌ Download Error",
+        description: "Error downloading evidence file. Please try again.",
+        variant: "destructive"
+      })
     }
   }
+
+  // Handle view analytics - Open modern analytics modal
+  const handleViewAnalytics = () => {
+    console.log('🔄 Opening case analytics modal')
+    setAnalyticsModalOpen(true)
+  }
+
+  // Calculate investigation progress percentage
+  const calculateInvestigationProgress = (complaint: any) => {
+    let progress = 0
+    
+    // Base progress from status
+    switch (complaint.status) {
+      case 'Pending': progress += 10; break
+      case 'Under Investigation': progress += 40; break
+      case 'Requires More Information': progress += 60; break
+      case 'Resolved': progress += 100; break
+      case 'Dismissed': progress += 100; break
+      default: progress += 5
+    }
+    
+    // Additional progress from evidence
+    if (evidenceFiles.length > 0) progress += 20
+    if (evidenceFiles.length >= 3) progress += 10
+    
+    // Additional progress from AI analysis
+    if (aiSummary) progress += 10
+    
+    // Additional progress from suspect information
+    if (complaint.suspect_name || complaint.suspect_contact) progress += 10
+    
+    return Math.min(progress, 100)
+  }
+
+  // Generate key metrics for analytics
+  const generateKeyMetrics = (complaint: any) => {
+    const metrics = []
+    
+    // Response time metric
+    const responseTime = statusHistory.length > 0 ? 'Within 24 hours' : 'Pending initial response'
+    metrics.push(`Response Time: ${responseTime}`)
+    
+    // Evidence collection metric
+    metrics.push(`Evidence Collection: ${evidenceFiles.length > 0 ? 'Active' : 'Pending'}`)
+    
+    // Investigation complexity
+    const complexity = (complaint.technical_info || complaint.system_details) ? 'High Complexity' : 
+                       (complaint.suspect_details || complaint.platform_website) ? 'Medium Complexity' : 'Standard'
+    metrics.push(`Case Complexity: ${complexity}`)
+    
+    // AI enhancement
+    metrics.push(`AI Analysis: ${aiSummary ? 'Complete' : 'In Progress'}`)
+    
+    // Case priority alignment
+    const priorityStatus = complaint.priority === 'high' && statusHistory.length > 0 ? 'Expedited Processing' : 'Standard Processing'
+    metrics.push(`Processing Status: ${priorityStatus}`)
+    
+    return metrics
+  }
+
+
+  // Handle export case data as professional PDF document
+  const handleExportCaseData = async () => {
+    try {
+      const complaint = complaintDetails || caseData.complaint || caseData
+      const complaintNumber = complaint.complaint_number || 'Unknown'
+      
+      console.log('🔄 Exporting case data as professional PDF for:', complaintNumber)
+      
+      // Generate and download PDF data export
+      await generatePDFCaseDataExport(complaint)
+      
+      console.log('✅ PDF case data export generated successfully')
+    } catch (error) {
+      console.error('❌ Error exporting case data as PDF:', error)
+      toast({
+        title: "❌ Data Export Failed",
+        description: "Failed to export case data. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Generate professional PDF case data export
+  const generatePDFCaseDataExport = async (complaint: any) => {
+    try {
+      // Get current officer info
+      const currentOfficer = await PNPOfficerService.getCurrentOfficerProfile()
+      const exportDate = new Date().toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+
+      // Create HTML content for PDF data export
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>PNP Case Data Export</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              line-height: 1.5;
+              margin: 0;
+              padding: 20mm;
+              color: #333;
+              background: white;
+              font-size: 12px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #0066cc;
+              padding-bottom: 15px;
+              margin-bottom: 25px;
+            }
+            .pnp-logo {
+              font-size: 20px;
+              font-weight: bold;
+              color: #0066cc;
+              margin-bottom: 8px;
+            }
+            .export-title {
+              font-size: 18px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 5px;
+            }
+            .data-section {
+              margin-bottom: 20px;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: bold;
+              color: #0066cc;
+              background: #f0f8ff;
+              padding: 8px 12px;
+              border-left: 4px solid #0066cc;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+            }
+            .data-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 15px;
+              font-size: 11px;
+            }
+            .data-table th {
+              background: #f8f9fa;
+              border: 1px solid #dee2e6;
+              padding: 8px;
+              text-align: left;
+              font-weight: bold;
+              color: #495057;
+              width: 30%;
+            }
+            .data-table td {
+              border: 1px solid #dee2e6;
+              padding: 8px;
+              vertical-align: top;
+              word-wrap: break-word;
+            }
+            .json-data {
+              background: #f8f9fa;
+              border: 1px solid #dee2e6;
+              padding: 10px;
+              font-family: 'Courier New', monospace;
+              font-size: 10px;
+              white-space: pre-wrap;
+              max-height: 200px;
+              overflow: hidden;
+            }
+            .metadata {
+              background: #e7f3ff;
+              border: 1px solid #b3d9ff;
+              padding: 10px;
+              margin-top: 20px;
+              font-size: 10px;
+            }
+            .priority-high { color: #d32f2f; font-weight: bold; }
+            .priority-medium { color: #f57c00; font-weight: bold; }
+            .priority-low { color: #388e3c; font-weight: bold; }
+            .evidence-list {
+              background: #f0f9ff;
+              border: 1px solid #b3d9ff;
+              padding: 10px;
+              margin: 5px 0;
+            }
+            .status-list {
+              background: #f0f9f0;
+              border: 1px solid #b3d9b3;
+              padding: 10px;
+              margin: 5px 0;
+            }
+            .ai-data {
+              background: #fff8e1;
+              border: 1px solid #ffcc80;
+              padding: 10px;
+              margin: 5px 0;
+            }
+            @media print {
+              body { margin: 0; padding: 15mm; }
+              .data-section { break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="pnp-logo">🇵🇭 PHILIPPINE NATIONAL POLICE</div>
+            <div class="export-title">CASE DATA EXPORT</div>
+            <div style="color: #666; font-size: 12px; margin-top: 5px;">Comprehensive Database Export</div>
+          </div>
+
+          <div class="data-section">
+            <div class="section-title">📋 Export Information</div>
+            <table class="data-table">
+              <tr><th>Export Date</th><td>${exportDate}</td></tr>
+              <tr><th>Case Number</th><td>${complaint.complaint_number || 'N/A'}</td></tr>
+              <tr><th>Exported By</th><td>${currentOfficer?.full_name || 'Unknown'} (${currentOfficer?.badge_number || 'N/A'})</td></tr>
+              <tr><th>Export Version</th><td>1.0</td></tr>
+            </table>
+          </div>
+
+          <div class="data-section">
+            <div class="section-title">📊 Case Information</div>
+            <table class="data-table">
+              <tr><th>Case ID</th><td>${complaint.id || 'N/A'}</td></tr>
+              <tr><th>Complaint Number</th><td>${complaint.complaint_number || 'N/A'}</td></tr>
+              <tr><th>Crime Type</th><td>${complaint.crime_type || 'Not specified'}</td></tr>
+              <tr><th>Title</th><td>${complaint.title || complaint.crime_type || 'Untitled'}</td></tr>
+              <tr><th>Status</th><td>${complaint.status || 'Unknown'}</td></tr>
+              <tr><th>Priority</th><td class="${complaint.priority === 'high' ? 'priority-high' : complaint.priority === 'medium' ? 'priority-medium' : 'priority-low'}">${(complaint.priority || 'Medium').toUpperCase()}</td></tr>
+              <tr><th>Risk Score</th><td>${complaint.ai_risk_score || complaint.risk_score || 'N/A'}/100</td></tr>
+              <tr><th>Created</th><td>${new Date(complaint.created_at).toLocaleDateString('en-PH')}</td></tr>
+              <tr><th>Last Updated</th><td>${complaint.updated_at ? new Date(complaint.updated_at).toLocaleDateString('en-PH') : 'N/A'}</td></tr>
+              <tr><th>Incident Date</th><td>${complaint.incident_date_time ? new Date(complaint.incident_date_time).toLocaleDateString('en-PH') : 'Not specified'}</td></tr>
+              <tr><th>Location</th><td>${complaint.incident_location || 'Not specified'}</td></tr>
+              <tr><th>Assigned Unit</th><td>${complaint.assigned_unit || 'Not assigned'}</td></tr>
+              <tr><th>Assigned Officer</th><td>${complaint.assigned_officer || 'Not assigned'}</td></tr>
+            </table>
+          </div>
+
+          <div class="data-section">
+            <div class="section-title">👤 Complainant Information</div>
+            <table class="data-table">
+              <tr><th>Full Name</th><td>${complaint.full_name || 'Not provided'}</td></tr>
+              <tr><th>Email</th><td>${complaint.email || 'Not provided'}</td></tr>
+              <tr><th>Phone</th><td>${complaint.phone_number || 'Not provided'}</td></tr>
+              <tr><th>User ID</th><td>${complaint.user_id || 'N/A'}</td></tr>
+            </table>
+          </div>
+
+          <div class="data-section">
+            <div class="section-title">📄 Incident Details</div>
+            <table class="data-table">
+              <tr><th>Description</th><td style="max-width: 400px;">${complaint.description || 'No description provided'}</td></tr>
+              ${complaint.estimated_loss && complaint.estimated_loss > 0 ? `
+                <tr><th>Estimated Loss</th><td>₱${complaint.estimated_loss.toLocaleString()}</td></tr>
+              ` : ''}
+              ${complaint.platform_website ? `<tr><th>Platform/Website</th><td>${complaint.platform_website}</td></tr>` : ''}
+              ${complaint.account_reference ? `<tr><th>Account Reference</th><td>${complaint.account_reference}</td></tr>` : ''}
+            </table>
+          </div>
+
+          ${complaint.suspect_name || complaint.suspect_contact || complaint.suspect_details ? `
+            <div class="data-section">
+              <div class="section-title">🎯 Suspect Information</div>
+              <table class="data-table">
+                ${complaint.suspect_name ? `<tr><th>Suspect Name</th><td>${complaint.suspect_name}</td></tr>` : ''}
+                ${complaint.suspect_relationship ? `<tr><th>Relationship</th><td>${complaint.suspect_relationship}</td></tr>` : ''}
+                ${complaint.suspect_contact ? `<tr><th>Contact</th><td>${complaint.suspect_contact}</td></tr>` : ''}
+                ${complaint.suspect_details ? `<tr><th>Details</th><td style="max-width: 400px;">${complaint.suspect_details}</td></tr>` : ''}
+              </table>
+            </div>
+          ` : ''}
+
+          ${complaint.technical_info || complaint.system_details || complaint.vulnerability_details ? `
+            <div class="data-section">
+              <div class="section-title">⚙️ Technical Information</div>
+              <table class="data-table">
+                ${complaint.system_details ? `<tr><th>System Details</th><td>${complaint.system_details}</td></tr>` : ''}
+                ${complaint.technical_info ? `<tr><th>Technical Info</th><td>${complaint.technical_info}</td></tr>` : ''}
+                ${complaint.vulnerability_details ? `<tr><th>Vulnerabilities</th><td>${complaint.vulnerability_details}</td></tr>` : ''}
+                ${complaint.attack_vector ? `<tr><th>Attack Vector</th><td>${complaint.attack_vector}</td></tr>` : ''}
+                ${complaint.security_level ? `<tr><th>Security Level</th><td>${complaint.security_level}</td></tr>` : ''}
+                ${complaint.target_info ? `<tr><th>Target Info</th><td>${complaint.target_info}</td></tr>` : ''}
+                ${complaint.content_description ? `<tr><th>Content</th><td>${complaint.content_description}</td></tr>` : ''}
+                ${complaint.impact_assessment ? `<tr><th>Impact</th><td>${complaint.impact_assessment}</td></tr>` : ''}
+              </table>
+            </div>
+          ` : ''}
+
+          ${evidenceFiles.length > 0 ? `
+            <div class="data-section">
+              <div class="section-title">📎 Evidence Files (${evidenceFiles.length})</div>
+              ${evidenceFiles.map((file, index) => `
+                <div class="evidence-list">
+                  <strong>Evidence ${index + 1}:</strong> ${file.file_name}<br>
+                  <small>
+                    ID: ${file.id} | Type: ${file.file_type} | Size: ${(file.file_size / 1024).toFixed(1)} KB | 
+                    Uploaded: ${new Date(file.created_at).toLocaleDateString('en-PH')} |
+                    Path: ${file.file_path || 'N/A'}
+                  </small>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${statusHistory.length > 0 ? `
+            <div class="data-section">
+              <div class="section-title">📈 Status History (${statusHistory.length})</div>
+              ${statusHistory.map((status, index) => `
+                <div class="status-list">
+                  <strong>${index + 1}. ${new Date(status.timestamp).toLocaleDateString('en-PH')}</strong> - ${status.status}<br>
+                  <small>
+                    Updated by: ${status.updated_by} | User ID: ${status.updated_by_user_id || 'N/A'}
+                    ${status.remarks ? ` | Remarks: ${status.remarks}` : ''}
+                  </small>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${aiSummary || aiActionItems.high.length > 0 || aiActionItems.medium.length > 0 || aiActionItems.low.length > 0 ? `
+            <div class="data-section">
+              <div class="section-title">🤖 AI Analysis Data</div>
+              ${aiSummary ? `
+                <div class="ai-data">
+                  <strong>AI Summary:</strong><br>
+                  ${aiSummary}
+                </div>
+              ` : ''}
+              ${aiActionItems.high.length > 0 || aiActionItems.medium.length > 0 || aiActionItems.low.length > 0 ? `
+                <div class="ai-data">
+                  <strong>AI Action Items:</strong><br>
+                  ${aiActionItems.high.length > 0 ? `<span class="priority-high">High: ${aiActionItems.high.join(', ')}</span><br>` : ''}
+                  ${aiActionItems.medium.length > 0 ? `<span class="priority-medium">Medium: ${aiActionItems.medium.join(', ')}</span><br>` : ''}
+                  ${aiActionItems.low.length > 0 ? `<span class="priority-low">Low: ${aiActionItems.low.join(', ')}</span><br>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          <div class="data-section">
+            <div class="section-title">📊 Raw Database Fields</div>
+            <div class="json-data">${JSON.stringify({
+              caseInformation: {
+                id: complaint.id,
+                user_id: complaint.user_id,
+                complaint_number: complaint.complaint_number,
+                crime_type: complaint.crime_type,
+                title: complaint.title,
+                description: complaint.description,
+                status: complaint.status,
+                priority: complaint.priority,
+                risk_score: complaint.risk_score,
+                ai_priority: complaint.ai_priority,
+                ai_risk_score: complaint.ai_risk_score,
+                ai_confidence_score: complaint.ai_confidence_score,
+                risk_factors: complaint.risk_factors,
+                urgency_indicators: complaint.urgency_indicators,
+                ai_reasoning: complaint.ai_reasoning,
+                last_ai_assessment: complaint.last_ai_assessment,
+                assigned_unit: complaint.assigned_unit,
+                assigned_officer_id: complaint.assigned_officer_id,
+                remarks: complaint.remarks,
+                created_at: complaint.created_at,
+                updated_at: complaint.updated_at
+              },
+              complainantData: {
+                full_name: complaint.full_name,
+                email: complaint.email,
+                phone_number: complaint.phone_number
+              },
+              incidentData: {
+                incident_date_time: complaint.incident_date_time,
+                incident_location: complaint.incident_location,
+                estimated_loss: complaint.estimated_loss
+              },
+              dynamicFields: {
+                platform_website: complaint.platform_website,
+                account_reference: complaint.account_reference,
+                suspect_name: complaint.suspect_name,
+                suspect_relationship: complaint.suspect_relationship,
+                suspect_contact: complaint.suspect_contact,
+                suspect_details: complaint.suspect_details,
+                system_details: complaint.system_details,
+                technical_info: complaint.technical_info,
+                vulnerability_details: complaint.vulnerability_details,
+                attack_vector: complaint.attack_vector,
+                security_level: complaint.security_level,
+                target_info: complaint.target_info,
+                content_description: complaint.content_description,
+                impact_assessment: complaint.impact_assessment
+              }
+            }, null, 2)}</div>
+          </div>
+
+          <div class="metadata">
+            <strong>Export Metadata:</strong><br>
+            Exported on: ${exportDate}<br>
+            Exported by: ${currentOfficer?.full_name || 'System'} (Badge #${currentOfficer?.badge_number || 'N/A'})<br>
+            Export Type: Comprehensive Case Data Export<br>
+            Total Evidence Files: ${evidenceFiles.length}<br>
+            Total Status Changes: ${statusHistory.length}<br>
+            Data Completeness: ${(() => {
+              let fields = 0
+              let filled = 0
+              const checkField = (field) => {
+                fields++
+                if (field && field !== '' && field !== null && field !== undefined) filled++
+              }
+              
+              checkField(complaint.description)
+              checkField(complaint.incident_location)
+              checkField(complaint.estimated_loss)
+              checkField(complaint.platform_website)
+              checkField(complaint.suspect_name)
+              checkField(complaint.technical_info)
+              
+              return Math.round((filled / fields) * 100)
+            })()}%<br>
+            <br>
+            <strong>⚠️ CONFIDENTIAL:</strong> This export contains sensitive case information. 
+            Unauthorized distribution is prohibited under Philippine law.
+          </div>
+        </body>
+        </html>
+      `
+
+      // Create PDF using browser print functionality
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        
+        // Wait for content to load then trigger print with error handling
+        printWindow.addEventListener('load', () => {
+          setTimeout(() => {
+            try {
+              // Check if window is still available before printing
+              if (printWindow && !printWindow.closed) {
+                printWindow.print()
+                // Close after printing
+                printWindow.addEventListener('afterprint', () => {
+                  if (printWindow && !printWindow.closed) {
+                    printWindow.close()
+                  }
+                })
+                // Fallback close after 10 seconds
+                setTimeout(() => {
+                  if (printWindow && !printWindow.closed) {
+                    printWindow.close()
+                  }
+                }, 10000)
+              }
+            } catch (error) {
+              console.error('Print error:', error)
+              if (printWindow && !printWindow.closed) {
+                printWindow.close()
+              }
+            }
+          }, 500)
+        })
+      }
+
+      // Show success toast notification
+      toast({
+        title: "💾 Data Export Generated Successfully!",
+        description: `Professional case data export for ${complaint.complaint_number || 'N/A'} is ready for download/printing.`,
+        variant: "default"
+      })
+
+    } catch (error) {
+      console.error('❌ Error generating PDF case data export:', error)
+      throw error
+    }
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -2002,22 +2944,16 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
 
               <TabsContent value="actions" className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="card-modern bg-gradient-to-br from-lawbot-red-50/30 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+                  <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50/30 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                     <CardHeader>
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-lawbot-red-500 rounded-lg">
+                        <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
                           <Zap className="h-5 w-5 text-white" />
                         </div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">⚡ Quick Actions</CardTitle>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">⚡ Case Management</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline" onClick={handleContactComplainant}>
-                        <div className="p-1 bg-lawbot-blue-500 rounded-full mr-3">
-                          <Phone className="h-3 w-3 text-white" />
-                        </div>
-                        📞 Contact Complainant
-                      </Button>
                       <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline" onClick={() => setStatusModalOpen(true)}>
                         <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
                           <FileText className="h-3 w-3 text-white" />
@@ -2032,17 +2968,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           ✏️ Edit Information
                         </Button>
                       )}
-                      <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline">
+                      <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline" onClick={handleExportCaseData}>
                         <div className="p-1 bg-lawbot-purple-500 rounded-full mr-3">
-                          <User className="h-3 w-3 text-white" />
+                          <Download className="h-3 w-3 text-white" />
                         </div>
-                        👥 Assign to Specialist
-                      </Button>
-                      <Button className="w-full justify-start btn-modern border-lawbot-amber-300 text-lawbot-amber-600 hover:bg-lawbot-amber-50 dark:border-lawbot-amber-600 dark:text-lawbot-amber-400 dark:hover:bg-lawbot-amber-900/20" variant="outline">
-                        <div className="p-1 bg-lawbot-amber-500 rounded-full mr-3">
-                          <AlertTriangle className="h-3 w-3 text-white" />
-                        </div>
-                        🚨 Escalate Case
+                        💾 Export Case Data
                       </Button>
                     </CardContent>
                   </Card>
@@ -2053,33 +2983,21 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <div className="p-2 bg-lawbot-blue-500 rounded-lg">
                           <TrendingUp className="h-5 w-5 text-white" />
                         </div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">📊 Case Management</CardTitle>
+                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">📊 Analysis & Reporting</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Button className="w-full justify-start btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 dark:border-lawbot-emerald-600 dark:text-lawbot-emerald-400 dark:hover:bg-lawbot-emerald-900/20" variant="outline" onClick={handleGenerateReport}>
                         <div className="p-1 bg-lawbot-emerald-500 rounded-full mr-3">
-                          <Download className="h-3 w-3 text-white" />
+                          <FileText className="h-3 w-3 text-white" />
                         </div>
-                        📄 Generate Report
+                        📄 Generate Case Report
                       </Button>
-                      <Button className="w-full justify-start btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 dark:border-lawbot-purple-600 dark:text-lawbot-purple-400 dark:hover:bg-lawbot-purple-900/20" variant="outline">
-                        <div className="p-1 bg-lawbot-purple-500 rounded-full mr-3">
-                          <Calendar className="h-3 w-3 text-white" />
-                        </div>
-                        📅 Schedule Follow-up
-                      </Button>
-                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline">
+                      <Button className="w-full justify-start btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 dark:border-lawbot-blue-600 dark:text-lawbot-blue-400 dark:hover:bg-lawbot-blue-900/20" variant="outline" onClick={handleViewAnalytics}>
                         <div className="p-1 bg-lawbot-blue-500 rounded-full mr-3">
                           <TrendingUp className="h-3 w-3 text-white" />
                         </div>
-                        📈 View Analytics
-                      </Button>
-                      <Button className="w-full justify-start bg-gradient-to-r from-lawbot-red-500 to-lawbot-red-600 hover:from-lawbot-red-600 hover:to-lawbot-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                        <div className="p-1 bg-white/20 rounded-full mr-3">
-                          <XCircle className="h-3 w-3 text-white" />
-                        </div>
-                        ❌ Close Case
+                        📈 View Case Analytics
                       </Button>
                     </CardContent>
                   </Card>
@@ -2132,6 +3050,19 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
           // Refresh case details after edit
           fetchCaseDetails()
         }}
+      />
+
+      {/* Case Analytics Modal */}
+      <CaseAnalyticsModal
+        isOpen={analyticsModalOpen}
+        onClose={() => setAnalyticsModalOpen(false)}
+        caseData={complaint}
+        statusHistory={statusHistory}
+        evidenceFiles={evidenceFiles}
+        aiSummary={aiSummary}
+        aiActionItems={aiActionItems}
+        aiKeyDetails={aiKeyDetails}
+        aiPredictiveAnalysis={aiPredictiveAnalysis}
       />
     </div>
   )

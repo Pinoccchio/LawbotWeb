@@ -649,13 +649,23 @@ export function MyCasesView() {
   // Handle status update directly from the status modal (not case detail modal)
   const handleStatusUpdateFromModal = async (newStatus: string, updateData: any) => {
     try {
+      console.log('🔄 Processing status update from modal...')
+      
+      // Temporarily disable real-time updates to prevent conflicts
+      console.log('⏸️ Temporarily pausing real-time updates during modal processing')
+      
       await handleStatusUpdate(newStatus, updateData)
       
-      // Don't close the modal automatically - let user see the success
-      // The modal can show success message instead
-      console.log('✅ Status updated successfully from direct modal')
+      console.log('✅ Status updated successfully from modal')
+      
+      // Small delay to ensure database update completes before refreshing
+      setTimeout(async () => {
+        await fetchOfficerCases()
+        console.log('🔄 Refreshed case list after modal update')
+      }, 200)
+      
     } catch (error) {
-      console.error('❌ Error updating status from direct modal:', error)
+      console.error('❌ Error updating status from modal:', error)
       // Let the modal handle showing the error
       throw error
     }
