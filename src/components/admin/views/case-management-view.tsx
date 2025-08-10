@@ -15,6 +15,7 @@ import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import ComplaintService, { ComplaintData } from "@/lib/complaint-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 export function CaseManagementView() {
   const [selectedCase, setSelectedCase] = useState<ComplaintData | null>(null)
@@ -322,7 +323,7 @@ export function CaseManagementView() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                      {new Date(case_.created_at).toLocaleDateString()}
+                      {PhilippineTime.formatTableTime(case_.created_at)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">

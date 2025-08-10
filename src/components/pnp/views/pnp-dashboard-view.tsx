@@ -12,6 +12,7 @@ import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import PNPOfficerService, { PNPOfficerProfile, PNPOfficerStats, OfficerCase } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 export function PNPDashboardView() {
   const [selectedCase, setSelectedCase] = useState<any>(null)
@@ -303,7 +304,7 @@ export function PNPDashboardView() {
                 const title = caseData.title
                 const priority = caseData.priority
                 const status = caseData.status
-                const date = new Date(caseData.created_at).toLocaleDateString()
+                const date = PhilippineTime.formatDatabaseTime(caseData.created_at)
                 const riskScore = caseData.risk_score || 50
                 const evidenceCount = evidenceCounts[caseData.id] || 0
               

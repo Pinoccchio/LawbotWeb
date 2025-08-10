@@ -13,6 +13,7 @@ import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import EvidenceService, { EvidenceFile, EvidenceFilters, EvidenceStats } from "@/lib/evidence-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 import { PNPOfficerService } from "@/lib/pnp-officer-service"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 export function EvidenceViewerView() {
   // State for evidence data
@@ -261,11 +262,7 @@ export function EvidenceViewerView() {
 
   // Format date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    return PhilippineTime.formatDatabaseTime(dateString)
   }
 
   if (isLoading) {

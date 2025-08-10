@@ -4,6 +4,7 @@ import * as React from "react"
 import { CalendarIcon } from "lucide-react"
 import { addDays, format } from "date-fns"
 import type { DateRange } from "react-day-picker"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -42,10 +43,10 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
             {dateRange?.from ? (
               dateRange.to ? (
                 <>
-                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                  {PhilippineTime.formatDate(dateRange.from)} - {PhilippineTime.formatDate(dateRange.to)}
                 </>
               ) : (
-                format(dateRange.from, "LLL dd, y")
+                PhilippineTime.formatDate(dateRange.from)
               )
             ) : (
               <span>Pick a date</span>

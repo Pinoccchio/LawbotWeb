@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
 import PSGCApiService, { SimplifiedRegion } from "@/lib/psgc-api"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 interface ProfileViewProps {
   onProfileUpdate?: () => void // Callback to refresh header data
@@ -209,7 +210,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
     email: officerProfile.email,
     phone: officerProfile.phone_number || 'Not provided',
     location: officerProfile.region,
-    joinDate: new Date(officerProfile.created_at).toLocaleDateString(),
+    joinDate: PhilippineTime.formatDatabaseTime(officerProfile.created_at),
     stats: {
       totalCases: officerProfile.total_cases,
       resolvedCases: officerProfile.resolved_cases,

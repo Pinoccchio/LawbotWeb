@@ -17,6 +17,7 @@ import { UserEditModal } from "@/components/admin/modals/user-edit-modal"
 import { TestPushNotificationModal } from "@/components/admin/modals/test-push-notification-modal"
 import { supabase } from "@/lib/supabase"
 import UserService, { UserProfile, UserStats } from "@/lib/user-service"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 export function UserManagementView() {
   const [isAddOfficerModalOpen, setIsAddOfficerModalOpen] = useState(false)
@@ -817,7 +818,7 @@ export function UserManagementView() {
                                 } else if (diffDays <= 7) {
                                   return `🕒 ${diffDays} days ago`
                                 } else {
-                                  return `📅 ${lastActive.toLocaleDateString()}`
+                                  return `📅 ${PhilippineTime.formatDatabaseDateShort(client.last_active)}`
                                 }
                               })()}
                             </div>

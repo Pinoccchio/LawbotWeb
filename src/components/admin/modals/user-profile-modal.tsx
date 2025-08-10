@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserProfile } from "@/lib/user-service"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 interface UserProfileModalProps {
   isOpen: boolean
@@ -18,13 +19,8 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
   if (!isOpen || !user) return null
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    // Use Philippine Time utility to convert UTC database time to Philippine time
+    return PhilippineTime.formatDatabaseTime(dateString)
   }
 
   const getStatusIcon = (status: string) => {

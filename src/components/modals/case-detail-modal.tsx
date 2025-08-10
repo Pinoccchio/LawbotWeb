@@ -40,6 +40,7 @@ import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import { EditComplaintModal } from "@/components/modals/edit-complaint-modal"
 import { CaseAnalyticsModal } from "@/components/modals/case-analytics-modal"
 import { toast } from "@/components/ui/use-toast"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 interface CaseDetailModalProps {
   isOpen: boolean
@@ -121,7 +122,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     
     // Financial Impact
     if (complaint.estimated_loss && complaint.estimated_loss > 0) {
-      const amount = complaint.estimated_loss.toLocaleString()
+      const amount = complaint.estimated_loss.toLocaleString('en-PH')
       details.financialImpact = `💰 Loss: ₱${amount}`
     }
     
@@ -543,13 +544,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     try {
       // Get current officer info
       const currentOfficer = await PNPOfficerService.getCurrentOfficerProfile()
-      const reportDate = new Date().toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      const reportDate = PhilippineTime.formatDate(new Date())
 
       // Create HTML content for PDF
       const htmlContent = `
@@ -728,7 +723,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               </div>
               <div class="info-item">
                 <div class="info-label">Incident Date</div>
-                <div class="info-value">${complaint.incident_date_time ? new Date(complaint.incident_date_time).toLocaleDateString('en-PH') : 'Not specified'}</div>
+                <div class="info-value">${complaint.incident_date_time ? PhilippineTime.formatDate(new Date(complaint.incident_date_time)) : 'Not specified'}</div>
               </div>
               <div class="info-item">
                 <div class="info-label">Location</div>
@@ -767,7 +762,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               <div class="section-title">💰 Financial Impact</div>
               <div class="info-item">
                 <div class="info-label">Estimated Loss</div>
-                <div class="info-value">₱${complaint.estimated_loss.toLocaleString()}</div>
+                <div class="info-value">₱${complaint.estimated_loss.toLocaleString('en-PH')}</div>
               </div>
             </div>
           ` : ''}
@@ -830,7 +825,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               ${evidenceFiles.map((file, index) => `
                 <div class="evidence-item">
                   <strong>Evidence ${index + 1}:</strong> ${file.file_name}<br>
-                  <small>Type: ${file.file_type} | Size: ${(file.file_size / 1024).toFixed(1)} KB | Uploaded: ${new Date(file.created_at).toLocaleDateString('en-PH')}</small>
+                  <small>Type: ${file.file_type} | Size: ${(file.file_size / 1024).toFixed(1)} KB | Uploaded: ${PhilippineTime.formatDate(new Date(file.created_at))}</small>
                 </div>
               `).join('')}
             </div>
@@ -841,7 +836,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               <div class="section-title">📈 Status History</div>
               ${statusHistory.map(status => `
                 <div class="status-item">
-                  <strong>${new Date(status.timestamp).toLocaleDateString('en-PH')}</strong> - ${status.status}<br>
+                  <strong>${PhilippineTime.formatDate(new Date(status.timestamp))}</strong> - ${status.status}<br>
                   <small>Updated by: ${status.updated_by}</small>
                   ${status.remarks ? `<br><em>${status.remarks}</em>` : ''}
                 </div>
@@ -1109,13 +1104,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     try {
       // Get current officer info
       const currentOfficer = await PNPOfficerService.getCurrentOfficerProfile()
-      const exportDate = new Date().toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      const exportDate = PhilippineTime.formatDate(new Date())
 
       // Create HTML content for PDF data export
       const htmlContent = `
@@ -1259,9 +1248,9 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               <tr><th>Status</th><td>${complaint.status || 'Unknown'}</td></tr>
               <tr><th>Priority</th><td class="${complaint.priority === 'high' ? 'priority-high' : complaint.priority === 'medium' ? 'priority-medium' : 'priority-low'}">${(complaint.priority || 'Medium').toUpperCase()}</td></tr>
               <tr><th>Risk Score</th><td>${complaint.ai_risk_score || complaint.risk_score || 'N/A'}/100</td></tr>
-              <tr><th>Created</th><td>${new Date(complaint.created_at).toLocaleDateString('en-PH')}</td></tr>
-              <tr><th>Last Updated</th><td>${complaint.updated_at ? new Date(complaint.updated_at).toLocaleDateString('en-PH') : 'N/A'}</td></tr>
-              <tr><th>Incident Date</th><td>${complaint.incident_date_time ? new Date(complaint.incident_date_time).toLocaleDateString('en-PH') : 'Not specified'}</td></tr>
+              <tr><th>Created</th><td>${PhilippineTime.formatDate(new Date(complaint.created_at))}</td></tr>
+              <tr><th>Last Updated</th><td>${complaint.updated_at ? PhilippineTime.formatDate(new Date(complaint.updated_at)) : 'N/A'}</td></tr>
+              <tr><th>Incident Date</th><td>${complaint.incident_date_time ? PhilippineTime.formatDate(new Date(complaint.incident_date_time)) : 'Not specified'}</td></tr>
               <tr><th>Location</th><td>${complaint.incident_location || 'Not specified'}</td></tr>
               <tr><th>Assigned Unit</th><td>${complaint.assigned_unit || 'Not assigned'}</td></tr>
               <tr><th>Assigned Officer</th><td>${complaint.assigned_officer || 'Not assigned'}</td></tr>
@@ -1283,7 +1272,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
             <table class="data-table">
               <tr><th>Description</th><td style="max-width: 400px;">${complaint.description || 'No description provided'}</td></tr>
               ${complaint.estimated_loss && complaint.estimated_loss > 0 ? `
-                <tr><th>Estimated Loss</th><td>₱${complaint.estimated_loss.toLocaleString()}</td></tr>
+                <tr><th>Estimated Loss</th><td>₱${complaint.estimated_loss.toLocaleString('en-PH')}</td></tr>
               ` : ''}
               ${complaint.platform_website ? `<tr><th>Platform/Website</th><td>${complaint.platform_website}</td></tr>` : ''}
               ${complaint.account_reference ? `<tr><th>Account Reference</th><td>${complaint.account_reference}</td></tr>` : ''}
@@ -1326,7 +1315,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                   <strong>Evidence ${index + 1}:</strong> ${file.file_name}<br>
                   <small>
                     ID: ${file.id} | Type: ${file.file_type} | Size: ${(file.file_size / 1024).toFixed(1)} KB | 
-                    Uploaded: ${new Date(file.created_at).toLocaleDateString('en-PH')} |
+                    Uploaded: ${PhilippineTime.formatDate(new Date(file.created_at))} |
                     Path: ${file.file_path || 'N/A'}
                   </small>
                 </div>
@@ -1339,7 +1328,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               <div class="section-title">📈 Status History (${statusHistory.length})</div>
               ${statusHistory.map((status, index) => `
                 <div class="status-list">
-                  <strong>${index + 1}. ${new Date(status.timestamp).toLocaleDateString('en-PH')}</strong> - ${status.status}<br>
+                  <strong>${index + 1}. ${PhilippineTime.formatDate(new Date(status.timestamp))}</strong> - ${status.status}<br>
                   <small>
                     Updated by: ${status.updated_by} | User ID: ${status.updated_by_user_id || 'N/A'}
                     ${status.remarks ? ` | Remarks: ${status.remarks}` : ''}
@@ -1434,7 +1423,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
             Data Completeness: ${(() => {
               let fields = 0
               let filled = 0
-              const checkField = (field) => {
+              const checkField = (field: any) => {
                 fields++
                 if (field && field !== '' && field !== null && field !== undefined) filled++
               }
@@ -1583,7 +1572,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📅 Reported Date</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{new Date(complaint.created_at).toLocaleDateString()}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{PhilippineTime.formatDate(new Date(complaint.created_at))}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📍 Location</label>
@@ -1709,13 +1698,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                                       </span>
                                     </div>
                                     <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
-                                      {new Date(update.created_at).toLocaleDateString('en-PH', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
+                                      {PhilippineTime.formatDatabaseTime(update.created_at)}
                                     </div>
                                   </div>
 
@@ -2929,7 +2912,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                             </div>
                             <div className="flex items-center space-x-2">
                               <Clock className="h-3 w-3 text-lawbot-slate-500" />
-                              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{new Date(event.date).toLocaleString()}</p>
+                              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">{PhilippineTime.formatDateTime(new Date(event.date))}</p>
                             </div>
                           </div>
                           {index < timeline.length - 1 && (

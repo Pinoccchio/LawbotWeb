@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { PhilippineTime } from "./philippine-time"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -54,14 +55,18 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  // Use Philippine Time utility to convert UTC database time to Philippine time
+  return PhilippineTime.formatDatabaseTime(dateString)
+}
+
+export function formatDateShort(dateString: string): string {
+  // Format date in short format using Philippine time
+  return PhilippineTime.formatDatabaseDateShort(dateString)
+}
+
+export function formatDateTableDisplay(dateString: string): string {
+  // Format date for table display using Philippine time
+  return PhilippineTime.formatTableTime(dateString)
 }
 
 export function getFileTypeIcon(type: string) {
@@ -98,7 +103,8 @@ export function getFileTypeIcon(type: string) {
 }
 
 export function generateCaseId(): string {
-  const year = new Date().getFullYear()
+  // Use Philippine time for case ID generation
+  const year = PhilippineTime.now().getFullYear()
   const randomNum = Math.floor(Math.random() * 1000)
     .toString()
     .padStart(3, "0")

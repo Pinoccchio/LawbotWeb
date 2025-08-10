@@ -12,6 +12,7 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import PNPOfficerService, { OfficerCase, SearchFilters } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 
 export function CaseSearchView() {
@@ -367,7 +368,7 @@ export function CaseSearchView() {
                   const title = caseData.title || `${caseData.crime_type} Case`
                   const priority = caseData.priority
                   const status = caseData.status
-                  const date = new Date(caseData.created_at).toLocaleDateString()
+                  const date = PhilippineTime.formatDatabaseTime(caseData.created_at)
                   const riskScore = caseData.risk_score || 50
                   const officer = caseData.assigned_officer || 'Unassigned'
                   const unit = caseData.assigned_unit || 'No Unit'

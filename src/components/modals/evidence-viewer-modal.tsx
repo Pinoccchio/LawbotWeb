@@ -32,6 +32,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PhilippineTime } from "@/lib/philippine-time"
 import EvidenceService, { EvidenceFile } from "@/lib/evidence-service"
 
 interface EvidenceViewerModalProps {
@@ -357,7 +358,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                                   )}
                                   <div className="flex items-center space-x-4 mt-2 text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
                                     <span>💾 {formatFileSize(file.file_size)}</span>
-                                    <span>📅 {new Date(file.uploaded_at).toLocaleDateString()}</span>
+                                    <span>📅 {PhilippineTime.formatDatabaseDateShort(file.uploaded_at)}</span>
                                   </div>
                                 </div>
                               </div>
@@ -412,7 +413,7 @@ export function EvidenceViewerModal({ isOpen, onClose, caseData }: EvidenceViewe
                           </div>
                           <div className="p-4 bg-white dark:bg-lawbot-slate-700 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-600">
                             <Label className="text-lawbot-slate-600 dark:text-lawbot-slate-400 font-semibold">📅 Upload Date</Label>
-                            <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{new Date(selectedFile.uploaded_at).toLocaleString()}</p>
+                            <p className="font-bold text-lawbot-slate-900 dark:text-white mt-1">{PhilippineTime.formatDatabaseTime(selectedFile.uploaded_at)}</p>
                           </div>
                         </div>
 

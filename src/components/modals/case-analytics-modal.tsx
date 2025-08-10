@@ -36,6 +36,193 @@ export function CaseAnalyticsModal({
   
   const complaint = caseData.complaint || caseData
   
+  // Helper function - moved up for proper initialization
+  const getCrimeCategory = (crimeType: string): string => {
+    // Map crime types to categories based on Flutter model
+    const categoryMap: { [key: string]: string } = {
+      // Communication & Social Media Crimes
+      'Phishing': 'Communication & Social Media Crimes',
+      'Social Engineering': 'Communication & Social Media Crimes',
+      'Spam Messages': 'Communication & Social Media Crimes',
+      'Fake Social Media Profiles': 'Communication & Social Media Crimes',
+      'Online Impersonation': 'Communication & Social Media Crimes',
+      'Business Email Compromise': 'Communication & Social Media Crimes',
+      'SMS Fraud': 'Communication & Social Media Crimes',
+      
+      // Financial & Economic Crimes
+      'Online Banking Fraud': 'Financial & Economic Crimes',
+      'Credit Card Fraud': 'Financial & Economic Crimes',
+      'Investment Scams': 'Financial & Economic Crimes',
+      'Cryptocurrency Fraud': 'Financial & Economic Crimes',
+      'Online Shopping Scams': 'Financial & Economic Crimes',
+      'Payment Gateway Fraud': 'Financial & Economic Crimes',
+      'Insurance Fraud': 'Financial & Economic Crimes',
+      'Tax Fraud': 'Financial & Economic Crimes',
+      'Money Laundering': 'Financial & Economic Crimes',
+      
+      // Data & Privacy Crimes
+      'Identity Theft': 'Data & Privacy Crimes',
+      'Data Breach': 'Data & Privacy Crimes',
+      'Unauthorized System Access': 'Data & Privacy Crimes',
+      'Corporate Espionage': 'Data & Privacy Crimes',
+      'Government Data Theft': 'Data & Privacy Crimes',
+      'Medical Records Theft': 'Data & Privacy Crimes',
+      'Personal Information Theft': 'Data & Privacy Crimes',
+      'Account Takeover': 'Data & Privacy Crimes',
+      
+      // Malware & System Attacks
+      'Ransomware': 'Malware & System Attacks',
+      'Virus Attacks': 'Malware & System Attacks',
+      'Trojan Horses': 'Malware & System Attacks',
+      'Spyware': 'Malware & System Attacks',
+      'Adware': 'Malware & System Attacks',
+      'Worms': 'Malware & System Attacks',
+      'Keyloggers': 'Malware & System Attacks',
+      'Rootkits': 'Malware & System Attacks',
+      'Cryptojacking': 'Malware & System Attacks',
+      'Botnet Attacks': 'Malware & System Attacks',
+      
+      // Harassment & Exploitation
+      'Cyberstalking': 'Harassment & Exploitation',
+      'Online Harassment': 'Harassment & Exploitation',
+      'Cyberbullying': 'Harassment & Exploitation',
+      'Revenge Porn': 'Harassment & Exploitation',
+      'Sextortion': 'Harassment & Exploitation',
+      'Online Predatory Behavior': 'Harassment & Exploitation',
+      'Doxxing': 'Harassment & Exploitation',
+      'Hate Speech': 'Harassment & Exploitation',
+      
+      // Content-Related Crimes
+      'Child Sexual Abuse Material': 'Content-Related Crimes',
+      'Illegal Content Distribution': 'Content-Related Crimes',
+      'Copyright Infringement': 'Content-Related Crimes',
+      'Software Piracy': 'Content-Related Crimes',
+      'Illegal Online Gambling': 'Content-Related Crimes',
+      'Online Drug Trafficking': 'Content-Related Crimes',
+      'Illegal Weapons Sales': 'Content-Related Crimes',
+      'Human Trafficking': 'Content-Related Crimes',
+      
+      // System Disruption & Sabotage
+      'Denial of Service Attacks': 'System Disruption & Sabotage',
+      'Website Defacement': 'System Disruption & Sabotage',
+      'System Sabotage': 'System Disruption & Sabotage',
+      'Network Intrusion': 'System Disruption & Sabotage',
+      'SQL Injection': 'System Disruption & Sabotage',
+      'Cross-Site Scripting': 'System Disruption & Sabotage',
+      'Man-in-the-Middle Attacks': 'System Disruption & Sabotage',
+      
+      // Government & Terrorism
+      'Cyberterrorism': 'Government & Terrorism',
+      'Cyber Warfare': 'Government & Terrorism',
+      'Government System Hacking': 'Government & Terrorism',
+      'Election Interference': 'Government & Terrorism',
+      'Critical Infrastructure Attacks': 'Government & Terrorism',
+      'Propaganda Distribution': 'Government & Terrorism',
+      'State-Sponsored Attacks': 'Government & Terrorism',
+      
+      // Technical Exploitation
+      'Zero-Day Exploits': 'Technical Exploitation',
+      'Vulnerability Exploitation': 'Technical Exploitation',
+      'Backdoor Creation': 'Technical Exploitation',
+      'Privilege Escalation': 'Technical Exploitation',
+      'Code Injection': 'Technical Exploitation',
+      'Buffer Overflow Attacks': 'Technical Exploitation',
+      
+      // Targeted Attacks
+      'Advanced Persistent Threats': 'Targeted Attacks',
+      'Spear Phishing': 'Targeted Attacks',
+      'CEO Fraud': 'Targeted Attacks',
+      'Supply Chain Attacks': 'Targeted Attacks',
+      'Insider Threats': 'Targeted Attacks'
+    }
+    
+    return categoryMap[crimeType] || 'General Cybercrime'
+  }
+
+  const getCategoryRequiredFields = (category: string): string[] => {
+    const fieldMap: { [key: string]: string[] } = {
+      'Financial & Economic Crimes': ['estimated_loss', 'account_reference', 'platform_website'],
+      'Communication & Social Media Crimes': ['platform_website', 'suspect_name', 'suspect_contact'],
+      'Harassment & Exploitation': ['suspect_name', 'suspect_relationship', 'suspect_contact'],
+      'Malware & System Attacks': ['system_details', 'technical_info', 'attack_vector'],
+      'Data & Privacy Crimes': ['system_details', 'vulnerability_details', 'impact_assessment'],
+      'Technical Exploitation': ['vulnerability_details', 'attack_vector', 'technical_info'],
+      'System Disruption & Sabotage': ['system_details', 'attack_vector', 'impact_assessment'],
+      'Government & Terrorism': ['security_level', 'target_info', 'impact_assessment'],
+      'Content-Related Crimes': ['content_description', 'platform_website'],
+      'Targeted Attacks': ['target_info', 'attack_vector', 'suspect_details']
+    }
+    
+    return fieldMap[category] || []
+  }
+
+  const calculateEvidenceStrength = (): number => {
+    if (evidenceFiles.length === 0) return 0
+    
+    let strengthScore = 0
+    let maxPossibleScore = 0
+    
+    evidenceFiles.forEach(file => {
+      let fileScore = 20 // Base score per file
+      maxPossibleScore += 30 // Max possible per file
+      
+      // Quality based on file type
+      if (file.file_type) {
+        const fileType = file.file_type.toLowerCase()
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileType)) {
+          fileScore += 5 // Images get bonus points
+        } else if (['mp4', 'mov', 'avi', 'mkv'].includes(fileType)) {
+          fileScore += 10 // Videos get higher bonus
+        } else if (['pdf', 'doc', 'docx', 'txt'].includes(fileType)) {
+          fileScore += 7 // Documents get good bonus
+        }
+      }
+      
+      // Quality based on file size (larger usually means more detailed)
+      if (file.file_size) {
+        if (file.file_size > 5000000) fileScore += 5 // Files > 5MB
+        else if (file.file_size > 1000000) fileScore += 3 // Files > 1MB
+        else if (file.file_size > 100000) fileScore += 1 // Files > 100KB
+      }
+      
+      strengthScore += fileScore
+    })
+    
+    // Cap at 100% and ensure we don't exceed max
+    return Math.min(Math.round((strengthScore / Math.max(maxPossibleScore, 1)) * 100), 100)
+  }
+
+  const calculateAIAnalysisProgress = (): number => {
+    let aiCompleteness = 0
+    let maxPoints = 100
+    
+    // AI Confidence Score (40% weight)
+    if (complaint.ai_confidence_score) {
+      aiCompleteness += (complaint.ai_confidence_score / 100) * 40
+    }
+    
+    // AI Risk Assessment (30% weight)
+    if (complaint.ai_risk_score) {
+      aiCompleteness += 30 // Full points if AI risk score exists
+    }
+    
+    // AI Reasoning (20% weight)
+    if (complaint.ai_reasoning && complaint.ai_reasoning.length > 50) {
+      aiCompleteness += 20
+    } else if (complaint.ai_reasoning) {
+      aiCompleteness += 10 // Partial points for brief reasoning
+    }
+    
+    // Risk Factors & Urgency Indicators (10% weight)
+    if (complaint.risk_factors && complaint.risk_factors.length > 0) {
+      aiCompleteness += 5
+    }
+    if (complaint.urgency_indicators && complaint.urgency_indicators.length > 0) {
+      aiCompleteness += 5
+    }
+    
+    return Math.min(Math.round(aiCompleteness), 100)
+  }
   
   // Calculate analytics metrics
   const caseAge = Math.ceil((new Date().getTime() - new Date(complaint.created_at).getTime()) / (1000 * 3600 * 24))
@@ -62,37 +249,120 @@ export function CaseAnalyticsModal({
   })()
   
   function calculateInvestigationProgress(): number {
+    const crimeCategory = getCrimeCategory(complaint.crime_type)
     let progress = 0
     
-    // Base progress from status
-    switch (complaint.status) {
-      case 'Pending': progress += 15; break
-      case 'Under Investigation': progress += 45; break
-      case 'Requires More Information': progress += 65; break
-      case 'Resolved': progress += 100; break
-      case 'Dismissed': progress += 100; break
-      default: progress += 10
+    // Base progress from status (dynamic weights)
+    const statusWeights = {
+      'Pending': 15,
+      'Under Investigation': 45,
+      'Requires More Information': 65,
+      'Resolved': 100,
+      'Dismissed': 100
     }
     
-    // Additional progress factors
-    if (evidenceFiles.length > 0) progress += Math.min(evidenceFiles.length * 5, 20)
-    if (aiSummary) progress += 10
-    if (complaint.suspect_name || complaint.suspect_contact) progress += 15
-    if (statusHistory.length > 1) progress += 10
+    progress += statusWeights[complaint.status as keyof typeof statusWeights] || 10
     
-    return Math.min(progress, 100)
+    // Crime-category specific progress factors
+    const categoryRequiredFields = getCategoryRequiredFields(crimeCategory)
+    const populatedCategoryFields = categoryRequiredFields.filter(field => complaint[field])
+    
+    if (categoryRequiredFields.length > 0) {
+      // Award points based on completion of category-specific fields
+      const categoryCompleteness = (populatedCategoryFields.length / categoryRequiredFields.length) * 25
+      progress += categoryCompleteness
+    }
+    
+    // Evidence quality factor (not just quantity)
+    const evidenceStrength = calculateEvidenceStrength()
+    progress += (evidenceStrength / 100) * 15 // Max 15 points based on evidence quality
+    
+    // AI analysis completeness
+    const aiProgress = calculateAIAnalysisProgress()
+    progress += (aiProgress / 100) * 10 // Max 10 points based on AI completeness
+    
+    // Investigation depth based on status history and remarks
+    if (statusHistory.length > 1) {
+      progress += Math.min(statusHistory.length * 2, 10) // Max 10 points for investigation activity
+      
+      // Bonus for detailed remarks
+      const hasDetailedRemarks = statusHistory.some(status => 
+        status.remarks && status.remarks.length > 50
+      )
+      if (hasDetailedRemarks) progress += 5
+    }
+    
+    return Math.min(Math.round(progress), 100)
   }
 
   function calculateComplexityScore(): number {
+    const crimeCategory = getCrimeCategory(complaint.crime_type)
     let complexity = 20 // Base complexity
     
-    if (complaint.technical_info) complexity += 20
-    if (complaint.system_details) complexity += 15
-    if (complaint.vulnerability_details) complexity += 20
-    if (complaint.suspect_details) complexity += 10
-    if (complaint.estimated_loss && complaint.estimated_loss > 100000) complexity += 15
-    if (evidenceFiles.length > 3) complexity += 10
-    if (complaint.platform_website) complexity += 5
+    // Crime-category specific complexity factors
+    switch (crimeCategory) {
+      case 'Malware & System Attacks':
+        if (complaint.technical_info) complexity += 25
+        if (complaint.system_details) complexity += 20
+        if (complaint.vulnerability_details) complexity += 25
+        if (complaint.attack_vector) complexity += 15
+        break
+        
+      case 'Technical Exploitation':
+        if (complaint.vulnerability_details) complexity += 30
+        if (complaint.attack_vector) complexity += 25
+        if (complaint.technical_info) complexity += 20
+        if (complaint.system_details) complexity += 15
+        break
+        
+      case 'Government & Terrorism':
+        if (complaint.security_level) complexity += 25
+        if (complaint.target_info) complexity += 20
+        if (complaint.impact_assessment) complexity += 20
+        if (complaint.technical_info) complexity += 15
+        break
+        
+      case 'Financial & Economic Crimes':
+        if (complaint.estimated_loss && complaint.estimated_loss > 500000) complexity += 25
+        else if (complaint.estimated_loss && complaint.estimated_loss > 100000) complexity += 15
+        else if (complaint.estimated_loss && complaint.estimated_loss > 10000) complexity += 10
+        if (complaint.account_reference) complexity += 15
+        if (complaint.platform_website) complexity += 10
+        break
+        
+      case 'Harassment & Exploitation':
+        if (complaint.suspect_details) complexity += 15
+        if (complaint.suspect_relationship) complexity += 10
+        if (complaint.content_description) complexity += 20
+        if (evidenceFiles.length > 2) complexity += 15
+        break
+        
+      case 'Data & Privacy Crimes':
+        if (complaint.system_details) complexity += 20
+        if (complaint.vulnerability_details) complexity += 25
+        if (complaint.impact_assessment) complexity += 20
+        if (complaint.technical_info) complexity += 15
+        break
+        
+      default:
+        // General cybercrime complexity factors
+        if (complaint.technical_info) complexity += 15
+        if (complaint.system_details) complexity += 12
+        if (complaint.suspect_details) complexity += 10
+        if (complaint.platform_website) complexity += 8
+        break
+    }
+    
+    // Universal complexity factors
+    if (evidenceFiles.length > 5) complexity += 15
+    else if (evidenceFiles.length > 2) complexity += 8
+    
+    // Cross-jurisdictional complexity
+    if (complaint.suspect_contact?.includes('international') || 
+        complaint.platform_website?.includes('.com') ||
+        complaint.description?.toLowerCase().includes('overseas')) {
+      complexity += 20
+    }
     
     return Math.min(complexity, 100)
   }
@@ -200,107 +470,6 @@ export function CaseAnalyticsModal({
   }
 
   // Helper functions
-  const getCrimeCategory = (crimeType: string): string => {
-    // Map crime types to categories based on Flutter model
-    const categoryMap: { [key: string]: string } = {
-      // Communication & Social Media Crimes
-      'Phishing': 'Communication & Social Media Crimes',
-      'Social Engineering': 'Communication & Social Media Crimes',
-      'Spam Messages': 'Communication & Social Media Crimes',
-      'Fake Social Media Profiles': 'Communication & Social Media Crimes',
-      'Online Impersonation': 'Communication & Social Media Crimes',
-      'Business Email Compromise': 'Communication & Social Media Crimes',
-      'SMS Fraud': 'Communication & Social Media Crimes',
-      
-      // Financial & Economic Crimes
-      'Online Banking Fraud': 'Financial & Economic Crimes',
-      'Credit Card Fraud': 'Financial & Economic Crimes',
-      'Investment Scams': 'Financial & Economic Crimes',
-      'Cryptocurrency Fraud': 'Financial & Economic Crimes',
-      'Online Shopping Scams': 'Financial & Economic Crimes',
-      'Payment Gateway Fraud': 'Financial & Economic Crimes',
-      'Insurance Fraud': 'Financial & Economic Crimes',
-      'Tax Fraud': 'Financial & Economic Crimes',
-      'Money Laundering': 'Financial & Economic Crimes',
-      
-      // Data & Privacy Crimes
-      'Identity Theft': 'Data & Privacy Crimes',
-      'Data Breach': 'Data & Privacy Crimes',
-      'Unauthorized System Access': 'Data & Privacy Crimes',
-      'Corporate Espionage': 'Data & Privacy Crimes',
-      'Government Data Theft': 'Data & Privacy Crimes',
-      'Medical Records Theft': 'Data & Privacy Crimes',
-      'Personal Information Theft': 'Data & Privacy Crimes',
-      'Account Takeover': 'Data & Privacy Crimes',
-      
-      // Malware & System Attacks
-      'Ransomware': 'Malware & System Attacks',
-      'Virus Attacks': 'Malware & System Attacks',
-      'Trojan Horses': 'Malware & System Attacks',
-      'Spyware': 'Malware & System Attacks',
-      'Adware': 'Malware & System Attacks',
-      'Worms': 'Malware & System Attacks',
-      'Keyloggers': 'Malware & System Attacks',
-      'Rootkits': 'Malware & System Attacks',
-      'Cryptojacking': 'Malware & System Attacks',
-      'Botnet Attacks': 'Malware & System Attacks',
-      
-      // Harassment & Exploitation
-      'Cyberstalking': 'Harassment & Exploitation',
-      'Online Harassment': 'Harassment & Exploitation',
-      'Cyberbullying': 'Harassment & Exploitation',
-      'Revenge Porn': 'Harassment & Exploitation',
-      'Sextortion': 'Harassment & Exploitation',
-      'Online Predatory Behavior': 'Harassment & Exploitation',
-      'Doxxing': 'Harassment & Exploitation',
-      'Hate Speech': 'Harassment & Exploitation',
-      
-      // Content-Related Crimes
-      'Child Sexual Abuse Material': 'Content-Related Crimes',
-      'Illegal Content Distribution': 'Content-Related Crimes',
-      'Copyright Infringement': 'Content-Related Crimes',
-      'Software Piracy': 'Content-Related Crimes',
-      'Illegal Online Gambling': 'Content-Related Crimes',
-      'Online Drug Trafficking': 'Content-Related Crimes',
-      'Illegal Weapons Sales': 'Content-Related Crimes',
-      'Human Trafficking': 'Content-Related Crimes',
-      
-      // System Disruption & Sabotage
-      'Denial of Service Attacks': 'System Disruption & Sabotage',
-      'Website Defacement': 'System Disruption & Sabotage',
-      'System Sabotage': 'System Disruption & Sabotage',
-      'Network Intrusion': 'System Disruption & Sabotage',
-      'SQL Injection': 'System Disruption & Sabotage',
-      'Cross-Site Scripting': 'System Disruption & Sabotage',
-      'Man-in-the-Middle Attacks': 'System Disruption & Sabotage',
-      
-      // Government & Terrorism
-      'Cyberterrorism': 'Government & Terrorism',
-      'Cyber Warfare': 'Government & Terrorism',
-      'Government System Hacking': 'Government & Terrorism',
-      'Election Interference': 'Government & Terrorism',
-      'Critical Infrastructure Attacks': 'Government & Terrorism',
-      'Propaganda Distribution': 'Government & Terrorism',
-      'State-Sponsored Attacks': 'Government & Terrorism',
-      
-      // Technical Exploitation
-      'Zero-Day Exploits': 'Technical Exploitation',
-      'Vulnerability Exploitation': 'Technical Exploitation',
-      'Backdoor Creation': 'Technical Exploitation',
-      'Privilege Escalation': 'Technical Exploitation',
-      'Code Injection': 'Technical Exploitation',
-      'Buffer Overflow Attacks': 'Technical Exploitation',
-      
-      // Targeted Attacks
-      'Advanced Persistent Threats': 'Targeted Attacks',
-      'Spear Phishing': 'Targeted Attacks',
-      'CEO Fraud': 'Targeted Attacks',
-      'Supply Chain Attacks': 'Targeted Attacks',
-      'Insider Threats': 'Targeted Attacks'
-    }
-    
-    return categoryMap[crimeType] || 'General Cybercrime'
-  }
 
   const isPaymentPlatform = (platform: string): boolean => {
     const paymentKeywords = ['gcash', 'paymaya', 'paypal', 'bank', 'visa', 'mastercard', 'crypto', 'bitcoin', 'payment']
@@ -319,6 +488,94 @@ export function CaseAnalyticsModal({
       case 8: return 'grid-cols-8'
       default: return 'grid-cols-4'
     }
+  }
+
+  // Dynamic calculation functions for removing hardcoded values
+  const calculateDocumentationProgress = (): number => {
+    const crimeCategory = getCrimeCategory(complaint.crime_type)
+    let totalRequiredFields = 5 // Base required fields (title, description, incident_date_time, complainant info, status)
+    let populatedFields = 0
+    
+    // Count base populated fields
+    if (complaint.title || complaint.description) populatedFields++
+    if (complaint.incident_date_time) populatedFields++
+    if (complaint.full_name) populatedFields++
+    if (complaint.email) populatedFields++
+    if (complaint.status) populatedFields++
+    
+    // Add crime-category specific required fields
+    const categoryRequiredFields = getCategoryRequiredFields(crimeCategory)
+    totalRequiredFields += categoryRequiredFields.length
+    
+    // Count populated category-specific fields
+    categoryRequiredFields.forEach(field => {
+      if (complaint[field]) populatedFields++
+    })
+    
+    // Factor in status history quality
+    if (statusHistory.length > 0) {
+      populatedFields += Math.min(statusHistory.length * 0.5, 2) // Max 2 points for status updates
+      const hasDetailedRemarks = statusHistory.some(status => status.remarks && status.remarks.length > 20)
+      if (hasDetailedRemarks) populatedFields += 1
+    }
+    
+    // Factor in evidence documentation
+    if (evidenceFiles.length > 0) {
+      populatedFields += Math.min(evidenceFiles.length * 0.3, 1.5) // Max 1.5 points for evidence
+    }
+    
+    return Math.min(Math.round((populatedFields / totalRequiredFields) * 100), 100)
+  }
+
+  // Philippine RA 10175 (Cybercrime Prevention Act) based classifications
+  const getPhilippineCaseCategory = (estimatedLoss: number | null): string => {
+    if (!estimatedLoss || estimatedLoss === 0) return 'Non-Monetary'
+    
+    // Based on Philippine legal thresholds and precedents
+    if (estimatedLoss >= 1000000) return 'Large Scale' // ₱1M+ - major cybercrime
+    if (estimatedLoss >= 200000) return 'Qualified Theft' // ₱200K+ - qualified theft under RPC
+    if (estimatedLoss >= 50000) return 'High Value' // ₱50K+ - significant amount
+    if (estimatedLoss >= 10000) return 'Standard Value' // ₱10K+ - standard threshold
+    return 'Minor Value' // Below ₱10K
+  }
+
+  const getPhilippineLegalCategory = (estimatedLoss: number | null, crimeType: string): string => {
+    // High-priority crimes are always criminal regardless of amount
+    const alwaysCriminalCrimes = [
+      'Child Sexual Abuse Material', 'Cyberterrorism', 'Government System Hacking',
+      'Online Predatory Behavior', 'Human Trafficking', 'Critical Infrastructure Attacks'
+    ]
+    
+    if (alwaysCriminalCrimes.some(crime => crimeType.includes(crime))) {
+      return 'Criminal (Felony)'
+    }
+    
+    if (!estimatedLoss || estimatedLoss === 0) {
+      // Non-monetary crimes - still criminal if they involve privacy/dignity
+      if (crimeType.includes('Harassment') || crimeType.includes('Stalking') || crimeType.includes('Privacy')) {
+        return 'Criminal (Misdemeanor)'
+      }
+      return 'Administrative'
+    }
+    
+    // Based on Philippine theft/fraud thresholds
+    if (estimatedLoss >= 200000) return 'Criminal (Felony)' // Qualified theft
+    if (estimatedLoss >= 50000) return 'Criminal (Misdemeanor)' // Theft
+    if (estimatedLoss >= 10000) return 'Civil/Criminal' // Can be either
+    return 'Civil/Administrative' // Below ₱10K
+  }
+
+  const getRecoveryProbability = (status: string, estimatedLoss: number | null): string => {
+    if (status === 'Resolved') return 'Recovered'
+    if (status === 'Dismissed') return 'Low'
+    
+    if (!estimatedLoss || estimatedLoss === 0) return 'N/A'
+    
+    // Higher amounts have better recovery chances due to more resources allocated
+    if (estimatedLoss >= 500000) return 'High' // Major cases get priority
+    if (estimatedLoss >= 100000) return 'Medium' // Significant amounts
+    if (estimatedLoss >= 20000) return 'Fair' // Moderate amounts
+    return 'Low' // Small amounts harder to recover
   }
 
   // Calculate which tabs should be shown
@@ -385,11 +642,11 @@ export function CaseAnalyticsModal({
     },
     {
       title: "Evidence Strength",
-      value: Math.min(evidenceFiles.length * 20, 100),
+      value: calculateEvidenceStrength(),
       suffix: "%",
       icon: Shield,
-      color: getProgressColor(Math.min(evidenceFiles.length * 20, 100)),
-      description: "Evidence collection status"
+      color: getProgressColor(calculateEvidenceStrength()),
+      description: "Quality-weighted evidence assessment"
     }
   ]
 
@@ -510,9 +767,11 @@ export function CaseAnalyticsModal({
                     <CardContent className="space-y-4">
                       {aiSummary ? (
                         <div className="p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-                          <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed">
-                            {aiSummary.length > 200 ? aiSummary.substring(0, 200) + '...' : aiSummary}
-                          </p>
+                          <div className="max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-lawbot-emerald-300 dark:scrollbar-thumb-lawbot-emerald-700 scrollbar-track-transparent">
+                            <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed pr-2">
+                              {aiSummary}
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <div className="p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg border-2 border-dashed border-lawbot-slate-300 dark:border-lawbot-slate-600 text-center">
@@ -616,7 +875,7 @@ export function CaseAnalyticsModal({
                                         style={{ width: `${((count as number) / evidenceFiles.length) * 100}%` }}
                                       ></div>
                                     </div>
-                                    <span className="text-xs font-medium w-6 text-right">{count}</span>
+                                    <span className="text-xs font-medium w-6 text-right">{count as number}</span>
                                   </div>
                                 </div>
                               ))
@@ -625,9 +884,9 @@ export function CaseAnalyticsModal({
                             <Separator />
                             <div className="space-y-1">
                               <p className="text-xs font-medium text-lawbot-slate-500 dark:text-lawbot-slate-400">Evidence Strength</p>
-                              <Progress value={Math.min(evidenceFiles.length * 20, 100)} className="h-3" />
+                              <Progress value={calculateEvidenceStrength()} className="h-3" />
                               <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                                {Math.min(evidenceFiles.length * 20, 100)}% collection target
+                                {calculateEvidenceStrength()}% quality assessment
                               </p>
                             </div>
                           </>
@@ -667,23 +926,23 @@ export function CaseAnalyticsModal({
                         <div className="grid md:grid-cols-3 gap-4">
                           <div className="text-center p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg">
                             <p className="text-lg font-bold text-lawbot-slate-900 dark:text-white">
-                              {complaint.estimated_loss > 100000 ? 'High Value' : complaint.estimated_loss > 10000 ? 'Medium Value' : 'Standard'}
+                              {getPhilippineCaseCategory(complaint.estimated_loss)}
                             </p>
-                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Case Category</p>
+                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">RA 10175 Category</p>
                           </div>
                           
                           <div className="text-center p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg">
                             <p className="text-lg font-bold text-lawbot-slate-900 dark:text-white">
-                              {complaint.status === 'Resolved' ? 'High' : complaint.status === 'Under Investigation' ? 'Medium' : 'Unknown'}
+                              {getRecoveryProbability(complaint.status, complaint.estimated_loss)}
                             </p>
                             <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Recovery Probability</p>
                           </div>
 
                           <div className="text-center p-4 bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg">
                             <p className="text-lg font-bold text-lawbot-slate-900 dark:text-white">
-                              {complaint.estimated_loss > 100000 ? 'Criminal' : 'Civil'}
+                              {getPhilippineLegalCategory(complaint.estimated_loss, complaint.crime_type)}
                             </p>
-                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Legal Category</p>
+                            <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Legal Classification</p>
                           </div>
                         </div>
                       </>
@@ -941,25 +1200,25 @@ export function CaseAnalyticsModal({
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm font-medium">Evidence Collection</span>
-                            <span className="text-sm text-lawbot-slate-500">{Math.min(evidenceFiles.length * 20, 100)}%</span>
+                            <span className="text-sm text-lawbot-slate-500">{calculateEvidenceStrength()}%</span>
                           </div>
-                          <Progress value={Math.min(evidenceFiles.length * 20, 100)} className="h-3" />
+                          <Progress value={calculateEvidenceStrength()} className="h-3" />
                         </div>
 
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm font-medium">AI Analysis</span>
-                            <span className="text-sm text-lawbot-slate-500">{aiSummary ? '100' : '0'}%</span>
+                            <span className="text-sm text-lawbot-slate-500">{calculateAIAnalysisProgress()}%</span>
                           </div>
-                          <Progress value={aiSummary ? 100 : 0} className="h-3" />
+                          <Progress value={calculateAIAnalysisProgress()} className="h-3" />
                         </div>
 
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-sm font-medium">Documentation</span>
-                            <span className="text-sm text-lawbot-slate-500">{statusHistory.length > 0 ? '85' : '10'}%</span>
+                            <span className="text-sm text-lawbot-slate-500">{calculateDocumentationProgress()}%</span>
                           </div>
-                          <Progress value={statusHistory.length > 0 ? 85 : 10} className="h-3" />
+                          <Progress value={calculateDocumentationProgress()} className="h-3" />
                         </div>
                       </div>
                     </CardContent>

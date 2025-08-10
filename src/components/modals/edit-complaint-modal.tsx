@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator"
 import ComplaintService from "@/lib/complaint-service"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 interface EditComplaintModalProps {
   isOpen: boolean
@@ -451,7 +452,7 @@ export function EditComplaintModal({ isOpen, onClose, caseData, onUpdate }: Edit
                               <span className="text-sm font-medium">{update.updater_name}</span>
                             </div>
                             <p className="text-sm text-gray-500">
-                              {new Date(update.created_at).toLocaleString()}
+                              {PhilippineTime.formatDatabaseTime(update.created_at)}
                             </p>
                           </div>
                           {update.ai_reassessment_completed && (
