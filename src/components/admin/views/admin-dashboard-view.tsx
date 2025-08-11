@@ -1,54 +1,74 @@
 "use client"
 
-import { FileText, AlertTriangle, Users, CheckCircle, MoreHorizontal, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight } from "lucide-react"
+import { useState, useEffect } from "react"
+import { FileText, AlertTriangle, Users, CheckCircle, MoreHorizontal, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
-import { mockCases } from "@/lib/mock-data"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import AdminService, { DashboardStats, CaseDistributionData, TimelineData, OfficerPerformanceData } from "@/lib/admin-service"
+import ComplaintService from "@/lib/complaint-service"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 export function AdminDashboardView() {
-  const stats = [
-    {
-      title: "Total Cases",
-      value: "1,247",
-      change: "+12%",
-      trend: "up",
-      icon: FileText,
-      color: "blue",
-      description: "from last month"
-    },
-    {
-      title: "High Priority",
-      value: "89",
-      change: "24 urgent",
-      trend: "urgent",
-      icon: AlertTriangle,
-      color: "red",
-      description: "requires immediate attention"
-    },
-    {
-      title: "Active Officers",
-      value: "45",
-      change: "8 online",
-      trend: "stable",
-      icon: Users,
-      color: "emerald",
-      description: "across 10 specialized units"
-    },
-    {
-      title: "Resolution Rate",
-      value: "78%",
-      change: "+5%",
-      trend: "up",
-      icon: CheckCircle,
-      color: "green",
-      description: "this month"
+  // State for dashboard data
+  const [isLoading, setIsLoading] = useState(true)
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
+  const [caseDistribution, setCaseDistribution] = useState<CaseDistributionData | null>(null)
+  const [timelineData, setTimelineData] = useState<TimelineData[] | null>(null)
+  const [officerPerformance, setOfficerPerformance] = useState<OfficerPerformanceData[] | null>(null)
+  const [recentCases, setRecentCases] = useState<any[]>([])
+  const [aiInsights, setAiInsights] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
+
+  // Load dashboard data on component mount
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  // Function to load all dashboard data
+  const loadDashboardData = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Load dashboard stats
+      const stats = await AdminService.getDashboardStats()
+      setDashboardStats(stats)
+
+      // Load case distribution data
+      const distribution = await AdminService.getCaseDistribution()
+      setCaseDistribution(distribution)
+
+      // Load timeline data
+      const timeline = await AdminService.getCaseTimeline(30)
+      setTimelineData(timeline)
+
+      // Load officer performance data
+      const performance = await AdminService.getOfficerPerformanceData()
+      setOfficerPerformance(performance)
+
+      // Load recent cases
+      const { data: cases } = await ComplaintService.getAllComplaints({ 
+        limit: 5,
+        offset: 0
+      })
+      setRecentCases(cases || [])
+
+      // Generate AI insights
+      const insights = await AdminService.generateSystemInsights()
+      setAiInsights(insights)
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+      setError('Failed to load dashboard data. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
-  ]
+  }
 
   const getIconColor = (color: string) => {
     switch (color) {
@@ -79,46 +99,142 @@ export function AdminDashboardView() {
     }
   }
 
+  // Generate stats cards data from real data
+  const generateStatsCards = () => {
+    if (!dashboardStats) return []
+
+    return [
+      {
+        title: "Total Cases",
+        value: dashboardStats.totalCases.toLocaleString(),
+        change: `+${Math.round((dashboardStats.totalCases / (dashboardStats.totalCases - dashboardStats.pendingCases) - 1) * 100)}%`,
+        trend: "up",
+        icon: FileText,
+        color: "blue",
+        description: "active cases"
+      },
+      {
+        title: "High Priority",
+        value: dashboardStats.highPriorityCases.toLocaleString(),
+        change: `${Math.round((dashboardStats.highPriorityCases / dashboardStats.totalCases) * 100)}%`,
+        trend: "urgent",
+        icon: AlertTriangle,
+        color: "red",
+        description: "of total cases"
+      },
+      {
+        title: "Active Officers",
+        value: dashboardStats.activeOfficers.toLocaleString(),
+        change: `${dashboardStats.activeOfficers}/${dashboardStats.totalOfficers}`,
+        trend: "stable",
+        icon: Users,
+        color: "emerald",
+        description: "officers available"
+      },
+      {
+        title: "Resolution Rate",
+        value: `${dashboardStats.resolutionRate}%`,
+        change: "+5%",
+        trend: "up",
+        icon: CheckCircle,
+        color: "green",
+        description: "resolved successfully"
+      }
+    ]
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Dashboard Header with Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+            Admin Dashboard
+          </h2>
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+            Real-time system overview and performance metrics
+          </p>
+        </div>
+        <Button 
+          variant="outline"
+          onClick={loadDashboardData}
+          disabled={isLoading}
+          className="btn-modern"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
+      </div>
+
+      {error && (
+        <Card className="border-lawbot-red-300 dark:border-lawbot-red-800 bg-lawbot-red-50 dark:bg-lawbot-red-900/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3 text-lawbot-red-600 dark:text-lawbot-red-300">
+              <AlertTriangle className="h-5 w-5" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title} className={`stats-card animate-fade-in-up`} style={{ animationDelay: `${index * 100}ms` }}>
+        {isLoading ? (
+          // Skeleton loaders for stats
+          Array(4).fill(0).map((_, index) => (
+            <Card key={index} className="stats-card animate-pulse">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg bg-gradient-to-r ${
-                  stat.color === 'red' ? 'from-lawbot-red-50 to-lawbot-red-100' :
-                  stat.color === 'blue' ? 'from-lawbot-blue-50 to-lawbot-blue-100' :
-                  stat.color === 'emerald' ? 'from-lawbot-emerald-50 to-lawbot-emerald-100' :
-                  'from-lawbot-slate-50 to-lawbot-slate-100'
-                }`}>
-                  <Icon className={`h-5 w-5 ${getIconColor(stat.color)}`} />
-                </div>
+                <div className="h-5 w-24 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                <div className="h-9 w-9 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded-lg"></div>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className={`text-3xl font-bold ${getValueColor(stat.color)}`}>
-                  {stat.value}
-                </div>
+                <div className="h-8 w-20 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${getChangeColor(stat.trend)}`}>
-                    {stat.change}
-                  </span>
-                  <span className="text-xs text-lawbot-slate-500">
-                    {stat.description}
-                  </span>
+                  <div className="h-4 w-16 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                  <div className="h-4 w-24 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
                 </div>
-                {stat.title === "Resolution Rate" && (
-                  <Progress value={78} className="h-2 mt-2" />
-                )}
               </CardContent>
             </Card>
-          )
-        })}
+          ))
+        ) : dashboardStats ? (
+          // Real data stats cards
+          generateStatsCards().map((stat, index) => {
+            const Icon = stat.icon
+            return (
+              <Card key={stat.title} className={`stats-card animate-fade-in-up`} style={{ animationDelay: `${index * 100}ms` }}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    {stat.title}
+                  </CardTitle>
+                  <div className={`p-2 rounded-lg bg-gradient-to-r ${
+                    stat.color === 'red' ? 'from-lawbot-red-50 to-lawbot-red-100' :
+                    stat.color === 'blue' ? 'from-lawbot-blue-50 to-lawbot-blue-100' :
+                    stat.color === 'emerald' ? 'from-lawbot-emerald-50 to-lawbot-emerald-100' :
+                    'from-lawbot-slate-50 to-lawbot-slate-100'
+                  }`}>
+                    <Icon className={`h-5 w-5 ${getIconColor(stat.color)}`} />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className={`text-3xl font-bold ${getValueColor(stat.color)}`}>
+                    {stat.value}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${getChangeColor(stat.trend)}`}>
+                      {stat.change}
+                    </span>
+                    <span className="text-xs text-lawbot-slate-500">
+                      {stat.description}
+                    </span>
+                  </div>
+                  {stat.title === "Resolution Rate" && (
+                    <Progress value={dashboardStats.resolutionRate} className="h-2 mt-2" />
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
+        ) : null}
       </div>
 
       {/* Enhanced Dashboard Content */}
@@ -135,79 +251,113 @@ export function AdminDashboardView() {
                   Latest cybercrime reports requiring attention
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="btn-icon">
-                <Eye className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="btn-icon"
+                onClick={() => loadDashboardData()}
+                disabled={isLoading}
+              >
+                {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockCases.slice(0, 5).map((case_, index) => (
-                <div 
-                  key={case_.id} 
-                  className="group flex items-center justify-between p-4 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-300 hover:border-lawbot-blue-300 dark:hover:border-lawbot-blue-600 animate-fade-in-up"
-                  style={{ animationDelay: `${(index + 4) * 100}ms` }}
-                >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-3">
-                      <span className="font-semibold text-sm text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                        {case_.id}
-                      </span>
-                      <Badge className={`${getPriorityColor(case_.priority)} text-xs`}>
-                        {case_.priority}
-                      </Badge>
-                      <div className={`w-2 h-2 rounded-full ${
-                        case_.riskScore >= 80 ? 'bg-lawbot-red-500' :
-                        case_.riskScore >= 50 ? 'bg-lawbot-amber-500' : 'bg-lawbot-emerald-500'
-                      }`} />
+              {isLoading ? (
+                // Skeleton loaders for cases
+                Array(5).fill(0).map((_, index) => (
+                  <div key={index} className="p-4 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl animate-pulse">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="h-4 w-16 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                      <div className="h-4 w-12 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
                     </div>
-                    <p className="text-sm font-medium text-lawbot-slate-900 dark:text-white line-clamp-1">
-                      {case_.title}
-                    </p>
+                    <div className="h-5 w-3/4 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded mb-3"></div>
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                        Officer: {case_.officer}
-                      </p>
-                      <p className="text-xs text-lawbot-slate-500">
-                        Risk: {case_.riskScore}
-                      </p>
+                      <div className="h-4 w-24 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                      <div className="h-4 w-20 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge className={`${getStatusColor(case_.status)} text-xs`}>
-                      {case_.status}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem className="flex items-center">
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center">
-                          <Users className="mr-2 h-4 w-4" />
-                          Reassign Officer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center">
-                          <AlertTriangle className="mr-2 h-4 w-4" />
-                          Update Priority
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                ))
+              ) : recentCases.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto mb-3 text-lawbot-slate-400" />
+                  <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400">No recent cases found</p>
                 </div>
-              ))}
+              ) : (
+                recentCases.map((caseData, index) => (
+                  <div 
+                    key={caseData.id} 
+                    className="group flex items-center justify-between p-4 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-300 hover:border-lawbot-blue-300 dark:hover:border-lawbot-blue-600 animate-fade-in-up"
+                    style={{ animationDelay: `${(index + 4) * 100}ms` }}
+                  >
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-semibold text-sm text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                          {caseData.complaint_number || `CYB-${caseData.id.substring(0, 8)}`}
+                        </span>
+                        <Badge className={`${getPriorityColor(caseData.priority)} text-xs`}>
+                          {caseData.priority}
+                        </Badge>
+                        <div className={`w-2 h-2 rounded-full ${
+                          caseData.ai_risk_score >= 80 ? 'bg-lawbot-red-500' :
+                          caseData.ai_risk_score >= 50 ? 'bg-lawbot-amber-500' : 'bg-lawbot-emerald-500'
+                        }`} />
+                      </div>
+                      <p className="text-sm font-medium text-lawbot-slate-900 dark:text-white line-clamp-1">
+                        {caseData.title || caseData.crime_type}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                          Submitted: {PhilippineTime.formatDatabaseDateShort(caseData.created_at)}
+                        </p>
+                        <p className="text-xs text-lawbot-slate-500">
+                          Risk: {caseData.ai_risk_score || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge className={`${getStatusColor(caseData.status)} text-xs`}>
+                        {caseData.status}
+                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem className="flex items-center">
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="flex items-center">
+                            <Users className="mr-2 h-4 w-4" />
+                            Reassign Officer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="flex items-center">
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Update Priority
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <div className="mt-4 pt-4 border-t border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <Button variant="outline" className="w-full btn-modern">
+              <Button variant="outline" className="w-full btn-modern" onClick={() => {
+                // We'll use the admin view change callback to switch to the cases view
+                // This is handled by the admin dashboard component
+                if (window && window.dispatchEvent) {
+                  window.dispatchEvent(new CustomEvent('admin-view-change', { detail: 'cases' }))
+                }
+              }}>
                 View All Cases
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
@@ -227,27 +377,106 @@ export function AdminDashboardView() {
                   Top performing officers this month
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="btn-icon">
-                <TrendingUp className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="btn-icon"
+                onClick={() => loadDashboardData()}
+                disabled={isLoading}
+              >
+                {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-lawbot-slate-500" />
-                </div>
-                <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                  Officer performance data will be displayed here
-                </p>
-                <p className="text-xs text-lawbot-slate-500">
-                  Data is now managed through the User Management system
-                </p>
+            {isLoading ? (
+              // Skeleton loader for officer performance
+              <div className="space-y-4">
+                {Array(3).fill(0).map((_, index) => (
+                  <div key={index} className="p-3 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl animate-pulse">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="h-10 w-10 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded-full"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                        <div className="h-3 w-24 bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : officerPerformance && officerPerformance.length > 0 ? (
+              // Real officer performance data
+              <div className="space-y-3">
+                {officerPerformance.slice(0, 3).map((officer, index) => (
+                  <div 
+                    key={officer.officerId} 
+                    className="flex items-center justify-between p-3 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-300 animate-fade-in-up"
+                    style={{ animationDelay: `${(index + 4) * 100}ms` }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10 border-2 border-lawbot-blue-200">
+                        <AvatarFallback className="bg-lawbot-blue-100 text-lawbot-blue-700 font-semibold">
+                          {officer.officerName.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-lawbot-slate-900 dark:text-white">
+                          {officer.officerName}
+                        </p>
+                        <div className="flex items-center text-xs">
+                          <span className="text-lawbot-slate-500">Success Rate:</span>
+                          <span className={`ml-1 font-semibold ${
+                            officer.successRate >= 80 ? 'text-lawbot-emerald-600 dark:text-lawbot-emerald-400' :
+                            officer.successRate >= 60 ? 'text-lawbot-blue-600 dark:text-lawbot-blue-400' :
+                            'text-lawbot-amber-600 dark:text-lawbot-amber-400'
+                          }`}>
+                            {officer.successRate}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
+                            {officer.assignedCases}
+                          </p>
+                          <p className="text-xs text-lawbot-slate-500">Assigned</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                            {officer.resolvedCases}
+                          </p>
+                          <p className="text-xs text-lawbot-slate-500">Resolved</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // No officer data available
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-3">
+                  <div className="mx-auto w-12 h-12 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 rounded-full flex items-center justify-center">
+                    <Users className="h-6 w-6 text-lawbot-slate-500" />
+                  </div>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Officer performance data will be displayed here
+                  </p>
+                  <p className="text-xs text-lawbot-slate-500">
+                    No officer data available at this time
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="mt-4 pt-4 border-t border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <Button variant="outline" className="w-full btn-modern">
+              <Button variant="outline" className="w-full btn-modern" onClick={() => {
+                // We'll use the admin view change callback to switch to the users view
+                if (window && window.dispatchEvent) {
+                  window.dispatchEvent(new CustomEvent('admin-view-change', { detail: 'users' }))
+                }
+              }}>
                 View All Officers
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
@@ -274,26 +503,43 @@ export function AdminDashboardView() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-baseline space-x-2">
-              <span className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
-                89
-              </span>
-              <span className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
-                Cases
-              </span>
-            </div>
-            <Progress value={89} max={1000} className="h-2 bg-lawbot-red-200 dark:bg-lawbot-red-800" />
-            <div className="space-y-1">
-              <p className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
-                🔴 Risk Score: 80-100
-              </p>
-              <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
-                ⏰ Response: 2 hours
-              </p>
-              <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
-                24 require immediate action
-              </p>
-            </div>
+            {isLoading ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-7 w-16 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
+                <div className="h-2 w-full bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
+                <div className="space-y-1">
+                  <div className="h-4 w-24 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
+                  <div className="h-3 w-20 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
+                </div>
+              </div>
+            ) : dashboardStats ? (
+              <>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
+                    {dashboardStats.highPriorityCases}
+                  </span>
+                  <span className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
+                    Cases
+                  </span>
+                </div>
+                <Progress 
+                  value={dashboardStats.highPriorityCases} 
+                  max={dashboardStats.totalCases} 
+                  className="h-2 bg-lawbot-red-200 dark:bg-lawbot-red-800" 
+                />
+                <div className="space-y-1">
+                  <p className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
+                    🔴 Risk Score: 80-100
+                  </p>
+                  <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
+                    ⏰ Response: 2 hours
+                  </p>
+                  <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
+                    {Math.round(dashboardStats.highPriorityCases / 3)} require immediate action
+                  </p>
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -313,26 +559,43 @@ export function AdminDashboardView() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-baseline space-x-2">
-              <span className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                234
-              </span>
-              <span className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
-                Cases
-              </span>
-            </div>
-            <Progress value={234} max={1000} className="h-2 bg-lawbot-amber-200 dark:bg-lawbot-amber-800" />
-            <div className="space-y-1">
-              <p className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
-                🟡 Risk Score: 50-79
-              </p>
-              <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                ⏰ Response: 24 hours
-              </p>
-              <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                Standard investigation timeline
-              </p>
-            </div>
+            {isLoading ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-7 w-16 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
+                <div className="h-2 w-full bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
+                <div className="space-y-1">
+                  <div className="h-4 w-24 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
+                  <div className="h-3 w-20 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
+                </div>
+              </div>
+            ) : dashboardStats ? (
+              <>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                    {dashboardStats.mediumPriorityCases}
+                  </span>
+                  <span className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
+                    Cases
+                  </span>
+                </div>
+                <Progress 
+                  value={dashboardStats.mediumPriorityCases} 
+                  max={dashboardStats.totalCases} 
+                  className="h-2 bg-lawbot-amber-200 dark:bg-lawbot-amber-800" 
+                />
+                <div className="space-y-1">
+                  <p className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
+                    🟡 Risk Score: 50-79
+                  </p>
+                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                    ⏰ Response: 24 hours
+                  </p>
+                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                    Standard investigation timeline
+                  </p>
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -352,26 +615,43 @@ export function AdminDashboardView() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-baseline space-x-2">
-              <span className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                456
-              </span>
-              <span className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
-                Cases
-              </span>
-            </div>
-            <Progress value={456} max={1000} className="h-2 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800" />
-            <div className="space-y-1">
-              <p className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
-                🟢 Risk Score: 1-49
-              </p>
-              <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                ⏰ Response: 72 hours
-              </p>
-              <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                Routine processing timeline
-              </p>
-            </div>
+            {isLoading ? (
+              <div className="animate-pulse space-y-3">
+                <div className="h-7 w-16 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
+                <div className="h-2 w-full bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
+                <div className="space-y-1">
+                  <div className="h-4 w-24 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
+                  <div className="h-3 w-20 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
+                </div>
+              </div>
+            ) : dashboardStats ? (
+              <>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                    {dashboardStats.lowPriorityCases}
+                  </span>
+                  <span className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
+                    Cases
+                  </span>
+                </div>
+                <Progress 
+                  value={dashboardStats.lowPriorityCases} 
+                  max={dashboardStats.totalCases} 
+                  className="h-2 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800" 
+                />
+                <div className="space-y-1">
+                  <p className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
+                    🟢 Risk Score: 1-49
+                  </p>
+                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                    ⏰ Response: 72 hours
+                  </p>
+                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                    Routine processing timeline
+                  </p>
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </div>
@@ -394,40 +674,65 @@ export function AdminDashboardView() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-              <div className="text-2xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400 mb-1">
-                92%
+          {isLoading ? (
+            // Skeleton loader for AI insights
+            <div className="animate-pulse space-y-3">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Array(4).fill(0).map((_, index) => (
+                  <div key={index} className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
+                    <div className="h-6 w-16 mx-auto mb-1 bg-lawbot-purple-200 dark:bg-lawbot-purple-800 rounded"></div>
+                    <div className="h-4 w-24 mx-auto bg-lawbot-purple-200 dark:bg-lawbot-purple-800 rounded"></div>
+                  </div>
+                ))}
               </div>
-              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                Auto-routing Accuracy
-              </p>
             </div>
-            <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-              <div className="text-2xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">
-                2.4h
+          ) : dashboardStats ? (
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
+                  <div className="text-2xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400 mb-1">
+                    {dashboardStats.resolutionRate}%
+                  </div>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Resolution Rate
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
+                  <div className="text-2xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">
+                    {dashboardStats.avgResolutionTime > 0 ? 
+                      `${dashboardStats.avgResolutionTime.toFixed(1)}d` : 
+                      'N/A'}
+                  </div>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Avg Resolution Time
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
+                  <div className="text-2xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">
+                    {dashboardStats.totalEvidence}
+                  </div>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    Evidence Files
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
+                  <div className="text-2xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">
+                    {dashboardStats.aiCacheHitRate}%
+                  </div>
+                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                    AI Cache Hit Rate
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                Avg Response Time
-              </p>
-            </div>
-            <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-              <div className="text-2xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">
-                156
-              </div>
-              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                Cases Processed Today
-              </p>
-            </div>
-            <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-              <div className="text-2xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">
-                🔥 Hot
-              </div>
-              <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                Trending Crime Type
-              </p>
-            </div>
-          </div>
+              
+              {/* AI insights text */}
+              {aiInsights && (
+                <div className="mt-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700 markdown-content">
+                  <div dangerouslySetInnerHTML={{ __html: aiInsights.replace(/^##\s+/gm, '<h3 class="text-lg font-bold mb-2 text-lawbot-purple-600 dark:text-lawbot-purple-400">').replace(/\n- /g, '<br>• ') }} />
+                </div>
+              )}
+            </>
+          ) : null}
         </CardContent>
       </Card>
     </div>

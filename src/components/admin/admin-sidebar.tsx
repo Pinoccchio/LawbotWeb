@@ -17,8 +17,7 @@ export function AdminSidebar({ currentView, onViewChange, sidebarOpen }: AdminSi
     { id: "cases" as AdminView, icon: <FileText className="h-5 w-5" />, label: "Case Management" },
     { id: "users" as AdminView, icon: <Users className="h-5 w-5" />, label: "User Management" },
     { id: "units" as AdminView, icon: <Shield className="h-5 w-5" />, label: "PNP Units" },
-    { id: "settings" as AdminView, icon: <Settings className="h-5 w-5" />, label: "System Settings" },
-    { id: "notifications" as AdminView, icon: <Bell className="h-5 w-5" />, label: "Notifications" },
+    // Removed System Settings and Notifications as requested
   ]
 
   return (

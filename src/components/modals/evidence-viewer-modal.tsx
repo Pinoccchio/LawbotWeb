@@ -45,10 +45,13 @@ interface EvidenceViewerModalProps {
     title: string
     evidenceFile?: EvidenceFile | null
     complaint_id?: string
+    evidenceCount?: number  // Add evidence count from case management view
   } | null
 }
 
 export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', caseData }: EvidenceViewerModalProps) {
+  // Debug log the case data when the component renders
+  console.log('📃 EvidenceViewerModal received caseData:', caseData)
   const [selectedFile, setSelectedFile] = useState<EvidenceFile | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
@@ -75,10 +78,13 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
   }, [sortBy, sortOrder])
 
   const fetchEvidenceFiles = async () => {
+    setIsLoading(true)
+    
     // If we have a specific evidence file, use it
     if (caseData?.evidenceFile) {
       setEvidenceFiles([caseData.evidenceFile])
       setSelectedFile(caseData.evidenceFile)
+      setIsLoading(false)
       return
     }
     
@@ -88,12 +94,21 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
       return
     }
     
+    // Log evidence count if provided
+    if (caseData.evidenceCount !== undefined) {
+      console.log('📊 Case data includes evidence count:', caseData.evidenceCount)
+    }
+    
     setIsLoading(true)
     try {
       const complaintId = caseData.complaint_id || caseData.id
       console.log('🔄 Fetching evidence files for complaint:', complaintId)
       console.log('📋 Case data received:', caseData)
       
+      // We removed the evidence_files reference since it doesn't exist in our interface
+      // Instead we'll use the regular fetching mechanism to load files from the database
+      
+      // Otherwise fetch from evidence service
       const files = await EvidenceService.getEvidenceFiles({ 
         caseId: complaintId,
         sortBy: sortBy as 'date' | 'name' | 'size' | 'type',
@@ -448,7 +463,7 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white">
-                    📁 Evidence Files ({filteredFiles.length})
+                    📁 Evidence Files ({filteredFiles.length || caseData?.evidenceCount || 0})
                   </h3>
                 </div>
                 

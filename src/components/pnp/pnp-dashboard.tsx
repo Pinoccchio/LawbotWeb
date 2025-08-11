@@ -6,7 +6,8 @@ import { PNPHeader } from "./pnp-header"
 import PNPOfficerService, { PNPOfficerProfile } from "@/lib/pnp-officer-service"
 import { PNPDashboardView } from "./views/pnp-dashboard-view"
 import { MyCasesView } from "./views/my-cases-view"
-import { CaseSearchView } from "./views/case-search-view"
+// Case Search temporarily disabled - uncomment to re-enable
+// import { CaseSearchView } from "./views/case-search-view"
 import { EvidenceViewerView } from "./views/evidence-viewer-view"
 import { ProfileView } from "./views/profile-view"
 import { useAuth } from "@/contexts/AuthContext"
@@ -60,8 +61,9 @@ export function PNPDashboard({ onViewChange, isDark, toggleTheme }: PNPDashboard
         return <PNPDashboardView />
       case "cases":
         return <MyCasesView />
-      case "search":
-        return <CaseSearchView />
+      // Case Search temporarily disabled - uncomment to re-enable
+      // case "search":
+      //   return <CaseSearchView />
       case "evidence":
         return <EvidenceViewerView />
       case "profile":

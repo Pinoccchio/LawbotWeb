@@ -15,7 +15,8 @@ export function PNPSidebar({ currentView, onViewChange, sidebarOpen }: PNPSideba
   const menuItems = [
     { id: "dashboard" as PNPView, icon: <BarChart3 className="h-5 w-5" />, label: "Dashboard" },
     { id: "cases" as PNPView, icon: <FileText className="h-5 w-5" />, label: "My Cases" },
-    { id: "search" as PNPView, icon: <Search className="h-5 w-5" />, label: "Case Search" },
+    // Case Search temporarily disabled - uncomment to re-enable
+    // { id: "search" as PNPView, icon: <Search className="h-5 w-5" />, label: "Case Search" },
     { id: "evidence" as PNPView, icon: <Eye className="h-5 w-5" />, label: "Evidence Viewer" },
     { id: "profile" as PNPView, icon: <User className="h-5 w-5" />, label: "Profile" },
   ]

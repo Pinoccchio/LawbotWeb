@@ -60,6 +60,27 @@ export interface EvidenceStats {
 }
 
 export class EvidenceService {
+  // Get evidence count for a case - this is useful for the case management view
+  static async getEvidenceCount(complaintId: string): Promise<number> {
+    try {
+      console.log('🔄 Getting evidence count for case:', complaintId)
+      
+      const { count, error } = await supabase
+        .from('evidence_files')
+        .select('*', { count: 'exact', head: true })
+        .eq('complaint_id', complaintId)
+      
+      if (error) {
+        console.error('❌ Error getting evidence count:', error)
+        return 0
+      }
+      
+      return count || 0
+    } catch (error) {
+      console.error('❌ Exception in getEvidenceCount:', error)
+      return 0
+    }
+  }
   // Get evidence files with optional filters
   static async getEvidenceFiles(filters: EvidenceFilters = {}): Promise<EvidenceFile[]> {
     try {

@@ -344,9 +344,7 @@ export function UserManagementView() {
           <TabsTrigger value="clients" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
             👥 Client Accounts
           </TabsTrigger>
-          <TabsTrigger value="permissions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-            🔐 Permissions
-          </TabsTrigger>
+          {/* Permissions tab removed as requested */}
         </TabsList>
 
         <TabsContent value="officers">
@@ -867,129 +865,7 @@ export function UserManagementView() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="permissions">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-lawbot-blue-500 rounded-lg">
-                    <Shield className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Admin Permissions</CardTitle>
-                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">System administrator access levels</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-blue-500 rounded-lg">
-                        <Shield className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Full System Access</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Complete administrative control</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
-                      ✅ Enabled
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">User Management</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Create, edit, delete users</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                      ✅ Enabled
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-purple-500 rounded-lg">
-                        <Settings className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">System Configuration</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Modify system settings and preferences</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100 text-lawbot-purple-700 border border-lawbot-purple-200 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800">
-                      ✅ Enabled
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                    <Shield className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Officer Permissions</CardTitle>
-                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">PNP officer access levels</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-amber-500 rounded-lg">
-                        <Shield className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Case Access</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">View and manage assigned cases</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-amber-50 to-lawbot-amber-100 text-lawbot-amber-700 border border-lawbot-amber-200 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 dark:text-lawbot-amber-300 dark:border-lawbot-amber-800">
-                      ⚠️ Limited
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-blue-500 rounded-lg">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Evidence Management</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">View and analyze evidence files</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                      ✅ Enabled
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white dark:bg-lawbot-slate-800 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-lawbot-purple-500 rounded-lg">
-                        <Activity className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-lawbot-slate-900 dark:text-white">Status Updates</p>
-                        <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">Update case status and add notes</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                      ✅ Enabled
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+        {/* Permissions tab content removed as requested */}
       </Tabs>
 
       {/* Add Officer Modal */}

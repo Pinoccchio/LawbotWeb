@@ -18,24 +18,10 @@ class ComplaintService {
       
       console.log('🔍 Fetching complaints with options:', options)
       
+      // Removing the related tables that might not exist in your schema
       let query = supabase
         .from('complaints')
-        .select(`
-          *,
-          evidence_files(
-            id,
-            file_name,
-            file_type,
-            file_size
-          ),
-          status_history(
-            id,
-            status,
-            updated_by,
-            timestamp,
-            remarks
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 

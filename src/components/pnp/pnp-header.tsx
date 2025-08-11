@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useState } from 'react'
 import { Menu, Sun, Moon, Bell, LogOut, User, Settings, Shield, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/AuthContext"
 import { PNPOfficerProfile } from "@/lib/pnp-officer-service"
+import NotificationBell from "@/components/pnp/notification-bell"
 
 interface PNPHeaderProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
@@ -27,6 +29,11 @@ interface PNPHeaderProps {
 
 export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, sidebarOpen, setSidebarOpen, refreshTrigger, officerProfile }: PNPHeaderProps) {
   const { signOut, userProfile } = useAuth()
+  
+  // Get officer ID for notifications - try both firebase_uid and UUID id
+  const officerFirebaseUid = officerProfile?.firebase_uid || userProfile?.firebase_uid
+  const officerUuid = officerProfile?.id
+  const officerId = officerFirebaseUid || officerUuid || ''
 
   const handleLogout = async () => {
     try {
@@ -38,6 +45,8 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
       onViewChange("landing")
     }
   }
+
+
 
   // Helper function to get availability status styling
   const getAvailabilityStatusStyling = (status: string = 'available') => {
@@ -127,9 +136,12 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
           <Button variant="ghost" size="sm" onClick={toggleTheme}>
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm">
-            <Bell className="h-5 w-5" />
-          </Button>
+          
+          {/* Notification Bell */}
+          {officerId && (
+            <NotificationBell officerId={officerId} />
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">

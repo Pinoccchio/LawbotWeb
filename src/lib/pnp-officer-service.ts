@@ -899,7 +899,7 @@ export class PNPOfficerService {
   }
 
   // Search all complaints with advanced filtering
-  static async searchAllComplints(searchFilters: {
+  static async searchAllComplaints(searchFilters: {
     searchTerm?: string
     status?: string
     priority?: string

@@ -53,9 +53,7 @@ export function AdminHeader({ onViewChange, onAdminViewChange, isDark, toggleThe
           <Button variant="ghost" size="sm" onClick={toggleTheme}>
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm">
-            <Bell className="h-5 w-5" />
-          </Button>
+          {/* Notification button removed as requested */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">

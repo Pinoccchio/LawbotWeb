@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
 import { AdminDashboardView } from "./views/admin-dashboard-view"
 import { CaseManagementView } from "./views/case-management-view"
 import { UserManagementView } from "./views/user-management-view"
 import { PNPUnitsView } from "./views/pnp-units-view"
-import { SystemSettingsView } from "./views/system-settings-view"
-import { NotificationsView } from "./views/notifications-view"
+// System Settings and Notifications views commented out as requested
+// import { SystemSettingsView } from "./views/system-settings-view"
+// import { NotificationsView } from "./views/notifications-view"
 
 interface AdminDashboardProps {
   onViewChange: (view: "landing" | "admin" | "pnp") => void
@@ -21,6 +22,23 @@ export type AdminView = "dashboard" | "cases" | "users" | "units" | "settings" |
 export function AdminDashboard({ onViewChange, isDark, toggleTheme }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<AdminView>("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Setup event listener for view changes
+  useEffect(() => {
+    const handleViewChange = (e: CustomEvent) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setCurrentView(e.detail as AdminView)
+      }
+    }
+    
+    // Add event listener
+    window.addEventListener('admin-view-change', handleViewChange as EventListener)
+    
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener('admin-view-change', handleViewChange as EventListener)
+    }
+  }, [])
 
   const renderView = () => {
     switch (currentView) {
@@ -32,10 +50,11 @@ export function AdminDashboard({ onViewChange, isDark, toggleTheme }: AdminDashb
         return <UserManagementView />
       case "units":
         return <PNPUnitsView />
+      // System Settings and Notifications views removed as requested
       case "settings":
-        return <SystemSettingsView />
       case "notifications":
-        return <NotificationsView />
+        // Fallback to dashboard if these views are somehow selected
+        return <AdminDashboardView />
       default:
         return <AdminDashboardView />
     }

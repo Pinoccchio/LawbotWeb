@@ -48,9 +48,10 @@ interface CaseDetailModalProps {
   caseData: any
   initialTab?: string
   onStatusUpdate?: (newStatus: string, remarks: string) => Promise<void>
+  isAdmin?: boolean // Added to identify if admin view
 }
 
-export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overview", onStatusUpdate }: CaseDetailModalProps) {
+export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overview", onStatusUpdate, isAdmin = false }: CaseDetailModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [statusHistory, setStatusHistory] = useState<any[]>([])
   const [updateHistory, setUpdateHistory] = useState<any[]>([])
@@ -1533,7 +1534,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
             </div>
           ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl">
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-5'} bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl`}>
               <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
                 📋 Overview
               </TabsTrigger>
@@ -1546,9 +1547,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
               <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
                 🕐 Timeline
               </TabsTrigger>
-              <TabsTrigger value="actions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
-                ⚡ Actions
-              </TabsTrigger>
+              {!isAdmin && (
+                <TabsTrigger value="actions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
+                  ⚡ Actions
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <div className="p-6">
@@ -2447,7 +2450,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         </p>
                       </div>
                     )}
-                  </CardContent>
+                </CardContent>
                 </Card>
 
                 {/* Enhanced AI Summarizer Section */}
@@ -2925,7 +2928,8 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                 </Card>
               </TabsContent>
 
-              <TabsContent value="actions" className="space-y-6">
+              {!isAdmin && (
+                <TabsContent value="actions" className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <Card className="card-modern bg-gradient-to-br from-lawbot-emerald-50/30 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                     <CardHeader>
@@ -2986,6 +2990,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                   </Card>
                 </div>
               </TabsContent>
+              )}
             </div>
           </Tabs>
           )}

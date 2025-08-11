@@ -53,7 +53,7 @@ export function CaseSearchView() {
         offset: (currentPage - 1) * resultsPerPage
       }
       
-      const results = await PNPOfficerService.searchAllComplints(searchFiltersWithPagination)
+      const results = await PNPOfficerService.searchAllComplaints(searchFiltersWithPagination)
       setSearchResults(results)
       setTotalResults(results.length) // TODO: Get actual total count from database
       console.log(`✅ Search completed, found ${results.length} results`)
