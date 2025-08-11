@@ -253,12 +253,6 @@ export function CaseManagementView() {
             Manage and monitor all cybercrime cases across specialized units
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" className="btn-modern">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter Cases
-          </Button>
-        </div>
       </div>
 
       {/* Enhanced Filters */}
@@ -366,11 +360,6 @@ export function CaseManagementView() {
               <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
                 Complete list of cybercrime cases in the system
               </CardDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="btn-modern">
-                Export Report
-              </Button>
             </div>
           </div>
         </CardHeader>

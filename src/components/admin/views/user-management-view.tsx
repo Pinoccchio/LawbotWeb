@@ -222,10 +222,6 @@ export function UserManagementView() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" className="btn-modern">
-            <Settings className="h-4 w-4 mr-2" />
-            Bulk Actions
-          </Button>
           <Button 
             className="btn-gradient"
             onClick={() => setIsAddOfficerModalOpen(true)}

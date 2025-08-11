@@ -21,7 +21,6 @@ export function AdminDashboardView() {
   const [timelineData, setTimelineData] = useState<TimelineData[] | null>(null)
   const [officerPerformance, setOfficerPerformance] = useState<OfficerPerformanceData[] | null>(null)
   const [recentCases, setRecentCases] = useState<any[]>([])
-  const [aiInsights, setAiInsights] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
 
   // Load dashboard data on component mount
@@ -57,10 +56,6 @@ export function AdminDashboardView() {
         offset: 0
       })
       setRecentCases(cases || [])
-
-      // Generate AI insights
-      const insights = await AdminService.generateSystemInsights()
-      setAiInsights(insights)
 
     } catch (error) {
       console.error('Error loading dashboard data:', error)
@@ -656,85 +651,6 @@ export function AdminDashboardView() {
         </Card>
       </div>
 
-      {/* AI Insights Section */}
-      <Card className="card-modern animate-fade-in-up bg-gradient-to-r from-lawbot-purple-50 to-lawbot-blue-50 dark:from-lawbot-purple-900/20 dark:to-lawbot-blue-900/20 border-lawbot-purple-200 dark:border-lawbot-purple-800">
-        <CardHeader>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-lawbot-purple-500 to-lawbot-blue-500 rounded-lg">
-              <Activity className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">
-                🤖 AI Insights
-              </CardTitle>
-              <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                Real-time analysis and predictions
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            // Skeleton loader for AI insights
-            <div className="animate-pulse space-y-3">
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Array(4).fill(0).map((_, index) => (
-                  <div key={index} className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-                    <div className="h-6 w-16 mx-auto mb-1 bg-lawbot-purple-200 dark:bg-lawbot-purple-800 rounded"></div>
-                    <div className="h-4 w-24 mx-auto bg-lawbot-purple-200 dark:bg-lawbot-purple-800 rounded"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : dashboardStats ? (
-            <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-                  <div className="text-2xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400 mb-1">
-                    {dashboardStats.resolutionRate}%
-                  </div>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    Resolution Rate
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-                  <div className="text-2xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">
-                    {dashboardStats.avgResolutionTime > 0 ? 
-                      `${dashboardStats.avgResolutionTime.toFixed(1)}d` : 
-                      'N/A'}
-                  </div>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    Avg Resolution Time
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-                  <div className="text-2xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">
-                    {dashboardStats.totalEvidence}
-                  </div>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    Evidence Files
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700">
-                  <div className="text-2xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">
-                    {dashboardStats.aiCacheHitRate}%
-                  </div>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    AI Cache Hit Rate
-                  </p>
-                </div>
-              </div>
-              
-              {/* AI insights text */}
-              {aiInsights && (
-                <div className="mt-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-700 markdown-content">
-                  <div dangerouslySetInnerHTML={{ __html: aiInsights.replace(/^##\s+/gm, '<h3 class="text-lg font-bold mb-2 text-lawbot-purple-600 dark:text-lawbot-purple-400">').replace(/\n- /g, '<br>• ') }} />
-                </div>
-              )}
-            </>
-          ) : null}
-        </CardContent>
-      </Card>
     </div>
   )
 }

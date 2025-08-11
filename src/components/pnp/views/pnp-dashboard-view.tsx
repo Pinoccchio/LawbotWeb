@@ -230,8 +230,8 @@ export function PNPDashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">My Cases</p>
-                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.total_cases || 0}</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📋 Total investigations</p>
+                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📋 Total cases</p>
               </div>
               <div className="p-3 bg-lawbot-blue-500 rounded-lg">
                 <FileText className="h-6 w-6 text-white" />
@@ -594,7 +594,7 @@ export function PNPDashboardView() {
                 <>
                   <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                     <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📊 My Cases</span>
-                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.total_cases || 0}</span>
+                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
                     <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">✅ Resolved</span>
