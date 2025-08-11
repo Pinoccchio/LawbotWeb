@@ -293,22 +293,6 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="py-16 bg-white dark:bg-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {dynamicStats.map((stat, index) => (
-              <div key={index} className="text-center group">
-                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2 group-hover:scale-110 transition-transform">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">{stat.label}</div>
-                <div className="text-xs text-green-600 dark:text-green-400 font-medium">{stat.change}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Enhanced Features Section */}
       <section className="py-20 bg-gradient-to-br from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-900 dark:to-lawbot-slate-800">

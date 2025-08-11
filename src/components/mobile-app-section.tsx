@@ -40,8 +40,8 @@ export function MobileAppSection({ isDark }: MobileAppSectionProps) {
   const specs = [
     { label: "Version", value: "1.2.0" },
     { label: "Platform", value: "Android 6.0+" },
-    { label: "Size", value: "~45MB" },
-    { label: "Updated", value: "January 2025" }
+    { label: "Size", value: "~58.6MB" },
+    { label: "Updated", value: "August 2024" }
   ]
 
   const handleDownloadClick = () => {

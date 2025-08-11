@@ -343,10 +343,17 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
 
         <CardContent className="overflow-y-auto max-h-[calc(90vh-180px)]">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+            {userType === "admin" && (
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+            )}
+            {userType === "pnp" && (
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="login">Login</TabsTrigger>
+              </TabsList>
+            )}
 
             <TabsContent value="login" className="space-y-4 mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
@@ -425,8 +432,9 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
               </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="space-y-3 mt-4">
-              <form onSubmit={handleSignup} className="space-y-3">
+            {userType === "admin" && (
+              <TabsContent value="signup" className="space-y-3 mt-4">
+                <form onSubmit={handleSignup} className="space-y-3">
                 {errors.general && (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
                     <div className="flex items-start space-x-2">
@@ -679,6 +687,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                 )}
               </form>
             </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
