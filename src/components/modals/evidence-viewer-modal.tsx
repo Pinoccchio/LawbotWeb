@@ -63,12 +63,37 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
   const [zoomLevel, setZoomLevel] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Fetch evidence files when modal opens
+  // Reset and fetch evidence files when modal opens with new case
   useEffect(() => {
     if (isOpen && caseData) {
+      // Reset state for new case
+      setEvidenceFiles([])
+      setSelectedFile(null)
+      setSearchTerm("")
+      setFilterType("all")
+      setSortBy("date")
+      setSortOrder("desc")
+      setZoomLevel(1)
+      setIsFullscreen(false)
+      
+      // Fetch evidence for new case
       fetchEvidenceFiles()
     }
   }, [isOpen, caseData])
+  
+  // Clean up state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setEvidenceFiles([])
+      setSelectedFile(null)
+      setSearchTerm("")
+      setFilterType("all")
+      setSortBy("date")
+      setSortOrder("desc")
+      setZoomLevel(1)
+      setIsFullscreen(false)
+    }
+  }, [isOpen])
 
   // Refetch when sorting changes
   useEffect(() => {
@@ -329,10 +354,10 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fade-in">
+      <Card className="w-full max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
         <CardHeader className="relative border-b bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-4 top-4 h-8 w-8 p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600">
+          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-2 sm:right-4 top-2 sm:top-4 min-h-[44px] min-w-[44px] p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600 touch-manipulation">
             <X className="h-4 w-4" />
           </Button>
           <div className="animate-fade-in-up">
@@ -345,8 +370,8 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
           </div>
         </CardHeader>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-          <div className="p-6 space-y-6">
+        <div className="overflow-y-auto max-h-[calc(98vh-120px)] sm:max-h-[calc(95vh-120px)] md:max-h-[calc(90vh-120px)]">
+          <div className="px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
             {mode === 'multi-case' ? (
               // Full-featured interface for multi-case evidence viewing
               <Card className="card-modern bg-gradient-to-r from-lawbot-blue-50/50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">

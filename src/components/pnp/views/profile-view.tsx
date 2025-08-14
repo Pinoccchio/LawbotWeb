@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PNPOfficerService, PNPOfficerProfile } from "@/lib/pnp-officer-service"
-import PSGCApiService, { SimplifiedRegion } from "@/lib/psgc-api"
 import { PhilippineTime } from "@/lib/philippine-time"
 
 interface ProfileViewProps {
@@ -20,6 +19,9 @@ interface ProfileViewProps {
 }
 
 export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
+  // Fixed region value - defined at component level for global access
+  const fixedRegion = "Philippine National Police No. 3, Santolan Road, Brgy. Corazon de Jesus, San Juan City, Metro Manila 1500, Philippines"
+  
   const [officerProfile, setOfficerProfile] = useState<PNPOfficerProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,13 +31,9 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
   // Form state for editable fields
   const [formData, setFormData] = useState({
     full_name: '',
-    phone_number: '',
-    region: ''
+    phone_number: ''
   })
   
-  // Region-related state
-  const [regions, setRegions] = useState<SimplifiedRegion[]>([])
-  const [isLoadingRegions, setIsLoadingRegions] = useState(false)
   
   // Simple availability management state
   const [availabilityMode, setAvailabilityMode] = useState(false)
@@ -56,14 +54,9 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
         setOfficerProfile(profile)
         setFormData({
           full_name: profile.full_name,
-          phone_number: profile.phone_number || '',
-          region: profile.region || ''
+          phone_number: profile.phone_number || ''
         })
         
-        // Load regions when profile is loaded and in edit mode
-        if (editMode) {
-          fetchRegions()
-        }
         // Set simple availability status
         setAvailabilityStatus(profile.availability_status || 'available')
       } else {
@@ -82,8 +75,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
       setSaving(true)
       const success = await PNPOfficerService.updateOfficerProfile({
         full_name: formData.full_name,
-        phone_number: formData.phone_number || null,
-        region: formData.region
+        phone_number: formData.phone_number || null
       })
       
       if (success) {
@@ -133,39 +125,15 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
     }
   }
 
-  const fetchRegions = async () => {
-    setIsLoadingRegions(true)
-    try {
-      // Use PSGC Cloud API as default with fallback to other sources
-      const fetchedRegions = await PSGCApiService.getRegions('cloud')
-      setRegions(fetchedRegions)
-      console.log(`✅ Loaded ${fetchedRegions.length} regions using PSGC Cloud API`)
-    } catch (error) {
-      console.error('Error fetching regions from PSGC Cloud API:', error)
-      console.log('🔄 Attempting fallback to other API sources...')
-      
-      try {
-        // Fallback to auto mode (tries all APIs)
-        const fallbackRegions = await PSGCApiService.getRegions('auto')
-        setRegions(fallbackRegions)
-        console.log(`✅ Loaded ${fallbackRegions.length} regions using fallback API sources`)
-      } catch (fallbackError) {
-        console.error('All API sources failed:', fallbackError)
-        // Regions state will remain empty, and we'll show an error message
-      }
-    } finally {
-      setIsLoadingRegions(false)
-    }
-  }
 
   if (loading) {
     return (
       <div className="space-y-8 animate-fade-in">
         <div className="animate-fade-in-up">
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
             Officer Profile
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-sm sm:text-base lg:text-lg mt-2">
             Loading your profile information...
           </p>
         </div>
@@ -181,10 +149,10 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
     return (
       <div className="space-y-8 animate-fade-in">
         <div className="animate-fade-in-up">
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
             Officer Profile
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-sm sm:text-base lg:text-lg mt-2">
             Unable to load your profile information
           </p>
         </div>
@@ -209,7 +177,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
     unit: officerProfile.unit?.unit_name || 'No Unit Assigned',
     email: officerProfile.email,
     phone: officerProfile.phone_number || 'Not provided',
-    location: officerProfile.region,
+    location: fixedRegion,
     joinDate: PhilippineTime.formatDatabaseTime(officerProfile.created_at),
     stats: {
       totalCases: officerProfile.total_cases,
@@ -222,10 +190,10 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="animate-fade-in-up">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
           Officer Profile
         </h2>
-        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-sm sm:text-base lg:text-lg mt-2">
           Manage your profile, view performance metrics, and update your settings
         </p>
       </div>
@@ -239,7 +207,7 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         {/* Enhanced Profile Overview */}
         <Card className={`lg:col-span-1 card-modern bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-2 ${
           // Dynamic border color based on availability status
@@ -323,12 +291,12 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
               🏷️ {officerData.badge}
             </Badge>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-blue-200 dark:border-lawbot-blue-800">
-              <div className="p-2 bg-lawbot-blue-500 rounded-lg">
-                <Shield className="h-4 w-4 text-white" />
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+            <div className="flex items-center space-x-3 p-2 sm:p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-blue-200 dark:border-lawbot-blue-800">
+              <div className="p-1.5 sm:p-2 bg-lawbot-blue-500 rounded-lg flex-shrink-0">
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{officerData.unit}</span>
+              <span className="text-xs sm:text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 truncate">{officerData.unit}</span>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
               <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
@@ -356,7 +324,6 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
             </div>
             <Button onClick={() => {
               setEditMode(true)
-              fetchRegions() // Load regions when entering edit mode
             }} className="w-full mt-6 btn-gradient">
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
@@ -490,62 +457,15 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="region" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📍 Region</Label>
-                  {editMode ? (
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Select 
-                        value={formData.region}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, region: value }))}
-                        disabled={isLoadingRegions}
-                      >
-                        <SelectTrigger className="pl-10 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500 focus:ring-lawbot-blue-500">
-                          <SelectValue placeholder={isLoadingRegions ? "Loading regions..." : "Select region"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {isLoadingRegions ? (
-                            <SelectItem key="loading-regions" value="loading" disabled>
-                              <div className="flex items-center space-x-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                <span>Loading Philippine regions...</span>
-                              </div>
-                            </SelectItem>
-                          ) : regions.length === 0 ? (
-                            <SelectItem key="error-regions" value="error" disabled>
-                              <span className="text-red-600">Failed to load regions. Please try again.</span>
-                            </SelectItem>
-                          ) : (
-                            regions.map((region) => (
-                              <SelectItem key={region.id} value={region.name}>
-                                <div className="flex flex-col">
-                                  <span>{region.name}</span>
-                                  {region.population !== 'N/A' && (
-                                    <span className="text-xs text-gray-500">Population: {region.population}</span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {!isLoadingRegions && regions.length > 0 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          ✅ Data from Philippine Statistics Authority (PSGC Cloud API)
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <Input 
-                        id="region" 
-                        value={officerData.location} 
-                        disabled 
-                        className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" 
-                      />
-                      <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400 font-medium">
-                        ✅ You can edit this field
-                      </p>
-                    </>
-                  )}
+                  <Input 
+                    id="region" 
+                    value={fixedRegion} 
+                    disabled 
+                    className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 border-lawbot-slate-300 dark:border-lawbot-slate-600" 
+                  />
+                  <p className="text-xs text-lawbot-blue-600 dark:text-lawbot-blue-400 font-medium">
+                    ⚠️ System location - Contact admin to change
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <Label htmlFor="joinDate" className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">📅 Join Date</Label>
@@ -569,7 +489,6 @@ export function ProfileView({ onProfileUpdate }: ProfileViewProps = {}) {
                 ) : (
                   <Button onClick={() => {
                     setEditMode(true)
-                    fetchRegions() // Load regions when entering edit mode
                   }} className="btn-gradient flex-1">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile

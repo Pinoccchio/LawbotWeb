@@ -364,10 +364,10 @@ export function EvidenceViewerView() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="animate-fade-in-up">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
           Evidence Viewer
         </h2>
-        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-sm sm:text-base lg:text-lg mt-2">
           Secure viewing and management of evidence files across all cases
         </p>
       </div>
@@ -386,8 +386,8 @@ export function EvidenceViewerView() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+            <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                 <Input 
@@ -421,25 +421,38 @@ export function EvidenceViewerView() {
             </Select>
             <Button 
               variant="outline" 
-              className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50"
+              className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 w-full sm:w-auto"
               onClick={() => fetchEvidenceFiles()}
             >
-              <Filter className="h-4 w-4 mr-2" />
-              Refresh
+              <Filter className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
             </Button>
           </div>
         </CardContent>
       </Card>
 
       <Tabs defaultValue="grid" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-        <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-2">
-          <TabsTrigger value="grid" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-            📊 Grid View
-          </TabsTrigger>
-          <TabsTrigger value="list" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
-            📄 List View
-          </TabsTrigger>
-        </TabsList>
+        {/* Improved Evidence Viewer Tab Design */}
+        <div className="w-full overflow-x-auto scrollbar-hide pb-2">
+          <TabsList className="inline-flex bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1.5 sm:p-2 rounded-xl w-full justify-start">
+            <TabsTrigger 
+              value="grid" 
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+            >
+              <span>📊</span>
+              <span className="font-semibold">Grid View</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="list" 
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+            >
+              <span>📄</span>
+              <span className="font-semibold">List View</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="grid">
           {sortedFilteredFiles.length === 0 ? (
@@ -452,75 +465,84 @@ export function EvidenceViewerView() {
               </AlertDescription>
             </Alert>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {sortedFilteredFiles.map((file, index) => {
                 const display = getFileDisplay(file)
                 return (
                   <Card key={file.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`${display.color} p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm`}>
+                    <CardHeader className="p-3 sm:p-6">
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <div className={`${display.color} p-2 sm:p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm flex-shrink-0`}>
                             {display.icon}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-lawbot-slate-900 dark:text-white truncate">{file.file_name}</h3>
-                            <p className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-medium">💾 {formatFileSize(file.file_size)}</p>
+                            <h3 className="font-bold text-sm sm:text-base text-lawbot-slate-900 dark:text-white truncate">{file.file_name}</h3>
+                            <p className="text-xs sm:text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-medium">💾 {formatFileSize(file.file_size)}</p>
                           </div>
                         </div>
                         {file.is_valid !== undefined && (
-                          <Badge variant={file.is_valid ? "outline" : "destructive"} className="flex items-center gap-1">
+                          <Badge variant={file.is_valid ? "outline" : "destructive"} className="flex items-center gap-1 text-xs self-start sm:self-center">
                             {file.is_valid ? (
                               <>
                                 <CheckCircle className="h-3 w-3" />
-                                Valid
+                                <span className="hidden sm:inline">Valid</span>
+                                <span className="sm:hidden">✓</span>
                               </>
                             ) : (
                               <>
                                 <XCircle className="h-3 w-3" />
-                                Invalid
+                                <span className="hidden sm:inline">Invalid</span>
+                                <span className="sm:hidden">✗</span>
                               </>
                             )}
                           </Badge>
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="p-3 sm:p-6">
+                      <div className="space-y-3 sm:space-y-4">
                         {file.complaint && (
                           <div className="space-y-2">
-                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
+                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 text-xs">
                               📁 {file.complaint.complaint_number}
                             </Badge>
-                            <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium truncate">
+                            <p className="text-xs sm:text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium truncate">
                               {file.complaint.title || file.complaint.crime_type}
                             </p>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getPriorityColor(file.complaint.priority)} variant="outline">
-                                {file.complaint.priority}
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                              <Badge className={`${getPriorityColor(file.complaint.priority)} text-xs`} variant="outline">
+                                <span className="hidden sm:inline">{file.complaint.priority}</span>
+                                <span className="sm:hidden">{file.complaint.priority === 'high' ? '🔴' : file.complaint.priority === 'medium' ? '🟡' : '🟢'}</span>
                               </Badge>
-                              <Badge className={getStatusColor(file.complaint.status)} variant="outline">
-                                {file.complaint.status}
+                              <Badge className={`${getStatusColor(file.complaint.status)} text-xs`} variant="outline">
+                                <span className="hidden lg:inline">{file.complaint.status}</span>
+                                <span className="lg:hidden">
+                                  {file.complaint.status === 'Pending' ? '📋' : 
+                                   file.complaint.status === 'Under Investigation' ? '🔍' :
+                                   file.complaint.status === 'Requires More Information' ? '❓' :
+                                   file.complaint.status === 'Resolved' ? '✅' : '❌'}
+                                </span>
                               </Badge>
                             </div>
                           </div>
                         )}
                         {file.validation_notes && (
-                          <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 italic">
+                          <p className="text-xs sm:text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 italic">
                             {file.validation_notes}
                           </p>
                         )}
                         <div className="flex items-center text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Uploaded: {formatDate(file.uploaded_at)}
+                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">Uploaded: {formatDate(file.uploaded_at)}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button size="sm" className="flex-1 btn-gradient" onClick={() => handleViewEvidence(file)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
+                          <Button size="sm" className="flex-1 btn-gradient text-xs sm:text-sm" onClick={() => handleViewEvidence(file)}>
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">View</span>
                           </Button>
-                          <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleDownloadEvidence(file)}>
-                            <Download className="h-4 w-4" />
+                          <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 px-2 sm:px-4" onClick={() => handleDownloadEvidence(file)}>
+                            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
@@ -556,45 +578,49 @@ export function EvidenceViewerView() {
                   </AlertDescription>
                 </Alert>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {sortedFilteredFiles.map((file) => {
                     const display = getFileDisplay(file)
                     return (
                       <div
                         key={file.id}
-                        className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+                        className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
                       >
-                        <div className={`${display.color} p-2 bg-gray-100 dark:bg-slate-800 rounded-lg`}>{display.icon}</div>
+                        <div className={`${display.color} p-2 bg-gray-100 dark:bg-slate-800 rounded-lg self-start sm:self-center flex-shrink-0`}>{display.icon}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-medium truncate">{file.file_name}</h3>
-                            {file.complaint && (
-                              <Badge variant="outline">{file.complaint.complaint_number}</Badge>
-                            )}
-                            {file.is_valid !== undefined && (
-                              <Badge variant={file.is_valid ? "outline" : "destructive"}>
-                                {file.is_valid ? "Valid" : "Invalid"}
-                              </Badge>
-                            )}
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
+                            <h3 className="font-medium truncate text-sm sm:text-base">{file.file_name}</h3>
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                              {file.complaint && (
+                                <Badge variant="outline" className="text-xs">{file.complaint.complaint_number}</Badge>
+                              )}
+                              {file.is_valid !== undefined && (
+                                <Badge variant={file.is_valid ? "outline" : "destructive"} className="text-xs">
+                                  <span className="hidden sm:inline">{file.is_valid ? "Valid" : "Invalid"}</span>
+                                  <span className="sm:hidden">{file.is_valid ? "✓" : "✗"}</span>
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           {file.complaint && (
-                            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 mb-2 truncate">
                               {file.complaint.title || file.complaint.crime_type}
                             </p>
                           )}
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
                             <span>Size: {formatFileSize(file.file_size)}</span>
-                            <span>Uploaded: {formatDate(file.uploaded_at)}</span>
-                            <span>Type: {display.type}</span>
+                            <span className="hidden sm:inline">Uploaded: {formatDate(file.uploaded_at)}</span>
+                            <span className="sm:hidden">📅 {formatDate(file.uploaded_at).split(' ')[0]}</span>
+                            <span className="hidden lg:inline">Type: {display.type}</span>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="outline" onClick={() => handleViewEvidence(file)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
+                        <div className="flex items-center space-x-2 self-end sm:self-center">
+                          <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-xs" onClick={() => handleViewEvidence(file)}>
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">View</span>
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDownloadEvidence(file)}>
-                            <Download className="h-4 w-4" />
+                          <Button size="sm" variant="outline" className="px-2 sm:px-4" onClick={() => handleDownloadEvidence(file)}>
+                            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
@@ -609,51 +635,51 @@ export function EvidenceViewerView() {
 
       {/* Simple Evidence Statistics */}
       {evidenceFiles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
           <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Files</p>
-                  <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{evidenceFiles.length}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Files</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{evidenceFiles.length}</p>
                   <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">📎 Evidence files</p>
                 </div>
-                <div className="p-3 bg-lawbot-blue-500 rounded-lg">
-                  <FileText className="h-6 w-6 text-white" />
+                <div className="p-2 sm:p-3 bg-lawbot-blue-500 rounded-lg flex-shrink-0">
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Valid Files</p>
-                  <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Valid Files</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
                     {evidenceFiles.filter(f => f.is_valid === true).length}
                   </p>
                   <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">✅ Validated</p>
                 </div>
-                <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-white" />
+                <div className="p-2 sm:p-3 bg-lawbot-emerald-500 rounded-lg flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Size</p>
-                  <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Size</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
                     {formatFileSize(evidenceFiles.reduce((sum, file) => sum + file.file_size, 0))}
                   </p>
                   <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">💾 Storage used</p>
                 </div>
-                <div className="p-3 bg-lawbot-amber-500 rounded-lg">
-                  <Database className="h-6 w-6 text-white" />
+                <div className="p-2 sm:p-3 bg-lawbot-amber-500 rounded-lg flex-shrink-0">
+                  <Database className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
             </CardContent>

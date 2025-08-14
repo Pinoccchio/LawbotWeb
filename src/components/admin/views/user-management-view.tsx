@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle, RefreshCw, Bell } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Shield, User, Mail, Phone, Activity, Users, Settings, AlertTriangle, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,6 @@ import { EditOfficerModal } from "@/components/admin/modals/edit-officer-modal"
 import { DeleteOfficerModal } from "@/components/admin/modals/delete-officer-modal"
 import { UserProfileModal } from "@/components/admin/modals/user-profile-modal"
 import { UserEditModal } from "@/components/admin/modals/user-edit-modal"
-import { TestPushNotificationModal } from "@/components/admin/modals/test-push-notification-modal"
 import { supabase } from "@/lib/supabase"
 import UserService, { UserProfile, UserStats } from "@/lib/user-service"
 import { PhilippineTime } from "@/lib/philippine-time"
@@ -38,7 +37,6 @@ export function UserManagementView() {
   // User modal state
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false)
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false)
-  const [isTestNotificationModalOpen, setIsTestNotificationModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
 
   // Fetch PNP officers from Supabase with enhanced availability data
@@ -201,23 +199,18 @@ export function UserManagementView() {
     fetchClientUsers() // Refresh the client users list
   }
 
-  const handleTestNotification = (user: UserProfile) => {
-    console.log('Test notification for user:', user.firebase_uid)
-    setSelectedUser(user)
-    setIsTestNotificationModalOpen(true)
-  }
 
   // Use filtered data for display
   const displayOfficers = filteredOfficers
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in-up">
         <div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent leading-tight pb-2">
             User Management
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base sm:text-lg mt-2">
             Manage PNP officers and client accounts across the platform
           </p>
         </div>
@@ -233,99 +226,118 @@ export function UserManagementView() {
       </div>
 
       {/* Enhanced User Stats with Availability Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Officers</p>
-                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{displayOfficers.length}</p>
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 rounded-lg">
+                <Shield className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-blue-500 rounded-lg">
-                <Shield className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Total Officers</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">{displayOfficers.length}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Active users</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-emerald-500 to-lawbot-emerald-600 rounded-lg">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              
+              {/* Content - Centered Stack */}
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Available</p>
-                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Available</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">
                   {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'available').length}
                 </p>
-                <p className="text-xs text-lawbot-emerald-500 dark:text-lawbot-emerald-400">Ready for assignment</p>
-              </div>
-              <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
-                <Activity className="h-6 w-6 text-white" />
+                <p className="text-xs text-lawbot-emerald-500 dark:text-lawbot-emerald-400">Ready for duty</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-amber-500 to-lawbot-amber-600 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
+              
+              {/* Content - Centered Stack */}
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Busy</p>
-                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Busy</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">
                   {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'busy').length}
                 </p>
                 <p className="text-xs text-lawbot-amber-500 dark:text-lawbot-amber-400">High workload</p>
-              </div>
-              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="stats-card bg-gradient-to-br from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-red-500 to-lawbot-red-600 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-white" />
+              </div>
+              
+              {/* Content - Centered Stack */}
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Overloaded</p>
-                <p className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Overloaded</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400 mb-1">
                   {displayOfficers.filter(officer => (officer.availabilityStatus || 'available') === 'overloaded').length}
                 </p>
                 <p className="text-xs text-lawbot-red-500 dark:text-lawbot-red-400">At capacity</p>
-              </div>
-              <div className="p-3 bg-lawbot-red-500 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="stats-card bg-gradient-to-br from-lawbot-slate-50 to-white dark:from-lawbot-slate-900/10 dark:to-lawbot-slate-800 border-lawbot-slate-200 dark:border-lawbot-slate-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-slate-500 to-lawbot-slate-600 rounded-lg">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              
+              {/* Content - Centered Stack */}
               <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">On Leave</p>
-                <p className="text-3xl font-bold text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">On Leave</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-1">
                   {displayOfficers.filter(officer => (officer.status || 'active') === 'on_leave').length}
                 </p>
                 <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Leave period</p>
-              </div>
-              <div className="p-3 bg-lawbot-slate-500 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Client Accounts</p>
-                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{userStats?.total_users || 0}</p>
-                <p className="text-xs text-lawbot-purple-500 dark:text-lawbot-purple-400">Mobile app users</p>
+          <CardContent className="p-4 xl:p-5">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 rounded-lg">
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-purple-500 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Client Accounts</p>
+                <p className="text-2xl xl:text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400 mb-1">{userStats?.total_users || 0}</p>
+                <p className="text-xs text-lawbot-purple-500 dark:text-lawbot-purple-400">Mobile users</p>
               </div>
             </div>
           </CardContent>
@@ -356,47 +368,51 @@ export function UserManagementView() {
                     Manage officer accounts and unit assignments
                   </CardDescription>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3">
+                  <div className="relative flex-1 sm:flex-none">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                     <Input 
                       placeholder="Search officers..." 
                       value={officerSearchTerm}
                       onChange={(e) => setOfficerSearchTerm(e.target.value)}
-                      className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" 
+                      className="pl-10 w-full sm:w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500" 
                     />
                   </div>
-                  <Button 
-                    className="btn-gradient"
-                    onClick={() => setIsAddOfficerModalOpen(true)}
-                    disabled={isLoadingOfficers}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Officer
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => fetchPnpOfficers()}
-                    disabled={isLoadingOfficers}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingOfficers ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2 sm:gap-3">
+                    <Button 
+                      className="btn-gradient flex-1 sm:flex-none"
+                      onClick={() => setIsAddOfficerModalOpen(true)}
+                      disabled={isLoadingOfficers}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Add Officer</span>
+                      <span className="sm:hidden">Add</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fetchPnpOfficers()}
+                      disabled={isLoadingOfficers}
+                      className="flex-shrink-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoadingOfficers ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Refresh</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <Table className="table-modern">
+                <Table className="table-modern min-w-[800px]">
                   <TableHeader>
                     <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Officer</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Contact & Unit</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300" title="Current workload capacity for case assignments">Work Availability</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Cases & Performance</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300" title="Officer's employment standing with PNP">Employment Status</TableHead>
-                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Actions</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[200px]">Officer</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[180px]">Contact & Unit</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[150px]" title="Current workload capacity for case assignments">Work Availability</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[160px]">Cases & Performance</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[140px]" title="Officer's employment standing with PNP">Employment Status</TableHead>
+                      <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 min-w-[120px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -619,7 +635,7 @@ export function UserManagementView() {
         <TabsContent value="clients">
           <Card className="card-modern">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-3">
                 <div>
                   <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white flex items-center">
                     <Users className="h-6 w-6 text-lawbot-purple-500 mr-3" />
@@ -629,31 +645,34 @@ export function UserManagementView() {
                     Monitor and manage client accounts from mobile app
                   </CardDescription>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3">
+                  <div className="relative flex-1 sm:flex-none">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                     <Input 
                       placeholder="Search clients..." 
                       value={clientSearchTerm}
                       onChange={(e) => setClientSearchTerm(e.target.value)}
-                      className="pl-10 w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
+                      className="pl-10 w-full sm:w-64 border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-purple-500" 
                     />
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => fetchClientUsers()}
-                    disabled={isLoadingClients}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingClients ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2 sm:gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fetchClientUsers()}
+                      disabled={isLoadingClients}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoadingClients ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Refresh</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <Table className="table-modern">
+                <Table className="table-modern min-w-[700px]">
                   <TableHeader>
                     <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
                       <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Client</TableHead>
@@ -839,16 +858,6 @@ export function UserManagementView() {
                               >
                                 <Edit className="h-4 w-4 text-lawbot-emerald-500" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="btn-icon hover:bg-lawbot-purple-50 dark:hover:bg-lawbot-purple-900/20"
-                                title="Test push notification"
-                                onClick={() => handleTestNotification(client)}
-                                disabled={!client.fcm_token || client.user_status !== 'active'}
-                              >
-                                <Bell className="h-4 w-4 text-lawbot-purple-500" />
-                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -914,15 +923,6 @@ export function UserManagementView() {
         user={selectedUser}
       />
 
-      {/* Test Push Notification Modal */}
-      <TestPushNotificationModal
-        isOpen={isTestNotificationModalOpen}
-        onClose={() => {
-          setIsTestNotificationModalOpen(false)
-          setSelectedUser(null)
-        }}
-        user={selectedUser}
-      />
 
     </div>
   )

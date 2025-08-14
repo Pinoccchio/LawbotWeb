@@ -194,6 +194,50 @@
   @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-background;
 }
 
+/* Touch-friendly utilities */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Mobile-first responsive utilities */
+.responsive-grid {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6;
+}
+
+.responsive-flex {
+  @apply flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4;
+}
+
+.responsive-text {
+  @apply text-base sm:text-sm;
+}
+
+.mobile-hidden {
+  @apply hidden sm:block;
+}
+
+.mobile-only {
+  @apply block sm:hidden;
+}
+
+/* Improved button styles for mobile */
+.btn-mobile {
+  @apply min-h-[44px] px-4 py-2 text-base sm:text-sm touch-manipulation;
+}
+
+/* Mobile-optimized spacing */
+.space-mobile {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.padding-mobile {
+  @apply p-4 sm:p-6;
+}
+
+.margin-mobile {
+  @apply m-4 sm:m-6;
+}
+
 /* Card hover effects */
 .card-hover {
   @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-800;
@@ -387,6 +431,44 @@
   .animate-fade-in-up {
     animation-duration: 0.6s;
   }
+
+  /* Mobile-optimized sidebar */
+  .sidebar-mobile {
+    @apply fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300;
+  }
+
+  .sidebar-mobile.closed {
+    @apply -translate-x-full;
+  }
+
+  /* Mobile table improvements */
+  .table-responsive {
+    @apply block w-full overflow-x-auto whitespace-nowrap;
+  }
+
+  /* Mobile modal improvements */
+  .modal-mobile {
+    @apply h-full w-full rounded-none;
+  }
+
+  /* Touch-friendly elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Improved text sizing for mobile */
+  .text-mobile-friendly {
+    @apply text-base leading-relaxed;
+  }
+
+  /* Mobile modal tab improvements */
+  .modal-tabs-mobile {
+    @apply flex overflow-x-auto;
+  }
+  
+  .modal-tab-mobile {
+    @apply flex-shrink-0 min-h-[44px] px-3 py-2;
+  }
 }
 
 /* Print styles */
@@ -503,4 +585,14 @@
 
 .notification-info {
   @apply bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/20 dark:border-blue-800 dark:text-blue-200;
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

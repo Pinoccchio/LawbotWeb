@@ -188,8 +188,8 @@ export function SystemSettingsView() {
                     <Activity className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Predictive Analytics</CardTitle>
-                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Configure forecasting and prediction models</CardDescription>
+                    <CardTitle className="text-lawbot-slate-900 dark:text-white">Prescriptive Analytics</CardTitle>
+                    <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">Configure recommendation and action guidance models</CardDescription>
                   </div>
                 </div>
               </CardHeader>

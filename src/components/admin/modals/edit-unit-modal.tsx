@@ -24,6 +24,10 @@ interface EditUnitModalProps {
 export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModalProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  
+  // Fixed region value - defined at component level for global access
+  const fixedRegion = "Philippine National Police No. 3, Santolan Road, Brgy. Corazon de Jesus, San Juan City, Metro Manila 1500, Philippines"
+  
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -49,18 +53,21 @@ export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModa
         category: unit.category || "",
         unitCode: unit.unit_code || "",
         description: unit.description || "",
-        region: unit.region || "",
+        region: fixedRegion, // Always use our fixed value instead of unit.region
         maxOfficers: unit.max_officers ? String(unit.max_officers) : "",
         primaryCrimeTypes: unit.crime_types || [],
         status: unit.status || "active"
       })
+      console.log('✅ Populated edit form with fixed region:', fixedRegion)
     }
   }, [unit, isOpen])
 
-  // Fetch regions when modal opens
+  // Set default values when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchRegions()
+      // No need to fetch regions anymore - using fixed value
+      // fetchRegions()
+      console.log('✅ Modal opened with fixed region value:', fixedRegion)
     }
   }, [isOpen])
 
@@ -159,10 +166,10 @@ export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModa
           unit_code: unitForm.unitCode,
           category: unitForm.category,
           description: unitForm.description,
-          region: unitForm.region,
+          region: fixedRegion, // Always use our fixed value for consistency
           max_officers: parseInt(unitForm.maxOfficers),
           primary_crime_types: unitForm.primaryCrimeTypes
-        })
+        }, user?.uid) // Pass admin Firebase UID for consistency
         
         // Change status if needed
         if (unit.status !== unitForm.status) {
@@ -396,54 +403,44 @@ export function EditUnitModal({ isOpen, onClose, onSuccess, unit }: EditUnitModa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="region">Primary Region *</Label>
-                  <Select 
-                    value={unitForm.region} 
-                    onValueChange={(value) => {
-                      setUnitForm({ ...unitForm, region: value })
-                      if (errors.region) setErrors({ ...errors, region: '' })
-                    }}
-                    disabled={isLoadingRegions}
-                  >
-                    <SelectTrigger className={errors.region ? 'border-red-500 focus:border-red-500' : ''}>
-                      <SelectValue placeholder={
-                        isLoadingRegions ? "Loading regions..." : "Select region"
-                      } />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingRegions ? (
-                        <SelectItem key="loading-regions" value="loading" disabled>
-                          <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                            <span>Loading Philippine regions...</span>
+                  <Label htmlFor="region">Region *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Select 
+                      value={unitForm.region}
+                      onValueChange={(value) => {
+                        setUnitForm({ ...unitForm, region: value })
+                        if (errors.region) setErrors({ ...errors, region: '' })
+                      }}>
+                      <SelectTrigger className={`pl-10 h-10 ${errors.region ? 'border-red-500 focus:border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select region">
+                          <span className="truncate">Philippine National Police No. 3...</span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value={fixedRegion} className="py-2">
+                          <div className="flex flex-col">
+                            <span className="text-sm">Philippine National Police No. 3</span>
+                            <span className="text-xs text-gray-500">
+                              Santolan Road, Brgy. Corazon de Jesus
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              San Juan City, Metro Manila 1500
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Philippines
+                            </span>
                           </div>
                         </SelectItem>
-                      ) : regions.length === 0 ? (
-                        <SelectItem key="error-regions" value="error" disabled>
-                          <span className="text-red-600">Failed to load regions. Please try again.</span>
-                        </SelectItem>
-                      ) : (
-                        regions.map((region) => (
-                          <SelectItem key={region.id} value={region.name}>
-                            <div className="flex flex-col">
-                              <span>{region.name}</span>
-                              {region.population !== 'N/A' && (
-                                <span className="text-xs text-gray-500">Population: {region.population}</span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {errors.region && (
                     <p className="text-red-600 text-xs mt-1">{errors.region}</p>
                   )}
-                  {!isLoadingRegions && regions.length > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      ✅ Data from Philippine Statistics Authority (PSGC API)
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    ✅ PNP National Headquarters
+                  </p>
                 </div>
 
                 {/* Unit Status */}

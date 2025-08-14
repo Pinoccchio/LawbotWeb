@@ -15,6 +15,7 @@ export interface EvidenceFile {
   uploaded_at: string
   created_at: string
   uploaded_by?: string
+  uploaded_by_name?: string  // Add full name field
   is_valid?: boolean
   validation_notes?: string
   // Joined complaint data
@@ -279,6 +280,24 @@ export class EvidenceService {
         }
       }
       
+      // Fetch user profile name if uploaded_by exists
+      let uploaderName = data.uploaded_by || 'System'
+      if (data.uploaded_by && data.uploaded_by !== 'System') {
+        try {
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('firebase_uid', data.uploaded_by)
+            .single()
+          
+          if (userProfile && userProfile.full_name) {
+            uploaderName = userProfile.full_name
+          }
+        } catch (err) {
+          console.log(`⚠️ Could not fetch user profile for ${data.uploaded_by}`)
+        }
+      }
+      
       return {
         id: data.id,
         complaint_id: data.complaint_id,
@@ -290,6 +309,7 @@ export class EvidenceService {
         uploaded_at: data.uploaded_at,
         created_at: data.created_at,
         uploaded_by: data.uploaded_by,
+        uploaded_by_name: uploaderName,  // Add full name
         is_valid: data.is_valid,
         validation_notes: data.validation_notes,
         complaint: complaintData
@@ -488,6 +508,24 @@ export class EvidenceService {
             console.log(`⚠️ Could not fetch complaint data for ${file.complaint_id}`)
           }
           
+          // Fetch user profile name if uploaded_by exists
+          let uploaderName = file.uploaded_by || 'System'
+          if (file.uploaded_by && file.uploaded_by !== 'System') {
+            try {
+              const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('full_name')
+                .eq('firebase_uid', file.uploaded_by)
+                .single()
+              
+              if (userProfile && userProfile.full_name) {
+                uploaderName = userProfile.full_name
+              }
+            } catch (err) {
+              console.log(`⚠️ Could not fetch user profile for ${file.uploaded_by}`)
+            }
+          }
+          
           return {
             id: file.id,
             complaint_id: file.complaint_id,
@@ -499,6 +537,7 @@ export class EvidenceService {
             uploaded_at: file.uploaded_at,
             created_at: file.created_at,
             uploaded_by: file.uploaded_by,
+            uploaded_by_name: uploaderName,  // Add full name
             is_valid: file.is_valid,
             validation_notes: file.validation_notes,
             complaint: complaintData

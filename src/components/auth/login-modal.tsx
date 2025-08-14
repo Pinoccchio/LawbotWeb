@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Shield, User, Lock, Mail, Phone, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,13 +16,12 @@ import { useAuth } from "@/contexts/AuthContext"
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  userType: "admin" | "pnp"
-  onLogin: (userType: "admin" | "pnp") => void
+  onLogin: () => void
   authError?: string | null
   isValidating?: boolean
 }
 
-export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isValidating = false }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onLogin, authError, isValidating = false }: LoginModalProps) {
   const { signIn, signUp, signOut } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showSignupPassword, setShowSignupPassword] = useState(false)
@@ -46,6 +45,14 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
     region: "",
     rank: "",
   })
+
+  // Reset loading state when parent passes authError
+  useEffect(() => {
+    if (authError && isLoading) {
+      console.log('🔄 Parent passed authError, resetting modal loading state')
+      setIsLoading(false)
+    }
+  }, [authError, isLoading])
 
   if (!isOpen) return null
 
@@ -79,7 +86,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         return
       }
 
-      console.log('🔑 Attempting login with:', { email: loginForm.email, userType })
+      console.log('🔑 Attempting login with:', { email: loginForm.email })
       
       try {
         // Use actual Firebase authentication
@@ -91,16 +98,14 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         // Wait a moment for auth state to update
         await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Call onLogin callback - the parent component will handle validation and navigation
-        // IMPORTANT: This is where we trigger the parent component to start its validation process
+        // Call onLogin callback - the parent component will handle role detection and navigation
+        // IMPORTANT: This is where we trigger the parent component to start its role detection process
         // The parent component will handle redirection and closing the modal after validation succeeds
-        onLogin(userType)
+        onLogin()
         
-        // IMPORTANT: Don't set isLoading to false here - the parent component will handle that
-        // after successful validation. This keeps the loading indicator visible in the modal.
-        
-        // Don't close modal immediately - let parent handle it after validation
-        // onClose() will be called by parent component after successful validation
+        // IMPORTANT: Don't set isLoading to false here immediately
+        // But we need to handle the case where validation might fail
+        // The parent will pass authError if validation fails
       } catch (error: any) {
         // Keep this modal open and show error
         console.error('❌ Login failed:', error)
@@ -140,7 +145,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
     setIsLoading(true)
     
     try {
-      // Validate required fields
+      // Basic validation for all users
       const newErrors: { [key: string]: string } = {}
       
       if (!signupForm.firstName.trim()) newErrors.firstName = 'First name is required'
@@ -148,14 +153,6 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
       if (!signupForm.email.trim()) newErrors.email = 'Email is required'
       if (!signupForm.password) newErrors.password = 'Password is required'
       if (!signupForm.confirmPassword) newErrors.confirmPassword = 'Please confirm your password'
-      
-      // PNP-specific validation
-      if (userType === 'pnp') {
-        if (!signupForm.badgeNumber.trim()) newErrors.badgeNumber = 'Badge number is required'
-        if (!signupForm.rank) newErrors.rank = 'Rank is required'
-        if (!signupForm.unit) newErrors.unit = 'Unit is required'
-        if (!signupForm.region) newErrors.region = 'Region is required'
-      }
       
       if (signupForm.password !== signupForm.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match'
@@ -173,19 +170,14 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
 
       const fullName = `${signupForm.firstName.trim()} ${signupForm.lastName.trim()}`
       
-      // Create account with appropriate user type
-      const userTypeForDB = userType === 'admin' ? 'ADMIN' : 'PNP_OFFICER'
-      
-      console.log('🔐 Creating new account:', { 
-        email: signupForm.email, 
-        fullName, 
-        userType: userTypeForDB,
-        badge: signupForm.badgeNumber || 'N/A'
-      })
+      // Note: Signup functionality temporarily disabled for single login system
+      // Users should be created by administrators, not through self-registration
+      throw new Error('Account registration is currently disabled. Please contact your administrator for account setup.')
       
       try {
         // Create user account and profile
-        await signUp(signupForm.email, signupForm.password, fullName, userTypeForDB, {
+        // Note: This code is unreachable due to the error above, but keeping for reference
+        await signUp(signupForm.email, signupForm.password, fullName, 'PNP_OFFICER', {
           phoneNumber: signupForm.phone,
           badgeNumber: signupForm.badgeNumber,
           unitId: signupForm.unit,  // FIX: Map form field to correct metadata field
@@ -199,7 +191,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         setErrors({})
         
         // Show success message
-        setSuccessMessage(`✅ ${userType === 'admin' ? 'Admin' : 'PNP Officer'} account created successfully! Redirecting to dashboard...`)
+        setSuccessMessage('✅ Account created successfully! Redirecting to dashboard...')
         
         // Clear the form
         setSignupForm({
@@ -219,7 +211,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
         setTimeout(() => {
           console.log('🔄 Redirecting to dashboard after successful signup...')
           // Call onLogin callback to trigger dashboard redirect
-          onLogin(userType)
+          onLogin()
           // Close modal after successful signup and redirect
           onClose()
         }, 2000) // Increased timeout to ensure user sees success message
@@ -307,8 +299,8 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <Card className="w-full max-w-md sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden">
         <CardHeader className="relative">
           <Button 
             variant="ghost" 
@@ -324,15 +316,15 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
             <X className="h-4 w-4" />
           </Button>
           <div className="flex items-center space-x-3 mb-2">
-            <div className={`p-2 rounded-lg ${userType === "admin" ? "bg-blue-600" : "bg-green-600"}`}>
+            <div className="p-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
               <CardTitle className="text-xl">
-                {userType === "admin" ? "System Administrator" : "PNP Officer"} Access
+                LawBot Portal Access
               </CardTitle>
               <CardDescription>
-                {userType === "admin" ? "Secure access to system administration" : "Philippine National Police Portal"}
+                Secure access for authorized personnel
               </CardDescription>
             </div>
           </div>
@@ -343,19 +335,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
 
         <CardContent className="overflow-y-auto max-h-[calc(90vh-180px)]">
           <Tabs defaultValue="login" className="w-full">
-            {userType === "admin" && (
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-            )}
-            {userType === "pnp" && (
-              <TabsList className="grid w-full grid-cols-1">
-                <TabsTrigger value="login">Login</TabsTrigger>
-              </TabsList>
-            )}
-
-            <TabsContent value="login" className="space-y-4 mt-6">
+            <TabsContent value="login" className="space-y-4 mt-0">
               <form onSubmit={handleLogin} className="space-y-4">
                 {(errors.general || authError) && (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
@@ -379,7 +359,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                     <Input
                       id="email"
                       type="email"
-                      placeholder={userType === "admin" ? "admin@lawbot.gov.ph" : "officer@pnp.gov.ph"}
+                      placeholder="your.email@domain.com"
                       className="pl-10"
                       value={loginForm.email}
                       onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
@@ -403,7 +383,7 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
+                      className="absolute right-0 top-0 h-full px-3 min-w-[44px] touch-manipulation"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -415,279 +395,22 @@ export function LoginModal({ isOpen, onClose, userType, onLogin, authError, isVa
                 <Button
                   type="submit"
                   disabled={isLoading || isValidating}
-                  className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white min-h-[48px] touch-manipulation disabled:opacity-50"
                 >
                   {isLoading || isValidating ? (
                     <span className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {isLoading ? 'Signing in...' : isValidating ? 'Validating access...' : 'Loading...'}
+                      {isLoading ? 'Signing in...' : isValidating ? 'Determining access...' : 'Loading...'}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">
                       <Shield className="mr-2 h-4 w-4" />
-                      {`Login to ${userType === "admin" ? "Admin" : "PNP"} Portal`}
+                      Access Portal
                     </span>
                   )}
                 </Button>
               </form>
             </TabsContent>
-
-            {userType === "admin" && (
-              <TabsContent value="signup" className="space-y-3 mt-4">
-                <form onSubmit={handleSignup} className="space-y-3">
-                {errors.general && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
-                    <div className="flex items-start space-x-2">
-                      <div className="text-red-600 dark:text-red-400 mt-0.5">⚠️</div>
-                      <div>
-                        <p className="text-red-800 dark:text-red-200 text-sm font-medium">
-                          {errors.general}
-                        </p>
-                        <p className="text-red-600 dark:text-red-300 text-xs mt-1">
-                          {errors.general.includes('email-already-in-use') ? 
-                            'Please try signing in instead or use a different email.' :
-                            'Please correct the error and try again.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {successMessage && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                    <p className="text-green-800 dark:text-green-200 text-sm font-medium">
-                      {successMessage}
-                    </p>
-                    <p className="text-green-700 dark:text-green-300 text-xs mt-1">
-                      Redirecting you to the dashboard...
-                    </p>
-                  </div>
-                )}
-                
-                {!successMessage && (
-                  <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="Juan"
-                      value={signupForm.firstName}
-                      onChange={(e) => {
-                        setSignupForm({ ...signupForm, firstName: e.target.value })
-                        if (errors.firstName) setErrors({ ...errors, firstName: '' })
-                      }}
-                      className={errors.firstName ? 'border-red-500 focus:border-red-500' : ''}
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-600 text-xs mt-1">{errors.firstName}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Dela Cruz"
-                      value={signupForm.lastName}
-                      onChange={(e) => setSignupForm({ ...signupForm, lastName: e.target.value })}
-                      className={errors.lastName ? 'border-red-500 focus:border-red-500' : ''}
-                    />
-                    {errors.lastName && (
-                      <p className="text-red-600 text-xs mt-1">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="signupEmail">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signupEmail"
-                      type="email"
-                      placeholder={userType === "admin" ? "admin@lawbot.gov.ph" : "officer@pnp.gov.ph"}
-                      className={`pl-10 ${errors.email ? 'border-red-500 focus:border-red-500' : ''}`}
-                      value={signupForm.email}
-                      onChange={(e) => {
-                        setSignupForm({ ...signupForm, email: e.target.value })
-                        if (errors.email) setErrors({ ...errors, email: '' })
-                      }}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-red-600 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      placeholder="+63 9XX XXX XXXX"
-                      className="pl-10"
-                      value={signupForm.phone}
-                      onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-
-                {userType === "pnp" && (
-                  <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="badgeNumber">Badge Number</Label>
-                        <Input
-                          id="badgeNumber"
-                          placeholder="PNP-12345"
-                          value={signupForm.badgeNumber}
-                          onChange={(e) => setSignupForm({ ...signupForm, badgeNumber: e.target.value })}
-                          className={errors.badgeNumber ? 'border-red-500 focus:border-red-500' : ''}
-                            />
-                        {errors.badgeNumber && (
-                          <p className="text-red-600 text-xs mt-1">{errors.badgeNumber}</p>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="rank">Rank</Label>
-                        <Select onValueChange={(value) => setSignupForm({ ...signupForm, rank: value })}>
-                          <SelectTrigger className={errors.rank ? 'border-red-500 focus:border-red-500' : ''}>
-                            <SelectValue placeholder="Select rank" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {pnpRanks.map((rank) => (
-                              <SelectItem key={rank} value={rank}>
-                                {rank}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors.rank && (
-                          <p className="text-red-600 text-xs mt-1">{errors.rank}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="unit">PNP Unit</Label>
-                      <Select onValueChange={(value) => setSignupForm({ ...signupForm, unit: value })}>
-                        <SelectTrigger className={errors.unit ? 'border-red-500 focus:border-red-500' : ''}>
-                          <SelectValue placeholder="Select your unit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pnpUnits.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.unit && (
-                        <p className="text-red-600 text-xs mt-1">{errors.unit}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="region">Region</Label>
-                      <Select onValueChange={(value) => setSignupForm({ ...signupForm, region: value })}>
-                        <SelectTrigger className={errors.region ? 'border-red-500 focus:border-red-500' : ''}>
-                          <SelectValue placeholder="Select region" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {regions.map((region) => (
-                            <SelectItem key={region} value={region}>
-                              {region}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.region && (
-                        <p className="text-red-600 text-xs mt-1">{errors.region}</p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="signupPassword">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="signupPassword"
-                        type={showSignupPassword ? "text" : "password"}
-                        placeholder="Password"
-                        className={`pl-10 pr-10 ${errors.password ? 'border-red-500 focus:border-red-500' : ''}`}
-                        value={signupForm.password}
-                        onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                        />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowSignupPassword(!showSignupPassword)}
-                      >
-                        {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm"
-                        className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}`}
-                        value={signupForm.confirmPassword}
-                        onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
-                        />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="text-red-600 text-xs mt-1">{errors.confirmPassword}</p>
-                    )}
-                  </div>
-                </div>
-
-
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className={`w-full text-white ${userType === "admin" ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating Account...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center">
-                      <User className="mr-2 h-4 w-4" />
-                      {`Create ${userType === "admin" ? "Admin" : "PNP"} Account`}
-                    </span>
-                  )}
-                </Button>
-                </>
-                )}
-              </form>
-            </TabsContent>
-            )}
           </Tabs>
         </CardContent>
       </Card>

@@ -141,12 +141,12 @@ export function AdminDashboardView() {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Dashboard Header with Refresh Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent leading-tight pb-2">
             Admin Dashboard
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base sm:text-lg mt-2">
             Real-time system overview and performance metrics
           </p>
         </div>
@@ -173,7 +173,7 @@ export function AdminDashboardView() {
       )}
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         {isLoading ? (
           // Skeleton loaders for stats
           Array(4).fill(0).map((_, index) => (
@@ -197,34 +197,46 @@ export function AdminDashboardView() {
             const Icon = stat.icon
             return (
               <Card key={stat.title} className={`stats-card animate-fade-in-up`} style={{ animationDelay: `${index * 100}ms` }}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <CardTitle className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-lg bg-gradient-to-r ${
-                    stat.color === 'red' ? 'from-lawbot-red-50 to-lawbot-red-100' :
-                    stat.color === 'blue' ? 'from-lawbot-blue-50 to-lawbot-blue-100' :
-                    stat.color === 'emerald' ? 'from-lawbot-emerald-50 to-lawbot-emerald-100' :
-                    'from-lawbot-slate-50 to-lawbot-slate-100'
-                  }`}>
-                    <Icon className={`h-5 w-5 ${getIconColor(stat.color)}`} />
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Header: Title + Icon */}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                          {stat.title}
+                        </p>
+                        <p className={`text-3xl font-bold ${getValueColor(stat.color)}`}>
+                          {stat.value}
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-xl ${
+                        stat.color === 'red' ? 'bg-gradient-to-br from-lawbot-red-500 to-lawbot-red-600' :
+                        stat.color === 'blue' ? 'bg-gradient-to-br from-lawbot-blue-500 to-lawbot-blue-600' :
+                        stat.color === 'emerald' ? 'bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600' :
+                        stat.color === 'green' ? 'bg-gradient-to-br from-lawbot-green-500 to-lawbot-green-600' :
+                        'bg-gradient-to-br from-lawbot-slate-500 to-lawbot-slate-600'
+                      } shadow-lg`}>
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    
+                    {/* Footer: Change + Description */}
+                    <div className="flex items-center justify-between pt-2 border-t border-lawbot-slate-100 dark:border-lawbot-slate-700">
+                      <span className={`text-sm font-semibold ${getChangeColor(stat.trend)}`}>
+                        {stat.change}
+                      </span>
+                      <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                        {stat.description}
+                      </span>
+                    </div>
+                    
+                    {/* Progress Bar for Resolution Rate */}
+                    {stat.title === "Resolution Rate" && (
+                      <div className="pt-2">
+                        <Progress value={dashboardStats.resolutionRate} className="h-2" />
+                      </div>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className={`text-3xl font-bold ${getValueColor(stat.color)}`}>
-                    {stat.value}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${getChangeColor(stat.trend)}`}>
-                      {stat.change}
-                    </span>
-                    <span className="text-xs text-lawbot-slate-500">
-                      {stat.description}
-                    </span>
-                  </div>
-                  {stat.title === "Resolution Rate" && (
-                    <Progress value={dashboardStats.resolutionRate} className="h-2 mt-2" />
-                  )}
                 </CardContent>
               </Card>
             )
@@ -233,7 +245,7 @@ export function AdminDashboardView() {
       </div>
 
       {/* Enhanced Dashboard Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         {/* Recent Cases */}
         <Card className="card-modern animate-slide-in-left">
           <CardHeader className="pb-4">
@@ -481,7 +493,7 @@ export function AdminDashboardView() {
       </div>
 
       {/* Enhanced Priority Distribution */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* High Priority */}
         <Card className="priority-high-indicator border-lawbot-red-200 dark:border-lawbot-red-800 bg-gradient-to-br from-lawbot-red-50 to-lawbot-red-100 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 animate-scale-in">
           <CardHeader className="pb-3">

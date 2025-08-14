@@ -68,7 +68,7 @@ export function AdminDashboard({ onViewChange, isDark, toggleTheme }: AdminDashb
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AdminHeader
           onViewChange={onViewChange}
           onAdminViewChange={setCurrentView}
@@ -77,7 +77,7 @@ export function AdminDashboard({ onViewChange, isDark, toggleTheme }: AdminDashb
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
-        <main className="flex-1 overflow-y-auto p-6">{renderView()}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{renderView()}</main>
       </div>
     </div>
   )

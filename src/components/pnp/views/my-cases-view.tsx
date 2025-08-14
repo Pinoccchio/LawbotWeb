@@ -350,26 +350,28 @@ export function MyCasesView() {
     
     return (
       <div className="mt-4 p-4 bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-blue-50 dark:from-lawbot-emerald-900/20 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-lawbot-emerald-500 rounded-full animate-pulse"></div>
-              <span className="font-semibold text-lawbot-emerald-700 dark:text-lawbot-emerald-300 text-sm">
+              <div className="w-3 h-3 bg-lawbot-emerald-500 rounded-full animate-pulse flex-shrink-0"></div>
+              <span className="font-semibold text-lawbot-emerald-700 dark:text-lawbot-emerald-300 text-xs sm:text-sm">
                 Case Updated by Citizen
               </span>
             </div>
-            {updateText && (
-              <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                {updateText}
-              </span>
-            )}
-            {timeText && (
-              <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">
-                {timeText}
-              </span>
-            )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              {updateText && (
+                <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate">
+                  {updateText}
+                </span>
+              )}
+              {timeText && (
+                <span className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-500">
+                  {timeText}
+                </span>
+              )}
+            </div>
           </div>
-          <Badge className="bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-300 border-lawbot-amber-200 dark:border-lawbot-amber-700">
+          <Badge className="bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/30 dark:text-lawbot-amber-300 border-lawbot-amber-200 dark:border-lawbot-amber-700 self-start sm:self-auto">
             <span className="text-xs font-bold">NEEDS REVIEW</span>
           </Badge>
         </div>
@@ -406,43 +408,48 @@ export function MyCasesView() {
         className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up"
         style={{ animationDelay: `${index * 50}ms` }}
       >
-        <CardContent className="p-8">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-4">
-                <h3 className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{caseId}</h3>
-                <Badge className={`${getPriorityColor(priority)} text-xs font-medium`}>
+        <CardContent className="p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col xl:flex-row items-start justify-between space-y-4 xl:space-y-0 xl:space-x-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <h3 className="text-lg sm:text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 truncate">{caseId}</h3>
+                <Badge className={`${getPriorityColor(priority)} text-xs font-medium flex-shrink-0`}>
                   {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
                 </Badge>
-                <Badge className={`${getStatusColor(status)} text-xs font-medium`}>
+                <Badge className={`${getStatusColor(status)} text-xs font-medium flex-shrink-0`}>
                   {status === 'Pending' ? '📋' : 
                    status === 'Under Investigation' ? '🔍' :
                    status === 'Requires More Information' ? '❓' :
                    status === 'Resolved' ? '✅' :
                    status === 'Dismissed' ? '❌' : '❓'} 
-                  {status}
+                  <span className="hidden sm:inline">{status}</span>
                 </Badge>
-                <Badge className="bg-lawbot-purple-100 text-lawbot-purple-800 dark:bg-lawbot-purple-900/30 dark:text-lawbot-purple-300 text-xs font-medium">
-                  {assignmentType === 'primary' ? '👤 Primary' :
-                   assignmentType === 'secondary' ? '👥 Secondary' :
-                   assignmentType === 'consultant' ? '💼 Consultant' : '🔍 Reviewer'}
+                <Badge className="bg-lawbot-purple-100 text-lawbot-purple-800 dark:bg-lawbot-purple-900/30 dark:text-lawbot-purple-300 text-xs font-medium flex-shrink-0">
+                  {assignmentType === 'primary' ? '👤' :
+                   assignmentType === 'secondary' ? '👥' :
+                   assignmentType === 'consultant' ? '💼' : '🔍'}
+                  <span className="hidden sm:inline ml-1">
+                    {assignmentType === 'primary' ? 'Primary' :
+                     assignmentType === 'secondary' ? 'Secondary' :
+                     assignmentType === 'consultant' ? 'Consultant' : 'Reviewer'}
+                  </span>
                 </Badge>
                 {/* Add visual indicators for updated cases */}
                 {requiresMoreInfoAndUpdated(caseData) && renderUpdateIndicator(caseData)}
               </div>
-              <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-xl">{title}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <h4 className="font-bold text-lawbot-slate-900 dark:text-white mb-4 text-base sm:text-lg lg:text-xl line-clamp-2">{title}</h4>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4">
                 <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                  <Calendar className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                  <span className="text-sm font-medium">📅 {date}</span>
+                  <Calendar className="h-4 w-4 mr-2 text-lawbot-blue-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium truncate">📅 {date}</span>
                 </div>
                 <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                  <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
-                  <span className="text-sm font-medium">📎 {evidenceCount} files</span>
+                  <FileText className="h-4 w-4 mr-2 text-lawbot-emerald-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium truncate">📎 {evidenceCount} files</span>
                 </div>
                 <div className="flex items-center p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                  <AlertTriangle className="h-4 w-4 mr-2 text-lawbot-amber-500" />
-                  <span className={`text-sm font-bold ${
+                  <AlertTriangle className="h-4 w-4 mr-2 text-lawbot-amber-500 flex-shrink-0" />
+                  <span className={`text-xs sm:text-sm font-bold truncate ${
                     riskScore >= 80 ? 'text-lawbot-red-500' : 
                     riskScore >= 50 ? 'text-lawbot-amber-500' : 
                     'text-lawbot-emerald-500'
@@ -451,18 +458,18 @@ export function MyCasesView() {
                   </span>
                 </div>
                 <div className="flex items-center text-lawbot-slate-600 dark:text-lawbot-slate-400 p-2 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                  <Shield className="h-4 w-4 mr-2 text-lawbot-purple-500" />
-                  <span className="text-sm font-medium truncate">🏢 {unit.split(' ')[0]}...</span>
+                  <Shield className="h-4 w-4 mr-2 text-lawbot-purple-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium truncate" title={unit}>🏢 {unit.split(' ')[0]}...</span>
                 </div>
               </div>
-              <div className="p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
-                <h5 className="font-semibold mb-2 text-lawbot-slate-900 dark:text-white flex items-center">
-                  <Activity className="h-4 w-4 mr-2 text-lawbot-blue-500" />
-                  Case Description:
+              <div className="p-3 sm:p-4 bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 rounded-xl border border-lawbot-blue-200 dark:border-lawbot-blue-800">
+                <h5 className="font-semibold mb-2 text-sm sm:text-base text-lawbot-slate-900 dark:text-white flex items-center">
+                  <Activity className="h-4 w-4 mr-2 text-lawbot-blue-500 flex-shrink-0" />
+                  <span className="truncate">Case Description:</span>
                 </h5>
-                <p className="text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed">
-                  {description.length > 200 
-                    ? `${description.substring(0, 200)}...`
+                <p className="text-xs sm:text-sm text-lawbot-slate-700 dark:text-lawbot-slate-300 leading-relaxed line-clamp-3">
+                  {description.length > 150 
+                    ? `${description.substring(0, 150)}...`
                     : description}
                   {priority === "high" && " 🚨 High priority case requiring immediate attention."}
                 </p>
@@ -471,18 +478,21 @@ export function MyCasesView() {
               {hasBeenUpdatedByCitizen(caseData) && renderDetailedUpdateInfo(caseData)}
               
             </div>
-            <div className="flex flex-col space-y-3 ml-6">
-              <Button size="sm" className="btn-gradient" onClick={() => handleViewDetails(caseData)}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
+            <div className="flex flex-row xl:flex-col gap-2 xl:gap-3 w-full xl:w-auto">
+              <Button size="sm" className="btn-gradient flex-1 xl:flex-none" onClick={() => handleViewDetails(caseData)}>
+                <Eye className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">View Details</span>
+                <span className="sm:hidden">View</span>
               </Button>
-              <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50" onClick={() => handleUpdateStatus(caseData)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Update Status
+              <Button size="sm" variant="outline" className="btn-modern border-lawbot-emerald-300 text-lawbot-emerald-600 hover:bg-lawbot-emerald-50 flex-1 xl:flex-none" onClick={() => handleUpdateStatus(caseData)}>
+                <Edit className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Update Status</span>
+                <span className="sm:hidden">Update</span>
               </Button>
-              <Button size="sm" variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50" onClick={() => handleViewEvidence(caseData)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Evidence
+              <Button size="sm" variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 flex-1 xl:flex-none" onClick={() => handleViewEvidence(caseData)}>
+                <FileText className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Evidence</span>
+                <span className="sm:hidden">Files</span>
               </Button>
             </div>
           </div>
@@ -705,18 +715,18 @@ export function MyCasesView() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between animate-fade-in-up">
-        <div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0 animate-fade-in-up">
+        <div className="flex-1">
+          <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
             My Cases
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base lg:text-lg mt-2">
             Cases assigned to you for investigation and resolution
           </p>
         </div>
-        <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</div>
+        <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800 w-full lg:w-auto">
+          <CardContent className="p-4 lg:p-6 text-center">
+            <div className="text-2xl lg:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</div>
             <div className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">📊 Total Cases</div>
           </CardContent>
         </Card>
@@ -733,8 +743,8 @@ export function MyCasesView() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="sm:col-span-2 lg:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
                 <Input
@@ -749,7 +759,7 @@ export function MyCasesView() {
               <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">📋 Pending</SelectItem>
                 <SelectItem value="investigation">🔍 Under Investigation</SelectItem>
@@ -761,16 +771,17 @@ export function MyCasesView() {
               <SelectTrigger className="border-lawbot-slate-300 dark:border-lawbot-slate-600 focus:border-lawbot-blue-500">
                 <SelectValue placeholder="Filter by priority" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 <SelectItem value="all">All Priorities</SelectItem>
                 <SelectItem value="high">🔴 High Priority</SelectItem>
                 <SelectItem value="medium">🟡 Medium Priority</SelectItem>
                 <SelectItem value="low">🟢 Low Priority</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50">
+            <Button variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 w-full sm:w-auto">
               <Filter className="h-4 w-4 mr-2" />
-              Advanced
+              <span className="hidden sm:inline">Advanced</span>
+              <span className="sm:hidden">Filter</span>
             </Button>
           </div>
         </CardContent>
@@ -801,23 +812,65 @@ export function MyCasesView() {
         </Card>
       ) : (
         <Tabs defaultValue="pending" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-          <TabsList className="bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1 rounded-xl grid grid-cols-5">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
-              📋 Pending ({statusCounts.pending})
-            </TabsTrigger>
-            <TabsTrigger value="investigation" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
-              🔍 Investigation ({statusCounts.underInvestigation})
-            </TabsTrigger>
-            <TabsTrigger value="requiresInfo" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-orange-600 font-medium">
-              ❓ More Info ({statusCounts.requiresInfo})
-            </TabsTrigger>
-            <TabsTrigger value="resolved" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-              ✅ Resolved ({statusCounts.resolved})
-            </TabsTrigger>
-            <TabsTrigger value="dismissed" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
-              ❌ Dismissed ({statusCounts.dismissed})
-            </TabsTrigger>
-          </TabsList>
+          {/* Improved Original Tab Design */}
+          <div className="w-full overflow-x-auto scrollbar-hide pb-2">
+            <TabsList className="inline-flex bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1.5 sm:p-2 rounded-xl w-full justify-start">
+              <TabsTrigger 
+                value="pending" 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+              >
+                <span>📋</span>
+                <span className="font-semibold">Pending</span>
+                <span className="ml-1 px-2 py-0.5 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 text-lawbot-amber-700 dark:text-lawbot-amber-300 rounded-full text-xs font-bold">
+                  {statusCounts.pending}
+                </span>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="investigation" 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+              >
+                <span>🔍</span>
+                <span className="font-semibold">Investigation</span>
+                <span className="ml-1 px-2 py-0.5 bg-lawbot-blue-100 dark:bg-lawbot-blue-900/30 text-lawbot-blue-700 dark:text-lawbot-blue-300 rounded-full text-xs font-bold">
+                  {statusCounts.underInvestigation}
+                </span>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="requiresInfo" 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-orange-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+              >
+                <span>❓</span>
+                <span className="font-semibold">More Info</span>
+                <span className="ml-1 px-2 py-0.5 bg-lawbot-orange-100 dark:bg-lawbot-orange-900/30 text-lawbot-orange-700 dark:text-lawbot-orange-300 rounded-full text-xs font-bold">
+                  {statusCounts.requiresInfo}
+                </span>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="resolved" 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+              >
+                <span>✅</span>
+                <span className="font-semibold">Resolved</span>
+                <span className="ml-1 px-2 py-0.5 bg-lawbot-emerald-100 dark:bg-lawbot-emerald-900/30 text-lawbot-emerald-700 dark:text-lawbot-emerald-300 rounded-full text-xs font-bold">
+                  {statusCounts.resolved}
+                </span>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                value="dismissed" 
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
+              >
+                <span>❌</span>
+                <span className="font-semibold">Dismissed</span>
+                <span className="ml-1 px-2 py-0.5 bg-lawbot-red-100 dark:bg-lawbot-red-900/30 text-lawbot-red-700 dark:text-lawbot-red-300 rounded-full text-xs font-bold">
+                  {statusCounts.dismissed}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
         {/* Pending Cases Tab */}
         <TabsContent value="pending">

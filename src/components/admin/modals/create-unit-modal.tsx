@@ -23,6 +23,10 @@ interface CreateUnitModalProps {
 export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  
+  // Fixed region value - defined at component level for global access
+  const fixedRegion = "Philippine National Police No. 3, Santolan Road, Brgy. Corazon de Jesus, San Juan City, Metro Manila 1500, Philippines"
+  
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -98,10 +102,18 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
     }
   }
 
-  // Fetch regions when modal opens using PSGC Cloud API as default
+  // Set default values when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchRegions()
+      // No need to fetch regions anymore - using fixed value
+      // fetchRegions()
+      
+      // Set default region value
+      setUnitForm(current => ({
+        ...current,
+        region: fixedRegion
+      }))
+      console.log('✅ Set default region value to:', fixedRegion)
     }
   }, [isOpen])
 
@@ -223,7 +235,11 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
       if (!unitForm.category) newErrors.category = 'Category is required'
       if (!unitForm.unitCode.trim()) newErrors.unitCode = 'Unit code is required'
       if (!unitForm.description.trim()) newErrors.description = 'Description is required'
-      if (!unitForm.region) newErrors.region = 'Region is required'
+      // Region is always set to fixed value, so no validation needed
+      if (!unitForm.region) {
+        console.log('⚠️ Region is empty, using fixed value:', fixedRegion)
+        setUnitForm(current => ({...current, region: fixedRegion}))
+      }
       if (!unitForm.maxOfficers.trim()) newErrors.maxOfficers = 'Maximum officers is required'
       if (unitForm.primaryCrimeTypes.length === 0) newErrors.primaryCrimeTypes = 'At least one crime type is required'
       
@@ -262,16 +278,16 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
       console.log('📡 Creating PNP unit in Supabase database...')
       
       try {
-        // Create the unit using PNPUnitsService
+        // Create the unit using PNPUnitsService with admin Firebase UID
         await PNPUnitsService.createPNPUnit({
           unit_name: unitForm.unitName,
           unit_code: unitForm.unitCode,
           category: unitForm.category,
           description: unitForm.description,
-          region: unitForm.region,
+          region: fixedRegion, // Always use our fixed value for consistency
           max_officers: parseInt(unitForm.maxOfficers),
           primary_crime_types: unitForm.primaryCrimeTypes
-        })
+        }, user.uid) // Pass the admin's Firebase UID
         
         console.log('✅ PNP Unit created successfully in database')
         
@@ -506,55 +522,44 @@ export function CreateUnitModal({ isOpen, onClose, onSuccess }: CreateUnitModalP
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="region">Primary Region *</Label>
-                  <Select 
-                    onValueChange={(value) => {
-                      setUnitForm({ ...unitForm, region: value })
-                      if (errors.region) setErrors({ ...errors, region: '' })
-                    }}
-                    disabled={!unitForm.category || isLoadingRegions}
-                  >
-                    <SelectTrigger className={errors.region ? 'border-red-500 focus:border-red-500' : ''}>
-                      <SelectValue placeholder={
-                        !unitForm.category ? "Select a crime category first" : 
-                        isLoadingRegions ? "Loading regions..." : 
-                        "Select region"
-                      } />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingRegions ? (
-                        <SelectItem key="loading-regions" value="loading" disabled>
-                          <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                            <span>Loading Philippine regions...</span>
+                  <Label htmlFor="region">Region *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Select 
+                      value={unitForm.region}
+                      onValueChange={(value) => {
+                        setUnitForm({ ...unitForm, region: value })
+                        if (errors.region) setErrors({ ...errors, region: '' })
+                      }}>
+                      <SelectTrigger className={`pl-10 h-10 ${errors.region ? 'border-red-500 focus:border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select region">
+                          <span className="truncate">Philippine National Police No. 3...</span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value={fixedRegion} className="py-2">
+                          <div className="flex flex-col">
+                            <span className="text-sm">Philippine National Police No. 3</span>
+                            <span className="text-xs text-gray-500">
+                              Santolan Road, Brgy. Corazon de Jesus
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              San Juan City, Metro Manila 1500
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Philippines
+                            </span>
                           </div>
                         </SelectItem>
-                      ) : regions.length === 0 ? (
-                        <SelectItem key="error-regions" value="error" disabled>
-                          <span className="text-red-600">Failed to load regions. Please try again.</span>
-                        </SelectItem>
-                      ) : (
-                        regions.map((region) => (
-                          <SelectItem key={region.id} value={region.name}>
-                            <div className="flex flex-col">
-                              <span>{region.name}</span>
-                              {region.population !== 'N/A' && (
-                                <span className="text-xs text-gray-500">Population: {region.population}</span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {errors.region && (
                     <p className="text-red-600 text-xs mt-1">{errors.region}</p>
                   )}
-                  {!isLoadingRegions && regions.length > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      ✅ Data from Philippine Statistics Authority (PSGC API)
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    ✅ PNP National Headquarters
+                  </p>
                 </div>
 
                 {/* Unit Description - Auto-filled but editable after category selection */}

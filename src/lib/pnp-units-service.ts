@@ -77,11 +77,54 @@ export interface OfficerAvailabilityUpdate {
 }
 
 export class PNPUnitsService {
-  // Get current user ID (this would come from auth context in real implementation)
-  static get currentUserId(): string | null {
-    // In real implementation, this would get the current admin's Firebase UID
-    // For now, return a placeholder that matches database
-    return 'firebase_admin_001'
+  // Cache for admin UUID to avoid repeated database calls
+  private static adminUuidCache: string | null = null
+  
+  // Get admin profile UUID by Firebase UID
+  static async getAdminProfileByFirebaseUid(firebaseUid: string): Promise<string | null> {
+    try {
+      console.log('🔍 Looking up admin profile for Firebase UID:', firebaseUid)
+      
+      const { data: admin, error } = await supabase
+        .from('admin_profiles')
+        .select('id')
+        .eq('firebase_uid', firebaseUid)
+        .eq('status', 'active')
+        .single()
+      
+      if (error) {
+        console.error('❌ Error fetching admin profile:', error)
+        return null
+      }
+      
+      if (!admin) {
+        console.warn('⚠️ No admin profile found for Firebase UID:', firebaseUid)
+        return null
+      }
+      
+      console.log('✅ Found admin profile UUID:', admin.id)
+      return admin.id
+    } catch (error) {
+      console.error('❌ Error in getAdminProfileByFirebaseUid:', error)
+      return null
+    }
+  }
+  
+  // Get current user ID from auth context and cache it
+  static async getCurrentAdminUuid(firebaseUid: string): Promise<string | null> {
+    // Return cached value if available
+    if (this.adminUuidCache) {
+      return this.adminUuidCache
+    }
+    
+    // Fetch and cache admin UUID
+    this.adminUuidCache = await this.getAdminProfileByFirebaseUid(firebaseUid)
+    return this.adminUuidCache
+  }
+  
+  // Clear cache (useful for logout or user changes)
+  static clearAdminCache(): void {
+    this.adminUuidCache = null
   }
 
   // =============================================
@@ -322,9 +365,15 @@ export class PNPUnitsService {
   /**
    * Create a new PNP unit with crime types
    */
-  static async createPNPUnit(unitData: CreatePNPUnitPayload) {
+  static async createPNPUnit(unitData: CreatePNPUnitPayload, adminFirebaseUid: string) {
     try {
       console.log('🔄 Creating new PNP unit in database...')
+      
+      // Get the admin's UUID from the database
+      const adminUuid = await this.getCurrentAdminUuid(adminFirebaseUid)
+      if (!adminUuid) {
+        throw new Error('Admin profile not found. Please ensure you are logged in as an administrator.')
+      }
       
       // Check if unit code already exists
       const codeExists = await this.checkUnitCodeExists(unitData.unit_code)
@@ -342,7 +391,7 @@ export class PNPUnitsService {
           description: unitData.description,
           region: unitData.region,
           max_officers: unitData.max_officers,
-          created_by: this.currentUserId
+          created_by: adminUuid
         })
         .select()
         .single()
@@ -385,7 +434,7 @@ export class PNPUnitsService {
   /**
    * Update a PNP unit
    */
-  static async updatePNPUnit(unitId: string, unitData: Partial<CreatePNPUnitPayload>) {
+  static async updatePNPUnit(unitId: string, unitData: Partial<CreatePNPUnitPayload>, adminFirebaseUid?: string) {
     try {
       console.log('🔄 Updating PNP unit in database...', unitId)
       

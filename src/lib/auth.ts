@@ -189,7 +189,7 @@ export class AuthService {
     }
   }
 
-  // Validate user role access for specific dashboard type
+  // Validate user role access for specific dashboard type (legacy method - still used by other parts)
   static async validateUserAccess(firebaseUid: string, requiredRole: 'admin' | 'pnp'): Promise<{ isValid: boolean; userProfile: any | null; errorMessage?: string }> {
     try {
       console.log(`🔐 Validating access for role: ${requiredRole}, Firebase UID: ${firebaseUid}`)
@@ -237,6 +237,51 @@ export class AuthService {
         isValid: false, 
         userProfile: null, 
         errorMessage: `Authentication error: ${error.message}` 
+      }
+    }
+  }
+
+  // Determine user role from profile (new method for single login system)
+  static async determineUserRole(firebaseUid: string): Promise<{ role: 'admin' | 'pnp' | null; userProfile: any | null; errorMessage?: string }> {
+    try {
+      console.log('🔍 Determining user role for Firebase UID:', firebaseUid)
+      
+      const userProfile = await this.getUserProfile(firebaseUid)
+      console.log('👤 Retrieved user profile:', userProfile)
+      
+      if (!userProfile) {
+        console.log('❌ No user profile found')
+        return { 
+          role: null, 
+          userProfile: null, 
+          errorMessage: 'No profile found for your account. Please contact support to complete your registration.' 
+        }
+      }
+
+      // Determine role based on user_type
+      let role: 'admin' | 'pnp' | null = null
+      if (userProfile.user_type === 'ADMIN') {
+        role = 'admin'
+        console.log('✅ User identified as Administrator')
+      } else if (userProfile.user_type === 'PNP_OFFICER') {
+        role = 'pnp'
+        console.log('✅ User identified as PNP Officer')
+      } else {
+        console.log('❌ Invalid user type:', userProfile.user_type)
+        return {
+          role: null,
+          userProfile,
+          errorMessage: 'Your account type is not authorized for this portal. Please contact support.'
+        }
+      }
+
+      return { role, userProfile }
+    } catch (error: any) {
+      console.error('💥 Error in determineUserRole:', error)
+      return { 
+        role: null, 
+        userProfile: null, 
+        errorMessage: `Error retrieving account information: ${error.message}` 
       }
     }
   }

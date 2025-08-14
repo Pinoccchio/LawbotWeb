@@ -21,6 +21,9 @@ interface EditOfficerModalProps {
 }
 
 export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOfficerModalProps) {
+  // Fixed region value - defined at component level for global access
+  const fixedRegion = "Philippine National Police No. 3, Santolan Road, Brgy. Corazon de Jesus, San Juan City, Metro Manila 1500, Philippines"
+  
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isResettingPassword, setIsResettingPassword] = useState(false)
@@ -54,6 +57,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     if (officer && isOpen) {
       const nameParts = officer.name?.split(' ') || ['', '']
       
+      // Always set region to our fixed value regardless of what's in the database
+      
       // Extract all the officer data we need with fallbacks
       const officerData = {
         firstName: nameParts[0] || '',
@@ -63,7 +68,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         badgeNumber: officer.badge || '',
         rank: officer.rank || '',
         unitId: officer.unitId || '',  // Changed from unit to unitId
-        region: officer.region || '',
+        region: fixedRegion, // Always use our fixed PNP value instead of officer.region
         status: officer.status || 'active',
         // Simple availability status with fallback
         availabilityStatus: officer.availabilityStatus || 'available',
@@ -72,6 +77,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       console.log('🔍 Populating edit form with officer data:', {
         officerName: officer.name,
         officerStatus: officer.status,
+        officerOriginalRegion: officer.region,
+        regionToBeSet: fixedRegion,
         statusToBeSet: officerData.status,
         fullOfficerData: officer
       })
@@ -84,6 +91,7 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         // Check if status is populating correctly
         console.log('🔄 Form state after update:', {
           currentStatus: officerData.status,
+          currentRegion: officerData.region,
           formStatus: document.querySelector('[data-testid="status-trigger"]')?.textContent?.trim()
         })
         
@@ -94,6 +102,12 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
           setOfficerForm(current => ({...current, status: officerData.status}))
         }
         
+        // Force update region if needed
+        if (document.querySelector('[data-testid="region-trigger"]')?.textContent?.includes('Select location')) {
+          console.log('⚠️ Region not applied, forcing update...')
+          setOfficerForm(current => ({...current, region: fixedRegion}))
+        }
+        
         // Update crime types for the selected unit
         if (officerData.unitId) {
           updateCrimeTypesForUnit(officerData.unitId)
@@ -102,30 +116,26 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     }
   }, [officer, isOpen])
 
-  // Fetch regions and PNP units when modal opens
+  // Fetch PNP units and set default values when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchRegions()
+      // No need to fetch regions anymore
+      // fetchRegions()
       fetchPNPUnits()
       
       // Debug the dropdown rendering
       setTimeout(() => {
-        console.log('🔍 Current officer data:', {
+        console.log('🔍 Current officer data after second useEffect:', {
           status: officer?.status,
           rank: officer?.rank,
-          region: officer?.region,
+          region: officerForm.region, 
           unit: officer?.unit
-        })
-        console.log('🔍 Current form data:', {
-          status: officerForm.status,
-          rank: officerForm.rank,
-          region: officerForm.region,
-          unit: officerForm.unit
         })
         
         // Check if the trigger elements are properly updated
         const statusTrigger = document.querySelector('[data-testid="status-trigger"]')
         const rankTrigger = document.querySelector('[data-testid="rank-trigger"]')
+        const regionTrigger = document.querySelector('[data-testid="region-trigger"]')
         
         if (statusTrigger) {
           console.log('📌 Status trigger content:', statusTrigger.textContent)
@@ -135,40 +145,41 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
           console.log('📌 Rank trigger content:', rankTrigger.textContent)
         }
         
+        if (regionTrigger) {
+          console.log('📌 Region trigger content:', regionTrigger.textContent)
+        }
+        
         // Check dropdown components structure
         console.log('⚙️ Select components comparison:', {
           statusTriggerHtml: statusTrigger?.innerHTML,
-          rankTriggerHtml: rankTrigger?.innerHTML
+          rankTriggerHtml: rankTrigger?.innerHTML,
+          regionTriggerHtml: regionTrigger?.innerHTML
         })
       }, 500)
     }
-  }, [isOpen, officer?.status, officerForm.status])
+  }, [isOpen, officer?.status, officerForm.status, officerForm.region])
 
   const fetchRegions = async () => {
     setIsLoadingRegions(true)
     try {
+      // COMMENTED OUT: API calls to external sources
       // Use PSGC Cloud API as default with fallback to other sources
-      const fetchedRegions = await PSGCApiService.getRegions('cloud')
-      setRegions(fetchedRegions)
-      console.log(`✅ Loaded ${fetchedRegions.length} regions using PSGC Cloud API`)
+      // const fetchedRegions = await PSGCApiService.getRegions('cloud')
+      // setRegions(fetchedRegions)
+      // console.log(`✅ Loaded ${fetchedRegions.length} regions using PSGC Cloud API`)
+      
+      // Using hardcoded fallback regions directly instead of API calls
+      const fallbackRegions = await PSGCApiService.getRegions('fallback')
+      setRegions(fallbackRegions)
+      console.log(`✅ Using default regions data (${fallbackRegions.length} regions)`)
       
       // Future reference - commented alternative API sources:
       // const fetchedRegions = await PSGCApiService.getRegions('gitlab') // GitLab API
       // const fetchedRegions = await PSGCApiService.getRegions('auto')   // Auto-select best API
-      // const fetchedRegions = await PSGCApiService.getRegions('fallback') // Hardcoded fallback
     } catch (error) {
-      console.error('Error fetching regions from PSGC Cloud API:', error)
-      console.log('🔄 Attempting fallback to other API sources...')
-      
-      try {
-        // Fallback to auto mode (tries all APIs)
-        const fallbackRegions = await PSGCApiService.getRegions('auto')
-        setRegions(fallbackRegions)
-        console.log(`✅ Loaded ${fallbackRegions.length} regions using fallback API sources`)
-      } catch (fallbackError) {
-        console.error('All API sources failed:', fallbackError)
-        // Regions state will remain empty, and we'll show an error message
-      }
+      console.error('Error loading default regions:', error)
+      // In case of any errors, set empty regions array
+      setRegions([])
     } finally {
       setIsLoadingRegions(false)
     }
@@ -226,6 +237,15 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
     setErrors({})
     setIsLoading(true)
     
+    // Debug log current form state before submission
+    console.log('🔄 Submitting officer update with form data:', {
+      firstName: officerForm.firstName,
+      lastName: officerForm.lastName,
+      region: officerForm.region,
+      status: officerForm.status,
+      unitId: officerForm.unitId
+    })
+    
     try {
       // Validate required fields
       const newErrors: { [key: string]: string } = {}
@@ -235,7 +255,12 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       if (!officerForm.badgeNumber.trim()) newErrors.badgeNumber = 'Badge number is required'
       if (!officerForm.rank) newErrors.rank = 'Rank is required'
       if (!officerForm.unitId) newErrors.unit = 'Unit is required'
-      if (!officerForm.region) newErrors.region = 'Region is required'
+      
+      // Check region field - but handle both formats
+      if (!officerForm.region) {
+        newErrors.region = 'Location is required'
+        console.log('⚠️ Region validation failed - empty value')
+      }
 
       // Note: Email validation removed since email field is read-only
 
@@ -254,6 +279,8 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
       
       console.log('🔄 Updating PNP officer profile...')
       
+      // Always use the fixed PNP HQ location regardless of what's in the form
+      
       // Update PNP officer profile in Supabase
       const updateData: any = {
         full_name: fullName,
@@ -262,12 +289,18 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
         badge_number: officerForm.badgeNumber,
         rank: officerForm.rank,
         unit_id: officerForm.unitId,  // Changed from unit to unit_id
-        region: officerForm.region,
+        region: fixedRegion, // Always use our fixed value for consistency
         status: officerForm.status,
         // Simple availability status
         availability_status: officerForm.availabilityStatus,
         updated_at: new Date().toISOString()
       }
+      
+      console.log('📝 Update data being sent to database:', {
+        region: updateData.region,
+        unit_id: updateData.unit_id,
+        status: updateData.status
+      })
 
       const { data: updatedProfile, error: supabaseError } = await supabase
         .from('pnp_officer_profiles')
@@ -648,48 +681,43 @@ export function EditOfficerModal({ isOpen, onClose, onSuccess, officer }: EditOf
                   <Label htmlFor="region">Region *</Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Select value={officerForm.region} onValueChange={(value) => {
-                      setOfficerForm({ ...officerForm, region: value })
-                      if (errors.region) setErrors({ ...errors, region: '' })
-                    }} disabled={isLoadingRegions}>
-                      <SelectTrigger className={`pl-10 ${errors.region ? 'border-red-500 focus:border-red-500' : ''}`}>
-                        <SelectValue placeholder={isLoadingRegions ? "Loading regions..." : "Select region"} />
+                    <Select 
+                      value={officerForm.region} 
+                      onValueChange={(value) => {
+                        setOfficerForm({ ...officerForm, region: value })
+                        if (errors.region) setErrors({ ...errors, region: '' })
+                      }}>
+                      <SelectTrigger 
+                        data-testid="region-trigger"
+                        className={`pl-10 ${errors.region ? 'border-red-500 focus:border-red-500' : ''}`}>
+                        <SelectValue placeholder="Select region">
+                          <span className="truncate">Philippine National Police No. 3...</span>
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {isLoadingRegions ? (
-                          <SelectItem key="loading-regions" value="loading" disabled>
-                            <div className="flex items-center space-x-2">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                              <span>Loading Philippine regions...</span>
-                            </div>
-                          </SelectItem>
-                        ) : regions.length === 0 ? (
-                          <SelectItem key="error-regions" value="error" disabled>
-                            <span className="text-red-600">Failed to load regions. Please try again.</span>
-                          </SelectItem>
-                        ) : (
-                          regions.map((region) => (
-                            <SelectItem key={region.id} value={region.name}>
-                              <div className="flex flex-col">
-                                <span key={`${region.id}-name`}>{region.name}</span>
-                                {region.population !== 'N/A' && (
-                                  <span key={`${region.id}-population`} className="text-xs text-gray-500">Population: {region.population}</span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
+                        <SelectItem value={fixedRegion}>
+                          <div className="flex flex-col">
+                            <span className="text-sm">Philippine National Police No. 3</span>
+                            <span className="text-xs text-gray-500">
+                              Santolan Road, Brgy. Corazon de Jesus
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              San Juan City, Metro Manila 1500
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Philippines
+                            </span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   {errors.region && (
                     <p className="text-red-600 text-xs mt-1">{errors.region}</p>
                   )}
-                  {!isLoadingRegions && regions.length > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      ✅ Data from Philippine Statistics Authority (PSGC Cloud API)
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    ✅ PNP National Headquarters
+                  </p>
                 </div>
 
                 {/* Employment Status */}

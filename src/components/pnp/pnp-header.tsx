@@ -98,54 +98,64 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
   const availabilityStatus = officerProfile?.availability_status || 'available'
   const statusStyling = getAvailabilityStatusStyling(availabilityStatus)
   return (
-    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+    <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-600 dark:text-slate-400"
+            className="text-gray-600 dark:text-slate-400 min-h-[44px] min-w-[44px] touch-manipulation shrink-0"
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Officer Portal</h1>
-            <div className="hidden md:flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Officer Portal</h1>
+            <div className="hidden sm:flex items-center space-x-2 lg:space-x-3 min-w-0">
               {officerProfile?.unit ? (
                 <>
-                  <Badge className="bg-gradient-to-r from-lawbot-indigo-100 to-lawbot-indigo-200 text-lawbot-indigo-800 border border-lawbot-indigo-300 dark:from-lawbot-indigo-900/30 dark:to-lawbot-indigo-800/30 dark:text-lawbot-indigo-200 dark:border-lawbot-indigo-700 font-bold px-3 py-1">
-                    <Building2 className="h-3 w-3 mr-1" />
-                    {officerProfile.unit.unit_code}
+                  <Badge className="bg-gradient-to-r from-lawbot-indigo-100 to-lawbot-indigo-200 text-lawbot-indigo-800 border border-lawbot-indigo-300 dark:from-lawbot-indigo-900/30 dark:to-lawbot-indigo-800/30 dark:text-lawbot-indigo-200 dark:border-lawbot-indigo-700 font-bold px-2 sm:px-3 py-1 shrink-0">
+                    <Building2 className="h-3 w-3 sm:mr-1" />
+                    <span className="hidden sm:inline">{officerProfile.unit.unit_code}</span>
                   </Badge>
-                  <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium hidden lg:block">
+                  <span className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium hidden lg:block truncate">
                     {officerProfile.unit.unit_name}
                   </span>
                 </>
               ) : (
-                <Badge className="bg-gradient-to-r from-lawbot-amber-100 to-lawbot-amber-200 text-lawbot-amber-800 border border-lawbot-amber-300 dark:from-lawbot-amber-900/30 dark:to-lawbot-amber-800/30 dark:text-lawbot-amber-200 dark:border-lawbot-amber-700 font-bold px-3 py-1">
-                  <Building2 className="h-3 w-3 mr-1" />
-                  No Unit
+                <Badge className="bg-gradient-to-r from-lawbot-amber-100 to-lawbot-amber-200 text-lawbot-amber-800 border border-lawbot-amber-300 dark:from-lawbot-amber-900/30 dark:to-lawbot-amber-800/30 dark:text-lawbot-amber-200 dark:border-lawbot-amber-700 font-bold px-2 sm:px-3 py-1 shrink-0">
+                  <Building2 className="h-3 w-3 sm:mr-1" />
+                  <span className="hidden sm:inline">No Unit</span>
                 </Badge>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={toggleTheme}>
+        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleTheme}
+            className="min-h-[44px] min-w-[44px] touch-manipulation"
+          >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           
           {/* Notification Bell */}
           {officerId && (
-            <NotificationBell officerId={officerId} />
+            <div className="min-h-[44px] flex items-center">
+              <NotificationBell officerId={officerId} />
+            </div>
           )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-2">
-                <div className="relative">
+              <Button 
+                variant="ghost" 
+                className="flex items-center space-x-2 min-h-[44px] touch-manipulation"
+              >
+                <div className="relative shrink-0">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder.svg?height=32&width=32" />
                     <AvatarFallback>
@@ -156,22 +166,19 @@ export function PNPHeader({ onViewChange, onPNPViewChange, isDark, toggleTheme, 
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 ${statusStyling.dotColor}`} title={statusStyling.title}>
                   </div>
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                <div className="flex flex-col items-start min-w-0 hidden sm:block">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px] lg:max-w-[250px]">
                     {officerProfile?.full_name || userProfile?.full_name || 'PNP Officer'}
-                  </span>
-                  <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                    {officerProfile?.rank || userProfile?.rank || 'Officer'} • {officerProfile?.badge_number || 'N/A'}
                   </span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <div className="px-2 py-2 border-b border-lawbot-slate-200 dark:border-lawbot-slate-700">
-                <p className="text-sm font-semibold text-lawbot-slate-900 dark:text-white">
+            <DropdownMenuContent align="end" className="w-72 sm:w-80">
+              <div className="px-3 py-3 border-b border-lawbot-slate-200 dark:border-lawbot-slate-700">
+                <p className="text-sm font-semibold text-lawbot-slate-900 dark:text-white break-words">
                   {officerProfile?.full_name || userProfile?.full_name || 'PNP Officer'}
                 </p>
-                <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
+                <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 break-words">
                   {officerProfile?.rank || userProfile?.rank || 'Officer'} • {officerProfile?.badge_number || 'N/A'}
                 </p>
                 <div className="flex items-center mt-2 space-x-2">

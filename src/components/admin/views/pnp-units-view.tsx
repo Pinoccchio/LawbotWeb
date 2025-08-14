@@ -177,99 +177,114 @@ export function PNPUnitsView() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between animate-fade-in-up">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 lg:gap-0 animate-fade-in-up">
         <div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+          <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-emerald-600 to-lawbot-blue-600 bg-clip-text text-transparent leading-tight pb-2">
             PNP Units Management
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base lg:text-lg mt-2">
             Manage specialized cybercrime investigation units and officer assignments
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3">
           <Button 
             variant="outline" 
-            className="btn-modern" 
+            className="btn-modern flex-1 sm:flex-none" 
             onClick={handleRefreshStatistics}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Stats
+            <span className="hidden sm:inline">Refresh Stats</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
           <Button 
             variant="outline" 
-            className="btn-modern" 
+            className="btn-modern flex-1 sm:flex-none" 
             onClick={() => setIsAnalyticsModalOpen(true)}
           >
             <BarChart3 className="h-4 w-4 mr-2" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Charts</span>
           </Button>
           <Button 
-            className="btn-gradient"
+            className="btn-gradient flex-1 sm:flex-none"
             onClick={() => setIsCreateUnitModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Create Unit
+            <span className="hidden sm:inline">Create Unit</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
       </div>
 
       {/* Enhanced Unit Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Units</p>
-                <p className="text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{stats.totalUnits}</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">Specialized cybercrime units</p>
+          <CardContent className="p-5 lg:p-6">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 rounded-lg">
+                <Shield className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-blue-500 rounded-lg">
-                <Shield className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Total Units</p>
+                <p className="text-2xl lg:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">{stats.totalUnits}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Specialized units</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Officers</p>
-                <p className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{stats.totalOfficers}</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">Active investigators</p>
+          <CardContent className="p-5 lg:p-6">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-emerald-500 to-lawbot-emerald-600 rounded-lg">
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-emerald-500 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Total Officers</p>
+                <p className="text-2xl lg:text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">{stats.totalOfficers}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Active investigators</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Active Cases</p>
-                <p className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">{stats.activeCases}</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">Currently under investigation</p>
+          <CardContent className="p-5 lg:p-6">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-amber-500 to-lawbot-amber-600 rounded-lg">
+                <Activity className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-amber-500 rounded-lg">
-                <Activity className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Active Cases</p>
+                <p className="text-2xl lg:text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">{stats.activeCases}</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Under investigation</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="stats-card bg-gradient-to-br from-lawbot-purple-50 to-white dark:from-lawbot-purple-900/10 dark:to-lawbot-slate-800 border-lawbot-purple-200 dark:border-lawbot-purple-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Resolution Rate</p>
-                <p className="text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400">{stats.resolutionRate}%</p>
-                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">Average across all units</p>
+          <CardContent className="p-5 lg:p-6">
+            <div className="text-center space-y-3">
+              {/* Icon - Top Center */}
+              <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-purple-500 to-lawbot-purple-600 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 bg-lawbot-purple-500 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-white" />
+              
+              {/* Content - Centered Stack */}
+              <div>
+                <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Resolution Rate</p>
+                <p className="text-2xl lg:text-3xl font-bold text-lawbot-purple-600 dark:text-lawbot-purple-400 mb-1">{stats.resolutionRate}%</p>
+                <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">Average rate</p>
               </div>
             </div>
           </CardContent>
@@ -288,7 +303,7 @@ export function PNPUnitsView() {
       
       {/* Enhanced Units Grid */}
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {pnpUnits.map((unit, index) => {
             const totalCases = (unit.resolved_cases || 0) + (unit.active_cases || 0)
             const successRate = totalCases > 0 ? Math.round(((unit.resolved_cases || 0) / totalCases) * 100) : 0
@@ -309,23 +324,23 @@ export function PNPUnitsView() {
             const unitColor = unitColors[unit.category] || 'bg-lawbot-blue-500'
             
             return (
-              <Card key={unit.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
+              <Card key={unit.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up break-inside-avoid" style={{ animationDelay: `${(index + 4) * 100}ms` }}>
                 <CardHeader className="pb-4">
                   {/* Top row: Unit indicator, name, and action button */}
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className={`w-3 h-8 rounded-full ${unitColor} shadow-md`}></div>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white leading-tight">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className={`w-3 h-8 rounded-full ${unitColor} shadow-md flex-shrink-0`}></div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg sm:text-xl font-bold text-lawbot-slate-900 dark:text-white leading-tight truncate">
                           {unit.unit_name}
                         </CardTitle>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1 shrink-0">
+                    <div className="flex items-center space-x-1 shrink-0 ml-2">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20"
+                        className="btn-icon hover:bg-lawbot-blue-50 dark:hover:bg-lawbot-blue-900/20 h-8 w-8 p-0"
                         onClick={() => {
                           setSelectedUnit(unit)
                           setIsEditUnitModalOpen(true)
@@ -336,7 +351,7 @@ export function PNPUnitsView() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="btn-icon hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="btn-icon hover:bg-red-50 dark:hover:bg-red-900/20 h-8 w-8 p-0"
                         onClick={() => {
                           setDeleteConfirmation({
                             unitId: unit.id,
@@ -361,14 +376,16 @@ export function PNPUnitsView() {
                   
                   {/* Third row: Unit code, region, and status in organized layout */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-gradient-to-r from-lawbot-indigo-50 to-lawbot-indigo-100 text-lawbot-indigo-700 border border-lawbot-indigo-200 dark:from-lawbot-indigo-950/20 dark:to-lawbot-indigo-900/30 dark:text-lawbot-indigo-300 dark:border-lawbot-indigo-800 font-mono font-semibold">
+                    <Badge className="bg-gradient-to-r from-lawbot-indigo-50 to-lawbot-indigo-100 text-lawbot-indigo-700 border border-lawbot-indigo-200 dark:from-lawbot-indigo-950/20 dark:to-lawbot-indigo-900/30 dark:text-lawbot-indigo-300 dark:border-lawbot-indigo-800 font-mono font-semibold text-xs sm:text-sm">
                       <span className="mr-1.5">🏷️</span>
-                      {unit.unit_code}
+                      <span className="truncate max-w-[100px] sm:max-w-none">{unit.unit_code}</span>
                     </Badge>
                     
-                    <Badge className="bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-950/20 dark:to-lawbot-slate-900/30 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800">
+                    <Badge className="bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-950/20 dark:to-lawbot-slate-900/30 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800 text-xs sm:text-sm max-w-[180px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[320px] xl:max-w-[380px]">
                       <span className="mr-1.5">🏢</span>
-                      {unit.region}
+                      <span className="truncate" title={unit.region}>
+                        {unit.region}
+                      </span>
                     </Badge>
                     
                     {unit.status === 'active' && (
@@ -396,18 +413,18 @@ export function PNPUnitsView() {
                 <CardContent>
                   <div className="space-y-6">
                     {/* Enhanced Unit Stats */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
-                        <div className="text-2xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{unit.current_officers || 0}</div>
-                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">👮 Officers</div>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                      <div className="text-center p-2 sm:p-3 bg-lawbot-slate-50 dark:bg-lawbot-slate-800 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{unit.current_officers || 0}</div>
+                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">👮 <span className="hidden sm:inline">Officers</span></div>
                       </div>
-                      <div className="text-center p-3 bg-lawbot-amber-50 dark:bg-lawbot-amber-900/20 rounded-lg">
-                        <div className="text-2xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">{unit.active_cases || 0}</div>
-                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">🔍 Active</div>
+                      <div className="text-center p-2 sm:p-3 bg-lawbot-amber-50 dark:bg-lawbot-amber-900/20 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">{unit.active_cases || 0}</div>
+                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">🔍 <span className="hidden sm:inline">Active</span></div>
                       </div>
-                      <div className="text-center p-3 bg-lawbot-emerald-50 dark:bg-lawbot-emerald-900/20 rounded-lg">
-                        <div className="text-2xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{unit.resolved_cases || 0}</div>
-                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">✅ Resolved</div>
+                      <div className="text-center p-2 sm:p-3 bg-lawbot-emerald-50 dark:bg-lawbot-emerald-900/20 rounded-lg">
+                        <div className="text-xl sm:text-2xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{unit.resolved_cases || 0}</div>
+                        <div className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 font-medium">✅ <span className="hidden sm:inline">Resolved</span></div>
                       </div>
                     </div>
 
@@ -417,12 +434,17 @@ export function PNPUnitsView() {
                         <Target className="h-4 w-4 mr-2 text-lawbot-purple-500" />
                         Specialized Crime Types:
                       </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(unit.crime_types || []).map((crime, index) => (
-                          <Badge key={index} className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100 text-lawbot-purple-700 border border-lawbot-purple-200 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800 text-xs font-medium">
-                            {crime}
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        {(unit.crime_types || []).slice(0, 6).map((crime, index) => (
+                          <Badge key={index} className="bg-gradient-to-r from-lawbot-purple-50 to-lawbot-purple-100 text-lawbot-purple-700 border border-lawbot-purple-200 dark:from-lawbot-purple-900/20 dark:to-lawbot-purple-800/20 dark:text-lawbot-purple-300 dark:border-lawbot-purple-800 text-xs font-medium truncate max-w-[140px] sm:max-w-none" title={crime}>
+                            {crime.length > 20 ? `${crime.substring(0, 20)}...` : crime}
                           </Badge>
                         ))}
+                        {(unit.crime_types || []).length > 6 && (
+                          <Badge className="bg-gradient-to-r from-lawbot-slate-50 to-lawbot-slate-100 text-lawbot-slate-700 border border-lawbot-slate-200 dark:from-lawbot-slate-900/20 dark:to-lawbot-slate-800/20 dark:text-lawbot-slate-300 dark:border-lawbot-slate-800 text-xs font-medium">
+                            +{(unit.crime_types || []).length - 6} more
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -432,9 +454,9 @@ export function PNPUnitsView() {
                         <Users className="h-4 w-4 mr-2 text-lawbot-emerald-500" />
                         Unit Officers:
                       </h4>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                         <div className="flex -space-x-2">
-                          {(unit.officers || []).slice(0, 5).map((officer, index) => {
+                          {(unit.officers || []).slice(0, 4).map((officer, index) => {
                             // Get officer initials from full name
                             const initials = officer.full_name
                               ?.split(' ')
@@ -443,24 +465,29 @@ export function PNPUnitsView() {
                               .toUpperCase() || 'O'
                             
                             return (
-                              <Avatar key={officer.id || index} className="h-8 w-8 border-2 border-white dark:border-lawbot-slate-800 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800" title={officer.full_name}>
+                              <Avatar key={officer.id || index} className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-white dark:border-lawbot-slate-800 ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800" title={officer.full_name}>
                                 <AvatarFallback className="text-xs bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 text-white font-bold">
                                   {initials}
                                 </AvatarFallback>
                               </Avatar>
                             )
                           })}
-                          {(unit.current_officers || 0) > 5 && (
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-600 border-2 border-white dark:border-lawbot-slate-800 flex items-center justify-center ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
-                              <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-300 font-bold">+{(unit.current_officers || 0) - 5}</span>
+                          {(unit.current_officers || 0) > 4 && (
+                            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-600 border-2 border-white dark:border-lawbot-slate-800 flex items-center justify-center ring-2 ring-lawbot-blue-200 dark:ring-lawbot-blue-800">
+                              <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-300 font-bold">+{(unit.current_officers || 0) - 4}</span>
                             </div>
                           )}
                         </div>
-                        <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                        <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 sm:flex-1">
                           {unit.officers?.length > 0 ? (
                             <>
-                              {unit.officers.slice(0, 3).map(officer => officer.full_name).join(', ')}
-                              {unit.officers.length > 3 && ` and ${unit.officers.length - 3} more`}
+                              <span className="hidden sm:inline">
+                                {unit.officers.slice(0, 2).map(officer => officer.full_name).join(', ')}
+                                {unit.officers.length > 2 && ` and ${unit.officers.length - 2} more`}
+                              </span>
+                              <span className="sm:hidden">
+                                {unit.current_officers || 0} officers assigned
+                              </span>
                             </>
                           ) : (
                             'No officers assigned'
@@ -503,12 +530,12 @@ export function PNPUnitsView() {
           
           {/* No units message */}
           {!isLoading && pnpUnits.length === 0 && (
-            <div className="col-span-2 p-6 bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 text-center">
+            <div className="col-span-1 lg:col-span-2 p-6 bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 text-center">
               <Shield className="h-12 w-12 mx-auto mb-4 text-lawbot-slate-400" />
               <h3 className="text-lg font-medium text-lawbot-slate-900 dark:text-white mb-2">No Units Configured</h3>
-              <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-6">There are no PNP units configured in the system yet. Create your first unit to get started.</p>
+              <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-6 text-sm sm:text-base">There are no PNP units configured in the system yet. Create your first unit to get started.</p>
               <Button 
-                className="btn-gradient"
+                className="btn-gradient w-full sm:w-auto"
                 onClick={() => setIsCreateUnitModalOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import NotificationService from "@/lib/notification-service"
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock } from "lucide-react"
+import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock, BarChart3 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -243,13 +243,13 @@ export function CaseManagementView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between animate-fade-in">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-purple-600 bg-clip-text text-transparent leading-tight pb-2">
             Case Management
           </h2>
-          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+          <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base sm:text-lg mt-2">
             Manage and monitor all cybercrime cases across specialized units
           </p>
         </div>
@@ -268,7 +268,7 @@ export function CaseManagementView() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
@@ -319,32 +319,79 @@ export function CaseManagementView() {
             </Button>
           </div>
           
-          {/* Quick Stats */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <div className="text-xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                {stats.totalComplaints}
-              </div>
-              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Total Cases</p>
-            </div>
-            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <div className="text-xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
-                {stats.highPriority}
-              </div>
-              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">High Priority</p>
-            </div>
-            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <div className="text-xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                {stats.investigating}
-              </div>
-              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">In Progress</p>
-            </div>
-            <div className="text-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
-              <div className="text-xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                {stats.avgRiskScore}
-              </div>
-              <p className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">Avg Risk Score</p>
-            </div>
+          {/* Enhanced Quick Stats */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
+              <CardContent className="p-5">
+                <div className="text-center space-y-3">
+                  {/* Icon - Top Center */}
+                  <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
+                  
+                  {/* Content - Centered Stack */}
+                  <div>
+                    <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Total Cases</p>
+                    <p className="text-2xl lg:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">{stats.totalComplaints}</p>
+                    <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">All complaints</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card bg-gradient-to-br from-lawbot-red-50 to-white dark:from-lawbot-red-900/10 dark:to-lawbot-slate-800 border-lawbot-red-200 dark:border-lawbot-red-800">
+              <CardContent className="p-5">
+                <div className="text-center space-y-3">
+                  {/* Icon - Top Center */}
+                  <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-red-500 to-lawbot-red-600 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                  </div>
+                  
+                  {/* Content - Centered Stack */}
+                  <div>
+                    <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">High Priority</p>
+                    <p className="text-2xl lg:text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400 mb-1">{stats.highPriority}</p>
+                    <p className="text-xs text-lawbot-red-500 dark:text-lawbot-red-400">Urgent cases</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+              <CardContent className="p-5">
+                <div className="text-center space-y-3">
+                  {/* Icon - Top Center */}
+                  <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-emerald-500 to-lawbot-emerald-600 rounded-lg">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
+                  
+                  {/* Content - Centered Stack */}
+                  <div>
+                    <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">In Progress</p>
+                    <p className="text-2xl lg:text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400 mb-1">{stats.investigating}</p>
+                    <p className="text-xs text-lawbot-emerald-500 dark:text-lawbot-emerald-400">Under investigation</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
+              <CardContent className="p-5">
+                <div className="text-center space-y-3">
+                  {/* Icon - Top Center */}
+                  <div className="mx-auto w-fit p-2.5 bg-gradient-to-r from-lawbot-amber-500 to-lawbot-amber-600 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                  
+                  {/* Content - Centered Stack */}
+                  <div>
+                    <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Avg Risk Score</p>
+                    <p className="text-2xl lg:text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400 mb-1">{stats.avgRiskScore}</p>
+                    <p className="text-xs text-lawbot-amber-500 dark:text-lawbot-amber-400">AI assessment</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
@@ -363,9 +410,10 @@ export function CaseManagementView() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table className="table-modern">
+            <div className="inline-block min-w-full align-middle">
+              <Table className="table-modern min-w-full">
               <TableHeader>
                 <TableRow className="border-lawbot-slate-200 dark:border-lawbot-slate-700">
                   <TableHead className="font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300">Case ID</TableHead>
@@ -509,7 +557,8 @@ export function CaseManagementView() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

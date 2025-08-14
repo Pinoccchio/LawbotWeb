@@ -82,10 +82,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     riskFactors: '🚨 Risk assessment in progress',
     complexity: '⚖️ Complexity analysis required'
   })
-  const [aiPredictiveAnalysis, setAiPredictiveAnalysis] = useState<{
+  const [aiPrescriptiveAnalysis, setAiPrescriptiveAnalysis] = useState<{
     confidence: number
     riskLevel: string
-    predictedOutcome: string
+    prescribedOutcome: string
     estimatedTime: string
     recommendations: string[]
     keyIndicators: Array<{label: string, value: number, color: string}>
@@ -93,7 +93,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   }>({
     confidence: 75,
     riskLevel: 'Medium',
-    predictedOutcome: 'Under Analysis',
+    prescribedOutcome: 'Analysis in progress',
     estimatedTime: '3-7 days',
     recommendations: [
       'Contact complainant for additional information',
@@ -109,7 +109,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     ],
     dataSourcesUsed: ['Basic case information']
   })
-  const [predictiveAnalysisLoading, setPredictiveAnalysisLoading] = useState(false)
+  const [prescriptiveAnalysisLoading, setPrescriptiveAnalysisLoading] = useState(false)
 
   // Generate initial key details from case data
   const generateInitialKeyDetails = (complaint: any, evidenceCount: number = 0) => {
@@ -205,7 +205,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       riskFactors: '🚨 Risk assessment in progress',
       complexity: '⚖️ Complexity analysis required'
     })
-    setAiPredictiveAnalysis({
+    setAiPrescriptiveAnalysis({
       confidence: 75,
       riskLevel: 'Medium',
       predictedOutcome: 'Under Analysis',
@@ -224,7 +224,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       ],
       dataSourcesUsed: ['Basic case information']
     })
-    setPredictiveAnalysisLoading(false)
+    setPrescriptiveAnalysisLoading(false)
   }
 
   useEffect(() => {
@@ -332,7 +332,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   // Generate AI summary
   const generateAISummary = async (complaint: any, evidenceCount: number) => {
     setAiSummaryLoading(true)
-    setPredictiveAnalysisLoading(true)
+    setPrescriptiveAnalysisLoading(true)
     
     try {
       // Prepare case data for AI with all dynamic fields
@@ -380,11 +380,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       }
       
       // Run all AI generations in parallel for better performance
-      const [summary, actions, keyDetails, predictiveAnalysis] = await Promise.allSettled([
+      const [summary, actions, keyDetails, prescriptiveAnalysis] = await Promise.allSettled([
         AIService.generateCaseSummary(caseDataForAI),
         AIService.generateActionItems(caseDataForAI),
         AIService.generateKeyDetails(caseDataForAI),
-        AIService.generatePredictiveAnalysis(caseDataForAI)
+        AIService.generatePrescriptiveAnalysis(caseDataForAI)
       ])
       
       // Set results from successful promises
@@ -400,10 +400,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         setAiKeyDetails(keyDetails.value)
       }
       
-      if (predictiveAnalysis.status === 'fulfilled') {
-        setAiPredictiveAnalysis(predictiveAnalysis.value)
+      if (prescriptiveAnalysis.status === 'fulfilled') {
+        setAiPrescriptiveAnalysis(prescriptiveAnalysis.value)
       } else {
-        console.error('Error generating predictive analysis:', predictiveAnalysis.reason)
+        console.error('Error generating prescriptive analysis:', prescriptiveAnalysis.reason)
       }
       
     } catch (error) {
@@ -411,7 +411,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
       setAiSummary('AI summary generation failed. Please review case details manually.')
     } finally {
       setAiSummaryLoading(false)
-      setPredictiveAnalysisLoading(false)
+      setPrescriptiveAnalysisLoading(false)
     }
   }
 
@@ -450,7 +450,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     }
   }
 
-  // Use dynamic AI predictive analysis (no longer hardcoded)
+  // Use dynamic AI prescriptive analysis (no longer hardcoded)
 
   // Generate timeline from status history and complaint data
   const timeline = [
@@ -1497,13 +1497,13 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
 
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-fade-in">
+      <Card className="w-full max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden bg-white dark:bg-lawbot-slate-800 shadow-2xl card-modern animate-scale-in">
         <CardHeader className="relative border-b bg-gradient-to-r from-lawbot-blue-50 to-lawbot-emerald-50 dark:from-lawbot-blue-900/20 dark:to-lawbot-emerald-900/20 border-lawbot-blue-200 dark:border-lawbot-blue-800">
-          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-4 top-4 h-8 w-8 p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600">
+          <Button variant="ghost" size="sm" onClick={onClose} className="absolute right-2 sm:right-4 top-2 sm:top-4 min-h-[44px] min-w-[44px] p-0 hover:bg-lawbot-red-50 dark:hover:bg-lawbot-red-900/20 hover:text-lawbot-red-600 touch-manipulation">
             <X className="h-4 w-4" />
           </Button>
-          <div className="flex items-start justify-between pr-12">
+          <div className="flex items-start justify-between pr-12 sm:pr-16">
             <div className="animate-fade-in-up">
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-lawbot-blue-600 to-lawbot-emerald-600 bg-clip-text text-transparent">
                 📁 Case #{complaint.complaint_number || complaint.id}
@@ -1527,36 +1527,42 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
           </div>
         </CardHeader>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="overflow-y-auto max-h-[calc(98vh-120px)] sm:max-h-[calc(95vh-120px)] md:max-h-[calc(90vh-120px)]">
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600" />
             </div>
           ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-5'} bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl`}>
-              <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
-                📋 Overview
+            <TabsList className="flex w-full overflow-x-auto bg-lawbot-slate-100 dark:bg-lawbot-slate-800 mx-2 sm:mx-4 my-2 sm:my-4 p-1 rounded-xl scrollbar-none"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <TabsTrigger value="overview" className="flex-shrink-0 min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium touch-manipulation whitespace-nowrap">
+                <span className="hidden sm:inline">📋 Overview</span>
+                <span className="sm:hidden">📋</span>
               </TabsTrigger>
-              <TabsTrigger value="ai-analysis" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium">
-                🧠 Predictive Analysis
+              <TabsTrigger value="ai-analysis" className="flex-shrink-0 min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-purple-600 font-medium touch-manipulation whitespace-nowrap">
+                <span className="hidden sm:inline">🧠 Prescriptive</span>
+                <span className="sm:hidden">🧠</span>
               </TabsTrigger>
-              <TabsTrigger value="evidence" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium">
-                📎 Evidence
+              <TabsTrigger value="evidence" className="flex-shrink-0 min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-emerald-600 font-medium touch-manipulation whitespace-nowrap">
+                <span className="hidden sm:inline">📎 Evidence</span>
+                <span className="sm:hidden">📎</span>
               </TabsTrigger>
-              <TabsTrigger value="timeline" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium">
-                🕐 Timeline
+              <TabsTrigger value="timeline" className="flex-shrink-0 min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium touch-manipulation whitespace-nowrap">
+                <span className="hidden sm:inline">🕐 Timeline</span>
+                <span className="sm:hidden">🕐</span>
               </TabsTrigger>
               {!isAdmin && (
-                <TabsTrigger value="actions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium">
-                  ⚡ Actions
+                <TabsTrigger value="actions" className="flex-shrink-0 min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-red-600 font-medium touch-manipulation whitespace-nowrap">
+                  <span className="hidden sm:inline">⚡ Actions</span>
+                  <span className="sm:hidden">⚡</span>
                 </TabsTrigger>
               )}
             </TabsList>
 
-            <div className="p-6">
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+            <div className="px-3 sm:px-6 py-4 sm:py-6">
+              <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* Enhanced Case Information */}
                   <Card className="card-modern bg-gradient-to-br from-lawbot-blue-50/30 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
                     <CardHeader>
@@ -1564,31 +1570,31 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <div className="p-2 bg-lawbot-blue-500 rounded-lg">
                           <FileText className="h-5 w-5 text-white" />
                         </div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">📋 Case Information</CardTitle>
+                        <CardTitle className="text-lg sm:text-xl text-lawbot-slate-900 dark:text-white">📋 Case Information</CardTitle>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-5">
-                      <div className="grid grid-cols-2 gap-4">
+                    <CardContent className="space-y-4 sm:space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">🏷️ Case Type</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.crime_type}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white text-sm sm:text-base truncate">{complaint.crime_type}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📅 Reported Date</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{PhilippineTime.formatDate(new Date(complaint.created_at))}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white text-sm sm:text-base truncate">{PhilippineTime.formatDate(new Date(complaint.created_at))}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📍 Location</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.incident_location || 'Not specified'}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white text-sm sm:text-base truncate">{complaint.incident_location || 'Not specified'}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700">
                           <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">👮 Assigned Officer</label>
-                          <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.assigned_officer || 'Unassigned'}</p>
+                          <p className="font-bold text-lawbot-slate-900 dark:text-white text-sm sm:text-base truncate">{complaint.assigned_officer || 'Unassigned'}</p>
                         </div>
                         {complaint.platform_website && (
-                          <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 col-span-2">
+                          <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-slate-200 dark:border-lawbot-slate-700 sm:col-span-2">
                             <label className="text-sm font-semibold text-lawbot-slate-600 dark:text-lawbot-slate-400 block mb-1">📱 Platform Involved</label>
-                            <p className="font-bold text-lawbot-slate-900 dark:text-white">{complaint.platform_website}</p>
+                            <p className="font-bold text-lawbot-slate-900 dark:text-white text-sm sm:text-base break-words">{complaint.platform_website}</p>
                           </div>
                         )}
                       </div>
@@ -1614,7 +1620,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                                 <span className="text-xs font-bold">NEEDS REVIEW</span>
                               </Badge>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                               <div className="text-sm">
                                 <span className="font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Updates:</span>
                                 <span className="ml-2 font-bold text-lawbot-slate-900 dark:text-white">
@@ -1792,11 +1798,11 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
                           <User className="h-5 w-5 text-white" />
                         </div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">👤 Complainant Information</CardTitle>
+                        <CardTitle className="text-lg sm:text-xl text-lawbot-slate-900 dark:text-white">👤 Complainant Information</CardTitle>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-5">
-                      <div className="flex items-center space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
+                    <CardContent className="space-y-4 sm:space-y-5">
+                      <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 p-4 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                         <Avatar className="h-14 w-14 ring-4 ring-lawbot-emerald-100 dark:ring-lawbot-emerald-800">
                           <AvatarFallback className="bg-gradient-to-br from-lawbot-emerald-500 to-lawbot-emerald-600 text-white font-bold text-lg">
                             {userProfile?.full_name ? userProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
@@ -1848,10 +1854,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                       <div className="p-2 bg-lawbot-amber-500 rounded-lg">
                         <Shield className="h-5 w-5 text-white" />
                       </div>
-                      <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white">🔍 Crime Details</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl text-lawbot-slate-900 dark:text-white">🔍 Crime Details</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-5">
+                  <CardContent className="space-y-4 sm:space-y-5">
                     {(() => {
                       // Crime type to category mapping
                       const crimeTypeToCategory = {
@@ -2473,8 +2479,8 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                    <div className="grid md:grid-cols-2 gap-6">
+                  <CardContent className="space-y-4 sm:space-y-6 pt-4 sm:pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <h4 className="font-semibold mb-4 text-lawbot-purple-700 dark:text-lawbot-purple-300 flex items-center">
                           <Target className="h-4 w-4 mr-2" />
@@ -2646,11 +2652,13 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <Brain className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
-                          🧠 Predictive Analysis Report
-                          <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800">
-                            🎯 Confidence: {aiPredictiveAnalysis.confidence}%
-                          </Badge>
+                        <CardTitle className="text-lg sm:text-xl text-lawbot-slate-900 dark:text-white">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                            <span>🧠 Prescriptive Analysis Report</span>
+                            <Badge className="bg-gradient-to-r from-lawbot-blue-50 to-lawbot-blue-100 text-lawbot-blue-700 border border-lawbot-blue-200 dark:from-lawbot-blue-900/20 dark:to-lawbot-blue-800/20 dark:text-lawbot-blue-300 dark:border-lawbot-blue-800 text-xs sm:text-sm">
+                              🎯 Confidence: {aiPrescriptiveAnalysis.confidence}%
+                            </Badge>
+                          </div>
                         </CardTitle>
                         <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
                           Advanced AI analysis for optimal case resolution strategy
@@ -2658,16 +2666,16 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                    {predictiveAnalysisLoading ? (
+                  <CardContent className="space-y-4 sm:space-y-6 pt-4 sm:pt-6">
+                    {prescriptiveAnalysisLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="h-8 w-8 animate-spin text-lawbot-blue-600 mr-3" />
-                        <span className="text-lg text-lawbot-blue-600 dark:text-lawbot-blue-400">Generating predictive analysis...</span>
+                        <span className="text-lg text-lawbot-blue-600 dark:text-lawbot-blue-400">Generating prescriptive analysis...</span>
                       </div>
                     ) : (
                       <>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      {aiPredictiveAnalysis.keyIndicators.map((indicator, index) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                      {aiPrescriptiveAnalysis.keyIndicators.map((indicator, index) => (
                         <div key={index} className="text-center p-5 bg-white dark:bg-lawbot-slate-800 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700 hover:shadow-lg transition-all duration-300">
                           <div className="mb-4">
                             <div
@@ -2699,7 +2707,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
 
                     <Separator className="bg-lawbot-slate-200 dark:bg-lawbot-slate-700" />
 
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div className="p-5 bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100/50 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/10 rounded-xl border border-lawbot-red-200 dark:border-lawbot-red-800">
                         <h4 className="font-semibold mb-4 flex items-center space-x-2 text-lawbot-red-700 dark:text-lawbot-red-300">
                           <div className="p-1 bg-lawbot-red-500 rounded-full">
@@ -2711,16 +2719,16 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Risk Level:</span>
                             <Badge className="bg-gradient-to-r from-lawbot-red-50 to-lawbot-red-100 text-lawbot-red-700 border border-lawbot-red-200 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 dark:text-lawbot-red-300 dark:border-lawbot-red-800">
-                              🚨 {aiPredictiveAnalysis.riskLevel}
+                              🚨 {aiPrescriptiveAnalysis.riskLevel}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
-                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Predicted Outcome:</span>
-                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPredictiveAnalysis.predictedOutcome}</span>
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Prescribed Outcome:</span>
+                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPrescriptiveAnalysis.prescribedOutcome}</span>
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Estimated Resolution:</span>
-                            <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiPredictiveAnalysis.estimatedTime}</span>
+                            <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiPrescriptiveAnalysis.estimatedTime}</span>
                           </div>
                         </div>
                       </div>
@@ -2733,7 +2741,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           <span>⚡ AI Recommendations</span>
                         </h4>
                         <ul className="space-y-3">
-                          {aiPredictiveAnalysis.recommendations.map((rec: string, index: number) => (
+                          {aiPrescriptiveAnalysis.recommendations.map((rec: string, index: number) => (
                             <li key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
                               <CheckCircle className="h-4 w-4 text-lawbot-emerald-500 mt-0.5 flex-shrink-0" />
                               <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{rec}</span>
@@ -2754,10 +2762,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                       </h4>
                       <div className="space-y-2">
                         <p className="text-sm text-lawbot-purple-700 dark:text-lawbot-purple-300 font-medium mb-3">
-                          This predictive analysis is based on:
+                          This prescriptive analysis is based on:
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {aiPredictiveAnalysis.dataSourcesUsed.map((source, index) => (
+                          {aiPrescriptiveAnalysis.dataSourcesUsed.map((source, index) => (
                             <div key={index} className="flex items-center space-x-2 p-2 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                               <CheckCircle className="h-3 w-3 text-lawbot-purple-500 flex-shrink-0" />
                               <span className="text-xs font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">{source}</span>
@@ -2783,11 +2791,13 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         <FileText className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl text-lawbot-slate-900 dark:text-white flex items-center space-x-3">
-                          📎 Evidence Files
-                          <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800">
-                            📁 {evidenceFiles.length} files
-                          </Badge>
+                        <CardTitle className="text-lg sm:text-xl text-lawbot-slate-900 dark:text-white">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                            <span>📎 Evidence Files</span>
+                            <Badge className="bg-gradient-to-r from-lawbot-emerald-50 to-lawbot-emerald-100 text-lawbot-emerald-700 border border-lawbot-emerald-200 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 dark:text-lawbot-emerald-300 dark:border-lawbot-emerald-800 text-xs sm:text-sm">
+                              📁 {evidenceFiles.length} files
+                            </Badge>
+                          </div>
                         </CardTitle>
                         <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400 mt-1">
                           Digital evidence collected for case investigation
@@ -2808,7 +2818,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                         evidenceFiles.map((file, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between p-5 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 bg-white dark:bg-lawbot-slate-800 border border-lawbot-emerald-200 dark:border-lawbot-emerald-800 rounded-xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300 space-y-3 sm:space-y-0"
                           >
                             <div className="flex items-center space-x-4">
                               <div className="p-3 bg-gradient-to-r from-lawbot-blue-100 to-lawbot-blue-200 dark:from-lawbot-blue-900 dark:to-lawbot-blue-800 rounded-lg">
@@ -2818,14 +2828,14 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                                 {getFileTypeCategory(file.file_type) === 'text' && <FileText className="h-5 w-5 text-lawbot-blue-600 dark:text-lawbot-blue-400" />}
                               </div>
                               <div>
-                                <p className="font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-2">
+                                <p className="font-bold text-lawbot-slate-900 dark:text-white flex items-center space-x-2 text-sm sm:text-base">
                                   {getFileTypeCategory(file.file_type) === 'image' && '🖼️'}
                                   {getFileTypeCategory(file.file_type) === 'document' && '📄'}
                                   {getFileTypeCategory(file.file_type) === 'audio' && '🎧'}
                                   {getFileTypeCategory(file.file_type) === 'text' && '📝'}
-                                  <span>{file.file_name}</span>
+                                  <span className="truncate max-w-[200px] sm:max-w-none">{file.file_name}</span>
                                 </p>
-                                <div className="flex items-center space-x-3 mt-1">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
                                   <Badge className="bg-lawbot-slate-100 text-lawbot-slate-700 dark:bg-lawbot-slate-700 dark:text-lawbot-slate-300 text-xs">
                                     {file.file_type.toUpperCase()}
                                   </Badge>
@@ -2834,7 +2844,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                                 </div>
                               </div>
                             </div>
-                            <div className="flex space-x-3">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
                               <Button size="sm" className="btn-gradient" onClick={() => handleViewEvidence(file)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
@@ -3051,7 +3061,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         aiSummary={aiSummary}
         aiActionItems={aiActionItems}
         aiKeyDetails={aiKeyDetails}
-        aiPredictiveAnalysis={aiPredictiveAnalysis}
+        aiPrescriptiveAnalysis={aiPrescriptiveAnalysis}
       />
     </div>
   )

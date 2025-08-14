@@ -145,9 +145,9 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
   const averageSuccessRate = unitsData.length > 0 ? Math.round(unitsData.reduce((sum, unit) => sum + unit.success_rate, 0) / unitsData.length) : 0
   
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden">
-        <CardHeader className="relative border-b border-slate-100 dark:border-slate-700 pb-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <Card className="w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl overflow-hidden mx-auto">
+        <CardHeader className="relative border-b border-slate-100 dark:border-slate-700 pb-4 px-4 sm:px-6">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -156,13 +156,13 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
           >
             <X className="h-4 w-4" />
           </Button>
-          <div className="flex items-center space-x-3 mb-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-2 pr-12">
             <div className="p-2 rounded-lg bg-lawbot-blue-600 bg-gradient-to-r from-lawbot-blue-500 to-lawbot-blue-600">
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <CardTitle className="text-xl">PNP Units Analytics</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">PNP Units Analytics</CardTitle>
+              <CardDescription className="text-sm">
                 Performance metrics and workload distribution across specialized units
               </CardDescription>
             </div>
@@ -171,18 +171,19 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
               size="sm" 
               onClick={fetchUnitsData}
               disabled={isLoading}
-              className="btn-modern"
+              className="btn-modern w-full sm:w-auto mt-2 sm:mt-0"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden ml-2">Refresh Data</span>
             </Button>
           </div>
-          <Badge variant="outline" className="w-fit">
+          <Badge variant="outline" className="w-fit text-xs">
             📊 Real-time metrics from database
           </Badge>
         </CardHeader>
 
-        <CardContent className="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
+        <CardContent className="overflow-y-auto max-h-[calc(95vh-200px)] sm:max-h-[calc(90vh-180px)] p-4 sm:p-6">
           {/* Error State */}
           {error && (
             <div className="mb-6">
@@ -213,10 +214,10 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
           {/* Main Content */}
           {!isLoading && !error && (
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="workload">Workload</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 h-10">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+                <TabsTrigger value="performance" className="text-xs sm:text-sm">Performance</TabsTrigger>
+                <TabsTrigger value="workload" className="text-xs sm:text-sm">Workload</TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -229,7 +230,7 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <Card className="bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
@@ -287,7 +288,7 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                       </Card>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Case Distribution Chart */}
                       <Card>
                         <CardHeader className="pb-2">
@@ -299,12 +300,12 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                           <div className="space-y-3">
                             {unitsData.map((unit) => (
                               <div key={unit.id} className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <div className="flex items-center">
-                                    <div className={`w-3 h-3 rounded-full ${unit.color} mr-2`}></div>
-                                    <span className="text-lawbot-slate-700 dark:text-lawbot-slate-300 truncate max-w-[150px]">{unit.unit_name}</span>
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
+                                  <div className="flex items-center min-w-0 flex-1">
+                                    <div className={`w-3 h-3 rounded-full ${unit.color} mr-2 flex-shrink-0`}></div>
+                                    <span className="text-lawbot-slate-700 dark:text-lawbot-slate-300 truncate" title={unit.unit_name}>{unit.unit_name}</span>
                                   </div>
-                                  <span className="font-medium">{unit.active_cases}</span>
+                                  <span className="font-medium ml-2">{unit.active_cases}</span>
                                 </div>
                                 <Progress 
                                   value={totalActiveCases > 0 ? (unit.active_cases / totalActiveCases) * 100 : 0} 
@@ -327,12 +328,12 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                           <div className="space-y-3">
                             {unitsData.map((unit) => (
                               <div key={unit.id} className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <div className="flex items-center">
-                                    <div className={`w-3 h-3 rounded-full ${unit.color} mr-2`}></div>
-                                    <span className="text-lawbot-slate-700 dark:text-lawbot-slate-300 truncate max-w-[150px]">{unit.unit_name}</span>
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
+                                  <div className="flex items-center min-w-0 flex-1">
+                                    <div className={`w-3 h-3 rounded-full ${unit.color} mr-2 flex-shrink-0`}></div>
+                                    <span className="text-lawbot-slate-700 dark:text-lawbot-slate-300 truncate" title={unit.unit_name}>{unit.unit_name}</span>
                                   </div>
-                                  <span className="font-medium">{unit.success_rate}%</span>
+                                  <span className="font-medium ml-2">{unit.success_rate}%</span>
                                 </div>
                                 <Progress 
                                   value={unit.success_rate} 
@@ -354,11 +355,11 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
 
               {/* Performance Tab */}
               <TabsContent value="performance" className="space-y-6 mt-6">
-                <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-lawbot-slate-800 dark:text-lawbot-slate-200 mb-2">
+                <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 p-3 sm:p-4 rounded-lg">
+                  <h3 className="text-base sm:text-lg font-semibold text-lawbot-slate-800 dark:text-lawbot-slate-200 mb-2">
                     Unit Performance Rankings
                   </h3>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
+                  <p className="text-xs sm:text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
                     Based on case resolution rates, response times, and officer efficiency
                   </p>
                 </div>
@@ -372,10 +373,10 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                       ${index === 2 ? 'border-l-lawbot-purple-500 bg-lawbot-purple-50/50 dark:bg-lawbot-purple-900/10' : ''} 
                       ${index > 2 ? 'border-l-lawbot-slate-500 bg-lawbot-slate-50/50 dark:bg-lawbot-slate-700/10' : ''}
                     `}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className={`bg-white dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold ${
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
+                          <div className="flex items-center space-x-3 min-w-0 flex-1">
+                            <div className={`bg-white dark:bg-slate-700 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-lg font-bold flex-shrink-0 ${
                               index === 0 ? 'text-lawbot-emerald-600 dark:text-lawbot-emerald-400' : ''
                             } ${
                               index === 1 ? 'text-lawbot-blue-600 dark:text-lawbot-blue-400' : ''
@@ -386,18 +387,18 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                             }`}>
                               {index + 1}
                             </div>
-                            <div>
-                              <h4 className="font-medium text-lawbot-slate-900 dark:text-white">{unit.unit_name}</h4>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-lawbot-slate-900 dark:text-white truncate text-sm sm:text-base" title={unit.unit_name}>{unit.unit_name}</h4>
                               <div className="flex items-center mt-1">
-                                <Target className="h-3 w-3 text-lawbot-slate-500 dark:text-lawbot-slate-400 mr-1" />
-                                <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                                  {unit.primaryCrimes.join(", ")}
+                                <Target className="h-3 w-3 text-lawbot-slate-500 dark:text-lawbot-slate-400 mr-1 flex-shrink-0" />
+                                <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400 truncate">
+                                  {unit.primaryCrimes.slice(0, 2).join(", ")}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className={`text-2xl font-bold ${
+                          <div className="text-right w-full sm:w-auto">
+                            <div className={`text-xl sm:text-2xl font-bold ${
                               index === 0 ? 'text-lawbot-emerald-600 dark:text-lawbot-emerald-400' : ''
                             } ${
                               index === 1 ? 'text-lawbot-blue-600 dark:text-lawbot-blue-400' : ''
@@ -408,7 +409,7 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                             }`}>
                               {unit.success_rate}%
                             </div>
-                            <div className="flex items-center justify-end space-x-4 mt-1">
+                            <div className="flex items-center justify-end space-x-3 sm:space-x-4 mt-1">
                               <div className="flex items-center">
                                 <Users className="h-3 w-3 text-lawbot-slate-500 dark:text-lawbot-slate-400 mr-1" />
                                 <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">{unit.current_officers}</span>
@@ -428,11 +429,11 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
 
               {/* Workload Tab */}
               <TabsContent value="workload" className="space-y-6 mt-6">
-                <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-lawbot-slate-800 dark:text-lawbot-slate-200 mb-2">
+                <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-800/50 p-3 sm:p-4 rounded-lg">
+                  <h3 className="text-base sm:text-lg font-semibold text-lawbot-slate-800 dark:text-lawbot-slate-200 mb-2">
                     Workload Distribution
                   </h3>
-                  <p className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
+                  <p className="text-xs sm:text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-4">
                     Active cases vs. officer capacity across specialized units
                   </p>
                 </div>
@@ -446,27 +447,34 @@ export function UnitAnalyticsModal({ isOpen, onClose }: UnitAnalyticsModalProps)
                     
                     return (
                       <Card key={unit.id} className="overflow-hidden">
-                        <CardContent className="p-4">
+                        <CardContent className="p-3 sm:p-4">
                           <div className="flex flex-col space-y-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium text-lawbot-slate-900 dark:text-white">{unit.unit_name}</h4>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-lawbot-slate-900 dark:text-white text-sm sm:text-base truncate" title={unit.unit_name}>{unit.unit_name}</h4>
                                 <div className="flex items-center mt-1">
                                   <span className="text-xs text-lawbot-slate-600 dark:text-lawbot-slate-400">
                                     {unit.current_officers} Officers · {unit.active_cases} Active Cases
                                   </span>
                                 </div>
                               </div>
-                              <Badge className={`${
+                              <Badge className={`text-xs flex-shrink-0 ${
                                 workloadLevel === 'high' ? 'bg-lawbot-red-100 text-lawbot-red-800 dark:bg-lawbot-red-900/20 dark:text-lawbot-red-300' : ''
                               } ${
                                 workloadLevel === 'medium' ? 'bg-lawbot-amber-100 text-lawbot-amber-800 dark:bg-lawbot-amber-900/20 dark:text-lawbot-amber-300' : ''
                               } ${
                                 workloadLevel === 'low' ? 'bg-lawbot-emerald-100 text-lawbot-emerald-800 dark:bg-lawbot-emerald-900/20 dark:text-lawbot-emerald-300' : ''
                               }`}>
-                                {workloadLevel === 'high' ? 'High Workload' : ''}
-                                {workloadLevel === 'medium' ? 'Medium Workload' : ''}
-                                {workloadLevel === 'low' ? 'Balanced Workload' : ''}
+                                <span className="hidden sm:inline">
+                                  {workloadLevel === 'high' ? 'High Workload' : ''}
+                                  {workloadLevel === 'medium' ? 'Medium Workload' : ''}
+                                  {workloadLevel === 'low' ? 'Balanced Workload' : ''}
+                                </span>
+                                <span className="sm:hidden">
+                                  {workloadLevel === 'high' ? 'High' : ''}
+                                  {workloadLevel === 'medium' ? 'Medium' : ''}
+                                  {workloadLevel === 'low' ? 'Balanced' : ''}
+                                </span>
                               </Badge>
                             </div>
                             

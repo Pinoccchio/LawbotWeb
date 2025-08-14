@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
+import { PhilippineTime } from "@/lib/philippine-time"
 
 interface CaseAnalyticsModalProps {
   isOpen: boolean
@@ -18,7 +19,7 @@ interface CaseAnalyticsModalProps {
   aiSummary: string
   aiActionItems: any
   aiKeyDetails: any
-  aiPredictiveAnalysis: any
+  aiPrescriptiveAnalysis: any
 }
 
 export function CaseAnalyticsModal({ 
@@ -30,7 +31,7 @@ export function CaseAnalyticsModal({
   aiSummary, 
   aiActionItems, 
   aiKeyDetails,
-  aiPredictiveAnalysis 
+  aiPrescriptiveAnalysis 
 }: CaseAnalyticsModalProps) {
   const [activeTab, setActiveTab] = useState("overview")
   
@@ -224,22 +225,36 @@ export function CaseAnalyticsModal({
     return Math.min(Math.round(aiCompleteness), 100)
   }
   
-  // Calculate analytics metrics
-  const caseAge = Math.ceil((new Date().getTime() - new Date(complaint.created_at).getTime()) / (1000 * 3600 * 24))
+  // Calculate analytics metrics using Philippine time
+  const caseAge = (() => {
+    const now = PhilippineTime.now()
+    const createdAt = PhilippineTime.parseDatabaseTime(complaint.created_at)
+    if (!createdAt) return 0
+    
+    const timeDiff = now.getTime() - createdAt.getTime()
+    return Math.ceil(timeDiff / (1000 * 3600 * 24))
+  })()
   const investigationProgress = calculateInvestigationProgress()
   const complexityScore = calculateComplexityScore()
   const riskLevel = complaint.ai_risk_score || complaint.risk_score || 50
-  // Calculate actual response time from database data
+  // Calculate actual response time from database data using Philippine time
   const responseTime = (() => {
     if (statusHistory.length === 0) return "Pending"
     
-    const caseCreated = new Date(complaint.created_at)
+    const caseCreated = PhilippineTime.parseDatabaseTime(complaint.created_at)
     const firstStatusChange = statusHistory
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())[0]
+      .sort((a, b) => {
+        const timeA = PhilippineTime.parseDatabaseTime(a.timestamp)
+        const timeB = PhilippineTime.parseDatabaseTime(b.timestamp)
+        if (!timeA || !timeB) return 0
+        return timeA.getTime() - timeB.getTime()
+      })[0]
     
-    if (!firstStatusChange) return "No updates"
+    if (!firstStatusChange || !caseCreated) return "No updates"
     
-    const firstUpdate = new Date(firstStatusChange.timestamp)
+    const firstUpdate = PhilippineTime.parseDatabaseTime(firstStatusChange.timestamp)
+    if (!firstUpdate) return "No updates"
+    
     const hoursDiff = Math.abs(firstUpdate.getTime() - caseCreated.getTime()) / (1000 * 60 * 60)
     
     if (hoursDiff < 1) return "< 1 hour"
@@ -608,12 +623,21 @@ export function CaseAnalyticsModal({
   // Always add performance tab last
   relevantTabs.push({ id: 'performance', label: '🎯 Performance', color: 'text-lawbot-indigo-600' })
 
-  // Set default active tab to first relevant tab
+  // Reset modal state when opening with new case data
   useEffect(() => {
-    if (isOpen && relevantTabs.length > 0 && !relevantTabs.find(tab => tab.id === activeTab)) {
-      setActiveTab(relevantTabs[0].id)
+    if (isOpen && caseData) {
+      // Reset active tab to overview (first tab is always overview)
+      setActiveTab("overview")
     }
-  }, [isOpen, relevantTabs, activeTab])
+  }, [isOpen, caseData])
+  
+  // Clean up state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset to default tab when modal closes
+      setActiveTab("overview")
+    }
+  }, [isOpen])
 
   const keyMetrics = [
     {

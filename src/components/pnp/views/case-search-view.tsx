@@ -90,10 +90,10 @@ export function CaseSearchView() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="animate-fade-in-up">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-lawbot-purple-600 to-lawbot-blue-600 bg-clip-text text-transparent">
+        <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-lawbot-purple-600 to-lawbot-blue-600 bg-clip-text text-transparent">
           Case Search
         </h2>
-        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-lg mt-2">
+        <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 text-base lg:text-lg mt-2">
           Advanced search and filtering across all cybercrime cases
         </p>
       </div>
@@ -113,7 +113,7 @@ export function CaseSearchView() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Enhanced Basic Search */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
@@ -126,23 +126,27 @@ export function CaseSearchView() {
                 />
               </div>
             </div>
-            <Button 
-              className="btn-gradient" 
-              onClick={handleSearch}
-              disabled={isLoading}
-            >
-              <Search className="h-4 w-4 mr-2" />
-              {isLoading ? 'Searching...' : 'Search'}
-            </Button>
-            <Button variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50" onClick={() => setShowAdvanced(!showAdvanced)}>
-              <Filter className="h-4 w-4 mr-2" />
-              {showAdvanced ? 'Hide' : 'Show'} Advanced
-            </Button>
+            <div className="flex gap-2 sm:gap-3">
+              <Button 
+                className="btn-gradient flex-1 sm:flex-none" 
+                onClick={handleSearch}
+                disabled={isLoading}
+              >
+                <Search className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{isLoading ? 'Searching...' : 'Search'}</span>
+                <span className="sm:hidden">{isLoading ? 'Searching' : 'Search'}</span>
+              </Button>
+              <Button variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 flex-1 sm:flex-none" onClick={() => setShowAdvanced(!showAdvanced)}>
+                <Filter className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{showAdvanced ? 'Hide' : 'Show'} Advanced</span>
+                <span className="sm:hidden">{showAdvanced ? 'Hide' : 'Advanced'}</span>
+              </Button>
+            </div>
           </div>
 
           {/* Enhanced Advanced Filters */}
           {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6 bg-gradient-to-r from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-800 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700 animate-fade-in-up">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 p-4 sm:p-6 bg-gradient-to-r from-lawbot-slate-50 to-lawbot-blue-50 dark:from-lawbot-slate-800 dark:to-lawbot-blue-900/20 rounded-xl border border-lawbot-slate-200 dark:border-lawbot-slate-700 animate-fade-in-up">
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-lawbot-slate-700 dark:text-lawbot-slate-300 flex items-center">
                   <Activity className="h-4 w-4 mr-2 text-lawbot-blue-500" />
