@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
-import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import PNPOfficerService, { OfficerCase } from "@/lib/pnp-officer-service"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
@@ -38,7 +37,6 @@ export function MyCasesView() {
   // Modal state
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
-  const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
   const [statusModalOpen, setStatusModalOpen] = useState(false)
   const [modalInitialTab, setModalInitialTab] = useState("overview")
 
@@ -489,11 +487,6 @@ export function MyCasesView() {
                 <span className="hidden sm:inline">Update Status</span>
                 <span className="sm:hidden">Update</span>
               </Button>
-              <Button size="sm" variant="outline" className="btn-modern border-lawbot-purple-300 text-lawbot-purple-600 hover:bg-lawbot-purple-50 flex-1 xl:flex-none" onClick={() => handleViewEvidence(caseData)}>
-                <FileText className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Evidence</span>
-                <span className="sm:hidden">Files</span>
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -598,10 +591,6 @@ export function MyCasesView() {
     }
   }
 
-  const handleViewEvidence = (caseData: any) => {
-    setSelectedCase(caseData)
-    setEvidenceModalOpen(true)
-  }
 
   const handleStatusUpdate = async (newStatus: string, updateData: any) => {
     try {
@@ -743,7 +732,7 @@ export function MyCasesView() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="sm:col-span-2 lg:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lawbot-slate-400 h-4 w-4" />
@@ -778,11 +767,6 @@ export function MyCasesView() {
                 <SelectItem value="low">🟢 Low Priority</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="btn-modern border-lawbot-blue-300 text-lawbot-blue-600 hover:bg-lawbot-blue-50 w-full sm:w-auto">
-              <Filter className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Advanced</span>
-              <span className="sm:hidden">Filter</span>
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1025,16 +1009,6 @@ export function MyCasesView() {
         onClose={() => setStatusModalOpen(false)}
         caseData={selectedCase}
         onStatusUpdate={handleStatusUpdateFromModal}
-      />
-      <EvidenceViewerModal
-        isOpen={evidenceModalOpen}
-        onClose={() => setEvidenceModalOpen(false)}
-        mode="single-case"
-        caseData={selectedCase ? {
-          id: selectedCase.complaint?.complaint_number || selectedCase.complaint_number,
-          complaint_id: selectedCase.complaint?.id || selectedCase.complaint_id || selectedCase.id,
-          title: selectedCase.complaint?.title || selectedCase.title || `${selectedCase.complaint?.crime_type || selectedCase.crime_type} Case`
-        } : null}
       />
     </div>
   )

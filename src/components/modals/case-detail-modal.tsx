@@ -208,7 +208,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     setAiPrescriptiveAnalysis({
       confidence: 75,
       riskLevel: 'Medium',
-      predictedOutcome: 'Under Analysis',
+      prescribedOutcome: 'Under Analysis',
       estimatedTime: '3-7 days',
       recommendations: [
         'Contact complainant for additional information',
@@ -679,7 +679,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         </head>
         <body>
           <div class="header">
-            <div class="pnp-logo">🇵🇭 PHILIPPINE NATIONAL POLICE</div>
+            <div class="pnp-logo">PHILIPPINE NATIONAL POLICE</div>
             <div class="report-title">CYBERCRIME INVESTIGATION REPORT</div>
             <div class="confidential">⚠️ CONFIDENTIAL - FOR OFFICIAL USE ONLY</div>
           </div>
@@ -1224,7 +1224,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         </head>
         <body>
           <div class="header">
-            <div class="pnp-logo">🇵🇭 PHILIPPINE NATIONAL POLICE</div>
+            <div class="pnp-logo">PHILIPPINE NATIONAL POLICE</div>
             <div class="export-title">CASE DATA EXPORT</div>
             <div style="color: #666; font-size: 12px; margin-top: 5px;">Comprehensive Database Export</div>
           </div>
@@ -1359,60 +1359,6 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
             </div>
           ` : ''}
 
-          <div class="data-section">
-            <div class="section-title">📊 Raw Database Fields</div>
-            <div class="json-data">${JSON.stringify({
-              caseInformation: {
-                id: complaint.id,
-                user_id: complaint.user_id,
-                complaint_number: complaint.complaint_number,
-                crime_type: complaint.crime_type,
-                title: complaint.title,
-                description: complaint.description,
-                status: complaint.status,
-                priority: complaint.priority,
-                risk_score: complaint.risk_score,
-                ai_priority: complaint.ai_priority,
-                ai_risk_score: complaint.ai_risk_score,
-                ai_confidence_score: complaint.ai_confidence_score,
-                risk_factors: complaint.risk_factors,
-                urgency_indicators: complaint.urgency_indicators,
-                ai_reasoning: complaint.ai_reasoning,
-                last_ai_assessment: complaint.last_ai_assessment,
-                assigned_unit: complaint.assigned_unit,
-                assigned_officer_id: complaint.assigned_officer_id,
-                remarks: complaint.remarks,
-                created_at: complaint.created_at,
-                updated_at: complaint.updated_at
-              },
-              complainantData: {
-                full_name: complaint.full_name,
-                email: complaint.email,
-                phone_number: complaint.phone_number
-              },
-              incidentData: {
-                incident_date_time: complaint.incident_date_time,
-                incident_location: complaint.incident_location,
-                estimated_loss: complaint.estimated_loss
-              },
-              dynamicFields: {
-                platform_website: complaint.platform_website,
-                account_reference: complaint.account_reference,
-                suspect_name: complaint.suspect_name,
-                suspect_relationship: complaint.suspect_relationship,
-                suspect_contact: complaint.suspect_contact,
-                suspect_details: complaint.suspect_details,
-                system_details: complaint.system_details,
-                technical_info: complaint.technical_info,
-                vulnerability_details: complaint.vulnerability_details,
-                attack_vector: complaint.attack_vector,
-                security_level: complaint.security_level,
-                target_info: complaint.target_info,
-                content_description: complaint.content_description,
-                impact_assessment: complaint.impact_assessment
-              }
-            }, null, 2)}</div>
-          </div>
 
           <div class="metadata">
             <strong>Export Metadata:</strong><br>

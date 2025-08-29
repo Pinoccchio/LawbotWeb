@@ -226,11 +226,6 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
     }
   }
 
-  const getValidationStatus = (isValid?: boolean) => {
-    if (isValid === undefined) return { text: "Not Validated", color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200", icon: null }
-    if (isValid) return { text: "Valid", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", icon: <CheckCircle className="h-3 w-3" /> }
-    return { text: "Invalid", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", icon: <XCircle className="h-3 w-3" /> }
-  }
 
   // Get file category for preview
   const getFileCategory = (fileType: string): 'image' | 'video' | 'pdf' | 'audio' | 'document' | 'other' => {
@@ -506,7 +501,6 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
                 ) : (
                   <div className="space-y-3">
                     {filteredFiles.map((file) => {
-                      const validationStatus = getValidationStatus(file.is_valid)
                       return (
                         <Card
                           key={file.id}
@@ -544,10 +538,6 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
                                   </div>
                                 </div>
                               </div>
-                              <Badge className={`${validationStatus.color} flex items-center gap-1`}>
-                                {validationStatus.icon}
-                                {validationStatus.text}
-                              </Badge>
                             </div>
                           </CardContent>
                         </Card>
@@ -573,10 +563,6 @@ export function EvidenceViewerModal({ isOpen, onClose, mode = 'single-case', cas
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-xl font-bold text-lawbot-slate-900 dark:text-white">{selectedFile.file_name}</CardTitle>
-                          <Badge className={`${getValidationStatus(selectedFile.is_valid).color} flex items-center gap-1 px-4 py-2 font-medium`}>
-                            {getValidationStatus(selectedFile.is_valid).icon}
-                            {getValidationStatus(selectedFile.is_valid).text}
-                          </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-6">

@@ -471,33 +471,14 @@ export function EvidenceViewerView() {
                 return (
                   <Card key={file.id} className="card-modern hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
                     <CardHeader className="p-3 sm:p-6">
-                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <div className={`${display.color} p-2 sm:p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm flex-shrink-0`}>
-                            {display.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-sm sm:text-base text-lawbot-slate-900 dark:text-white truncate">{file.file_name}</h3>
-                            <p className="text-xs sm:text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-medium">💾 {formatFileSize(file.file_size)}</p>
-                          </div>
+                      <div className="flex items-center space-x-3">
+                        <div className={`${display.color} p-2 sm:p-3 bg-gradient-to-r from-lawbot-slate-100 to-lawbot-slate-200 dark:from-lawbot-slate-700 dark:to-lawbot-slate-800 rounded-xl shadow-sm flex-shrink-0`}>
+                          {display.icon}
                         </div>
-                        {file.is_valid !== undefined && (
-                          <Badge variant={file.is_valid ? "outline" : "destructive"} className="flex items-center gap-1 text-xs self-start sm:self-center">
-                            {file.is_valid ? (
-                              <>
-                                <CheckCircle className="h-3 w-3" />
-                                <span className="hidden sm:inline">Valid</span>
-                                <span className="sm:hidden">✓</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-3 w-3" />
-                                <span className="hidden sm:inline">Invalid</span>
-                                <span className="sm:hidden">✗</span>
-                              </>
-                            )}
-                          </Badge>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-sm sm:text-base text-lawbot-slate-900 dark:text-white truncate">{file.file_name}</h3>
+                          <p className="text-xs sm:text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400 font-medium">💾 {formatFileSize(file.file_size)}</p>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-3 sm:p-6">
@@ -594,12 +575,6 @@ export function EvidenceViewerView() {
                               {file.complaint && (
                                 <Badge variant="outline" className="text-xs">{file.complaint.complaint_number}</Badge>
                               )}
-                              {file.is_valid !== undefined && (
-                                <Badge variant={file.is_valid ? "outline" : "destructive"} className="text-xs">
-                                  <span className="hidden sm:inline">{file.is_valid ? "Valid" : "Invalid"}</span>
-                                  <span className="sm:hidden">{file.is_valid ? "✓" : "✗"}</span>
-                                </Badge>
-                              )}
                             </div>
                           </div>
                           {file.complaint && (
@@ -635,7 +610,7 @@ export function EvidenceViewerView() {
 
       {/* Simple Evidence Statistics */}
       {evidenceFiles.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
           <Card className="stats-card bg-gradient-to-br from-lawbot-blue-50 to-white dark:from-lawbot-blue-900/10 dark:to-lawbot-slate-800 border-lawbot-blue-200 dark:border-lawbot-blue-800">
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
@@ -651,22 +626,6 @@ export function EvidenceViewerView() {
             </CardContent>
           </Card>
 
-          <Card className="stats-card bg-gradient-to-br from-lawbot-emerald-50 to-white dark:from-lawbot-emerald-900/10 dark:to-lawbot-slate-800 border-lawbot-emerald-200 dark:border-lawbot-emerald-800">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Valid Files</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                    {evidenceFiles.filter(f => f.is_valid === true).length}
-                  </p>
-                  <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">✅ Validated</p>
-                </div>
-                <div className="p-2 sm:p-3 bg-lawbot-emerald-500 rounded-lg flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="stats-card bg-gradient-to-br from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
             <CardContent className="p-4 sm:p-6">
