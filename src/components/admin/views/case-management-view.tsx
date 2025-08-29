@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import NotificationService from "@/lib/notification-service"
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock, BarChart3 } from "lucide-react"
+import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Activity, AlertTriangle, Clock, BarChart3, Shield } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,9 @@ import { Progress } from "@/components/ui/progress"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 // StatusUpdateModal removed for view-only mode
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
+import { AssignOfficerModal } from "@/components/modals/assign-officer-modal"
 import ComplaintService from "@/lib/complaint-service"
+import OfficerAssignmentService from "@/lib/officer-assignment-service"
 
 // Define ComplaintData interface since it's not exported from the service
 interface ComplaintData {
@@ -87,11 +89,15 @@ export function CaseManagementView() {
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false)
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
+  const [selectedCaseForAssignment, setSelectedCaseForAssignment] = useState<ComplaintData | null>(null)
+  const [unassignedCount, setUnassignedCount] = useState(0)
 
   // Fetch data on component mount
   useEffect(() => {
     fetchComplaintsData()
     fetchRecentNotifications()
+    fetchUnassignedCount()
   }, [])
 
   // Apply filters when search term or filters change
@@ -202,6 +208,26 @@ export function CaseManagementView() {
   const handleViewDetails = (caseData: ComplaintData) => {
     setSelectedCase(caseData)
     setDetailModalOpen(true)
+  }
+
+  const handleAssignOfficer = (caseData: ComplaintData) => {
+    setSelectedCaseForAssignment(caseData)
+    setAssignModalOpen(true)
+  }
+
+  const handleAssignmentComplete = () => {
+    // Refresh the case list after assignment
+    fetchComplaintsData()
+    fetchUnassignedCount()
+  }
+
+  const fetchUnassignedCount = async () => {
+    try {
+      const count = await OfficerAssignmentService.getUnassignedCasesCount()
+      setUnassignedCount(count)
+    } catch (error) {
+      console.error('Error fetching unassigned count:', error)
+    }
   }
 
   const handleViewEvidence = async (caseData: ComplaintData) => {
@@ -333,7 +359,9 @@ export function CaseManagementView() {
                   <div>
                     <p className="text-xs font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-2">Total Cases</p>
                     <p className="text-2xl lg:text-3xl font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400 mb-1">{stats.totalComplaints}</p>
-                    <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">All complaints</p>
+                    <p className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                      {unassignedCount > 0 ? `${unassignedCount} unassigned` : 'All assigned'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -495,7 +523,13 @@ export function CaseManagementView() {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium text-lawbot-slate-900 dark:text-white">
-                        {case_.assigned_officer || 'Unassigned'}
+                        {case_.assigned_officer ? (
+                          <span>{case_.assigned_officer}</span>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                            Unassigned
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -543,15 +577,17 @@ export function CaseManagementView() {
                         >
                           <Eye className="h-4 w-4 text-lawbot-blue-500" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="btn-icon h-8 w-8 hover:bg-lawbot-purple-50 dark:hover:bg-lawbot-purple-900/20"
-                          onClick={() => handleViewEvidence(case_)}
-                          title="View Evidence Files"
-                        >
-                          <Eye className="h-4 w-4 text-lawbot-purple-500" />
-                        </Button>
+                        {!case_.assigned_officer && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="btn-icon h-8 w-8 hover:bg-lawbot-green-50 dark:hover:bg-lawbot-green-900/20"
+                            onClick={() => handleAssignOfficer(case_)}
+                            title="Assign Officer"
+                          >
+                            <Shield className="h-4 w-4 text-lawbot-green-500" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -724,6 +760,13 @@ export function CaseManagementView() {
         onClose={() => setEvidenceModalOpen(false)}
         mode="single-case"
         caseData={selectedCase}
+      />
+      <AssignOfficerModal
+        isOpen={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        caseData={selectedCaseForAssignment}
+        onAssignmentComplete={handleAssignmentComplete}
+        isReassignment={false}
       />
     </div>
   )
