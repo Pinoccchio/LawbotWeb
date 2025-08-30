@@ -993,7 +993,7 @@ Base predictions on the specific data provided. Reference actual field values in
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
           try {
             const jsonString = text.substring(firstBrace, lastBrace + 1)
-            prescription = JSON.parse(jsonString)
+            prediction = JSON.parse(jsonString)
           } catch (parseError) {
             console.warn('⚠️ Predictive analysis JSON parse error (method 2):', parseError)
           }
@@ -1026,7 +1026,7 @@ Base predictions on the specific data provided. Reference actual field values in
         return {
           confidence: prediction.confidence,
           riskLevel: prediction.riskLevel,
-          predictedOutcome: prediction.predictedOutcome || prediction.prescribedOutcome,
+          prescribedOutcome: prediction.prescribedOutcome || prediction.predictedOutcome,
           estimatedTime: prediction.estimatedTime,
           recommendations: prediction.recommendations,
           keyIndicators,

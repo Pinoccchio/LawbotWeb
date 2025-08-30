@@ -85,7 +85,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   const [aiPredictiveAnalysis, setAiPredictiveAnalysis] = useState<{
     confidence: number
     riskLevel: string
-    predictedOutcome: string
+    prescribedOutcome: string
     estimatedTime: string
     recommendations: string[]
     keyIndicators: Array<{label: string, value: number, color: string}>
@@ -93,7 +93,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
   }>({
     confidence: 75,
     riskLevel: 'Medium',
-    predictedOutcome: 'Under Analysis',
+    prescribedOutcome: 'Under Analysis',
     estimatedTime: '3-7 days',
     recommendations: [
       'Contact complainant for additional information',
@@ -208,7 +208,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     setAiPredictiveAnalysis({
       confidence: 75,
       riskLevel: 'Medium',
-      predictedOutcome: 'Under Analysis',
+      prescribedOutcome: 'Under Analysis',
       estimatedTime: '3-7 days',
       recommendations: [
         'Contact complainant for additional information',
@@ -2705,7 +2705,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Predicted Outcome:</span>
-                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPredictiveAnalysis.predictedOutcome}</span>
+                            <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPredictiveAnalysis.prescribedOutcome}</span>
                           </div>
                           <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
                             <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Estimated Resolution:</span>
@@ -3039,7 +3039,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
         aiSummary={aiSummary}
         aiActionItems={aiActionItems}
         aiKeyDetails={aiKeyDetails}
-        aiPredictiveAnalysis={aiPredictiveAnalysis}
+        aiPrescriptiveAnalysis={aiPredictiveAnalysis}
       />
     </div>
   )
