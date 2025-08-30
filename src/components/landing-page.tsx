@@ -334,7 +334,7 @@ export function LandingPage({ onViewChange, isDark, toggleTheme }: LandingPagePr
               🧠 AI-Powered Analysis
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 bg-clip-text text-transparent mb-6">
-              Prescriptive Case Analysis
+              Prescriptive Case Analytics
             </h2>
             <p className="text-xl lg:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8">
               Advanced AI automatically analyzes cybercrime reports, determines priority levels, and generates specific action plans for investigators

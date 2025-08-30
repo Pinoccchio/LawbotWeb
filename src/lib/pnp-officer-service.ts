@@ -98,48 +98,122 @@ export class PNPOfficerService {
   
   // Get current user ID from Firebase auth or stored value
   static get currentUserId(): string | null {
-    // If we have a stored user ID, use it
-    if (this._currentUserId) {
-      return this._currentUserId
-    }
-    
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined') {
-      return null
-    }
-    
-    // Try to get the current user from Firebase Auth
     try {
-      // Import auth dynamically to avoid SSR issues
-      const { auth } = require('@/lib/firebase')
-      const currentUser = auth.currentUser
-      
-      if (currentUser) {
-        console.log('🔐 Current Firebase user ID:', currentUser.uid)
-        this._currentUserId = currentUser.uid
-        return currentUser.uid
+      // If we have a stored user ID, use it
+      if (this._currentUserId) {
+        console.log('🔐 Using cached currentUserId:', this._currentUserId)
+        return this._currentUserId
       }
       
-      // Fallback: Try to get from localStorage (if auth state is persisting)
-      const persistedAuth = localStorage.getItem('authPersistence')
-      if (persistedAuth === 'true') {
-        // For demo purposes, use a test officer if auth is persisted but user not loaded yet
-        console.log('⚠️ Auth persisted but user not loaded, using demo officer')
-        return 'firebase_officer_001'
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        console.log('⚠️ Server-side environment, no currentUserId available')
+        return null
       }
+      
+      // Try to get the current user from Firebase Auth
+      try {
+        // Import auth dynamically to avoid SSR issues
+        const { auth } = require('@/lib/firebase')
+        const currentUser = auth.currentUser
+        
+        if (currentUser) {
+          console.log('🔐 Current Firebase user ID:', currentUser.uid)
+          this._currentUserId = currentUser.uid
+          return currentUser.uid
+        } else {
+          console.log('⚠️ No Firebase user currently authenticated')
+        }
+        
+        // Enhanced fallback logic for web app demo/development
+        const persistedAuth = localStorage.getItem('authPersistence')
+        if (persistedAuth === 'true') {
+          console.log('⚠️ Auth persisted but user not loaded, using demo officer from database')
+          // Use one of the actual Firebase UIDs from the database for demo
+          const availableDemoUIDs = [
+            'lYqVWjQEM2OIV9QfLiqnHu54g5P2', // Lucifer Morningstar
+            'esDLeChoVTgdD5194Wd65YMu4VK2', // Cardo Dalisay
+            'DelDLBSu8FZky5tf1xhiUKGMgTw1'  // Ador Dalisay
+          ]
+          const demoUserId = availableDemoUIDs[0] // Use first available officer
+          console.log('🔐 Setting demo Firebase UID:', demoUserId)
+          this._currentUserId = demoUserId
+          return demoUserId
+        }
+        
+        // For web app development, provide a way to use demo officer
+        console.log('ℹ️ No authentication available, will use fallback in getCurrentOfficerProfile')
+      } catch (authError) {
+        console.error('❌ Error accessing Firebase Auth:', authError)
+        console.log('ℹ️ Will fall back to demo officer for functionality')
+      }
+      
+      return null
     } catch (error) {
       console.error('❌ Error getting current user ID:', error)
+      return null
     }
-    
-    return null
   }
 
   // Get current officer profile from database
   static async getCurrentOfficerProfile(): Promise<PNPOfficerProfile | null> {
     try {
       console.log('🔄 Fetching current officer profile from database...')
+      console.log('🔐 Using currentUserId:', this.currentUserId)
       
-      let { data: officer, error } = await supabase
+      // First, try to use the current Firebase UID if available
+      if (this.currentUserId) {
+        console.log('🔄 Attempting to find officer with Firebase UID:', this.currentUserId)
+        
+        // Use maybeSingle() instead of single() to avoid PGRST116 error when no rows found
+        const { data: officer, error } = await supabase
+          .from('pnp_officer_profiles')
+          .select(`
+            *,
+            pnp_units (
+              id,
+              unit_name,
+              unit_code,
+              category,
+              description,
+              region,
+              max_officers,
+              current_officers,
+              active_cases,
+              resolved_cases,
+              success_rate,
+              status
+            )
+          `)
+          .eq('firebase_uid', this.currentUserId)
+          .eq('status', 'active')
+          .maybeSingle()
+        
+        if (error) {
+          console.error('❌ Database error fetching officer by Firebase UID:', JSON.stringify(error, null, 2))
+        } else if (officer) {
+          console.log('✅ Found officer by Firebase UID:', officer.full_name)
+          // Get crime types for the unit if available
+          let crimeTypes: string[] = []
+          if (officer.pnp_units?.id) {
+            const { data: unitCrimeTypes } = await supabase
+              .from('pnp_unit_crime_types')
+              .select('crime_type')
+              .eq('unit_id', officer.pnp_units.id)
+            
+            crimeTypes = unitCrimeTypes?.map(ct => ct.crime_type) || []
+          }
+          
+          return this.mapOfficerData(officer, crimeTypes)
+        } else {
+          console.log('⚠️ No officer found with Firebase UID:', this.currentUserId)
+        }
+      }
+      
+      // Fallback: Get any active officer for demo/development purposes
+      console.log('🔄 Falling back to first active officer for demo functionality...')
+      
+      const { data: demoOfficers, error: demoError } = await supabase
         .from('pnp_officer_profiles')
         .select(`
           *,
@@ -158,108 +232,92 @@ export class PNPOfficerService {
             status
           )
         `)
-        .eq('firebase_uid', this.currentUserId)
-        .single()
+        .eq('status', 'active')
+        .limit(1)
       
-      if (error) {
-        console.error('❌ Database error fetching officer profile:', error)
+      if (demoError) {
+        console.error('❌ Error fetching demo officer:', JSON.stringify(demoError, null, 2))
         
-        // If officer not found with Firebase UID, try to find by ID for demo
-        if (error.code === 'PGRST116') {
-          console.log('🔄 Officer not found by Firebase UID, trying demo officer...')
-          
-          const { data: demoOfficer, error: demoError } = await supabase
-            .from('pnp_officer_profiles')
-            .select(`
-              *,
-              pnp_units (
-                id,
-                unit_name,
-                unit_code,
-                category,
-                description,
-                region,
-                max_officers,
-                current_officers,
-                active_cases,
-                resolved_cases,
-                success_rate,
-                status
-              )
-            `)
-            .eq('status', 'active')
-            .limit(1)
-            .single()
-          
-          if (demoError) {
-            console.error('❌ Error fetching demo officer:', demoError)
-            return null
-          }
-          
-          officer = demoOfficer
+        // Final fallback: List all officers for debugging
+        console.log('📊 Attempting to list all officers for debugging...')
+        const { data: allOfficers, error: listError } = await supabase
+          .from('pnp_officer_profiles')
+          .select('id, firebase_uid, full_name, email, status')
+          .limit(5)
+        
+        if (listError) {
+          console.error('❌ Error listing officers:', listError)
         } else {
-          return null
+          console.log('👮 Available officers in database:', allOfficers)
         }
-      }
-      
-      if (!officer) {
-        console.log('ℹ️ No officer profile found')
+        
         return null
       }
       
+      if (!demoOfficers || demoOfficers.length === 0) {
+        console.error('❌ No active officers found in database')
+        return null
+      }
+      
+      const demoOfficer = demoOfficers[0]
+      console.log('✅ Using demo officer for functionality:', demoOfficer.full_name)
+      
       // Get crime types for the unit if available
       let crimeTypes: string[] = []
-      if (officer.pnp_units?.id) {
+      if (demoOfficer.pnp_units?.id) {
         const { data: unitCrimeTypes } = await supabase
           .from('pnp_unit_crime_types')
           .select('crime_type')
-          .eq('unit_id', officer.pnp_units.id)
+          .eq('unit_id', demoOfficer.pnp_units.id)
         
         crimeTypes = unitCrimeTypes?.map(ct => ct.crime_type) || []
       }
       
-      console.log('✅ Officer profile found:', officer.full_name)
-      
-      return {
-        id: officer.id,
-        firebase_uid: officer.firebase_uid,
-        email: officer.email,
-        full_name: officer.full_name,
-        phone_number: officer.phone_number,
-        badge_number: officer.badge_number,
-        rank: officer.rank,
-        unit_id: officer.unit_id,
-        region: officer.region,
-        status: officer.status,
-        availability_status: officer.availability_status,
-        last_login_at: officer.last_login_at,
-        last_case_assignment_at: officer.last_case_assignment_at,
-        last_status_update_at: officer.last_status_update_at,
-        total_cases: officer.total_cases,
-        active_cases: officer.active_cases,
-        resolved_cases: officer.resolved_cases,
-        success_rate: officer.success_rate,
-        created_at: officer.created_at,
-        updated_at: officer.updated_at,
-        unit: officer.pnp_units ? {
-          id: officer.pnp_units.id,
-          unit_name: officer.pnp_units.unit_name,
-          unit_code: officer.pnp_units.unit_code,
-          category: officer.pnp_units.category,
-          description: officer.pnp_units.description,
-          region: officer.pnp_units.region,
-          max_officers: officer.pnp_units.max_officers,
-          current_officers: officer.pnp_units.current_officers,
-          active_cases: officer.pnp_units.active_cases,
-          resolved_cases: officer.pnp_units.resolved_cases,
-          success_rate: officer.pnp_units.success_rate,
-          status: officer.pnp_units.status,
-          crime_types: crimeTypes
-        } : null
-      }
+      return this.mapOfficerData(demoOfficer, crimeTypes)
     } catch (error) {
       console.error('❌ Error fetching current officer profile:', error)
       return null
+    }
+  }
+
+  // Helper method to map officer database data to interface
+  private static mapOfficerData(officer: any, crimeTypes: string[] = []): PNPOfficerProfile {
+    return {
+      id: officer.id,
+      firebase_uid: officer.firebase_uid,
+      email: officer.email,
+      full_name: officer.full_name,
+      phone_number: officer.phone_number,
+      badge_number: officer.badge_number,
+      rank: officer.rank,
+      unit_id: officer.unit_id,
+      region: officer.region,
+      status: officer.status,
+      availability_status: officer.availability_status,
+      last_login_at: officer.last_login_at,
+      last_case_assignment_at: officer.last_case_assignment_at,
+      last_status_update_at: officer.last_status_update_at,
+      total_cases: officer.total_cases,
+      active_cases: officer.active_cases,
+      resolved_cases: officer.resolved_cases,
+      success_rate: officer.success_rate,
+      created_at: officer.created_at,
+      updated_at: officer.updated_at,
+      unit: officer.pnp_units ? {
+        id: officer.pnp_units.id,
+        unit_name: officer.pnp_units.unit_name,
+        unit_code: officer.pnp_units.unit_code,
+        category: officer.pnp_units.category,
+        description: officer.pnp_units.description,
+        region: officer.pnp_units.region,
+        max_officers: officer.pnp_units.max_officers,
+        current_officers: officer.pnp_units.current_officers,
+        active_cases: officer.pnp_units.active_cases,
+        resolved_cases: officer.pnp_units.resolved_cases,
+        success_rate: officer.pnp_units.success_rate,
+        status: officer.pnp_units.status,
+        crime_types: crimeTypes
+      } : null
     }
   }
 

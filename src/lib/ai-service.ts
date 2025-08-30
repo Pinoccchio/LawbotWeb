@@ -863,8 +863,8 @@ Base your assessment on ALL available fields, especially:
     }
   }
 
-  // Generate prescriptive analysis for case
-  static async generatePrescriptiveAnalysis(caseData: CaseDataForSummary): Promise<{
+  // Generate predictive analysis for case
+  static async generatePredictiveAnalysis(caseData: CaseDataForSummary): Promise<{
     confidence: number
     riskLevel: string
     prescribedOutcome: string
@@ -874,7 +874,7 @@ Base your assessment on ALL available fields, especially:
     dataSourcesUsed: string[]
   }> {
     try {
-      console.log('🔮 Generating prescriptive analysis for:', caseData.complaint_number)
+      console.log('🔮 Generating predictive analysis for:', caseData.complaint_number)
       
       // Detect crime category
       const category = this.detectCrimeCategory(caseData.crime_type)
@@ -901,7 +901,7 @@ Base your assessment on ALL available fields, especially:
       if (caseData.evidence_count && caseData.evidence_count > 0) dataSources.push(`📎 Evidence: ${caseData.evidence_count} files`)
       
       const prompt = `
-You are generating prescriptive analysis for a Philippine National Police cybercrime investigation.
+You are generating predictive analysis for a Philippine National Police cybercrime investigation.
 
 CASE INFORMATION:
 Crime Type: ${caseData.crime_type}
@@ -919,11 +919,11 @@ ${dynamicFields}
 Assigned Unit: ${caseData.assigned_unit || 'Not assigned'}
 Assigned Officer: ${caseData.assigned_officer || 'Not assigned'}
 
-Based on ALL available information, generate prescriptive analysis:
+Based on ALL available information, generate predictive analysis:
 
-1. PRESCRIBED OUTCOME: Analyze similar ${caseData.crime_type} cases and prescribe the best course of action
+1. PREDICTED OUTCOME: Analyze similar ${caseData.crime_type} cases and predict the most likely outcome
    - Consider: Available evidence quality, suspect identification status, financial recovery potential
-   - Format: Brief outcome prescription (e.g., "Pursue prosecution with current evidence", "Focus on financial recovery first")
+   - Format: Brief outcome prediction (e.g., "Likely prosecution with current evidence", "Financial recovery probable")
 
 2. ESTIMATED RESOLUTION TIME: Based on case complexity and available resources
    - Simple cases with clear evidence: 3-7 days
@@ -938,21 +938,21 @@ Based on ALL available information, generate prescriptive analysis:
    - Suspect tracking opportunities
    - Preventive measures for victim
 
-4. CONFIDENCE CALCULATION: Assess prescription confidence (0-100) based on:
+4. CONFIDENCE CALCULATION: Assess prediction confidence (0-100) based on:
    - Completeness of information (all fields populated = higher confidence)
    - Evidence quality and quantity
    - Clear suspect identification
    - Similar case precedents
 
-5. RISK EVOLUTION: Prescribe how risk should be managed over time
-   - Recommend immediate actions to prevent risk escalation
-   - Prescribe monitoring and prevention strategies
+5. RISK EVOLUTION: Predict how risk will evolve over time
+   - Predict risk escalation patterns
+   - Forecast monitoring and prevention needs
 
 Format response as JSON:
 {
   "confidence": [0-100 based on data completeness],
   "riskLevel": "[current priority] - [prescribed trend management: immediate/monitor/preventive]",
-  "prescribedOutcome": "[specific outcome prescription based on case data]",
+  "predictedOutcome": "[specific outcome prediction based on case data]",
   "estimatedTime": "[time estimate with reasoning]",
   "recommendations": [
     "Specific action 1 based on [relevant field]",
@@ -963,7 +963,7 @@ Format response as JSON:
   ]
 }
 
-Base prescriptions on the specific data provided. Reference actual field values in recommendations.
+Base predictions on the specific data provided. Reference actual field values in recommendations.
 `
 
       const result = await model.generateContent(prompt)
@@ -971,23 +971,23 @@ Base prescriptions on the specific data provided. Reference actual field values 
       const text = response.text()
       
       // Extract JSON from response with better parsing
-      console.log('🔍 Raw AI prescriptive analysis response:', text.substring(0, 200) + '...')
+      console.log('🔍 Raw AI predictive analysis response:', text.substring(0, 200) + '...')
       
       // Try multiple JSON extraction methods
-      let prescription = null
+      let prediction = null
       
       // Method 1: Match complete JSON object
       const jsonMatch = text.match(/\{[\s\S]*?\}(?=\s*$|[\s\n]*[^{}]*$)/)
       if (jsonMatch) {
         try {
-          prescription = JSON.parse(jsonMatch[0])
+          prediction = JSON.parse(jsonMatch[0])
         } catch (parseError) {
-          console.warn('⚠️ Prescriptive analysis JSON parse error (method 1):', parseError)
+          console.warn('⚠️ Predictive analysis JSON parse error (method 1):', parseError)
         }
       }
       
       // Method 2: Find first { to last } in response
-      if (!prescription) {
+      if (!prediction) {
         const firstBrace = text.indexOf('{')
         const lastBrace = text.lastIndexOf('}')
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -995,12 +995,12 @@ Base prescriptions on the specific data provided. Reference actual field values 
             const jsonString = text.substring(firstBrace, lastBrace + 1)
             prescription = JSON.parse(jsonString)
           } catch (parseError) {
-            console.warn('⚠️ Prescriptive analysis JSON parse error (method 2):', parseError)
+            console.warn('⚠️ Predictive analysis JSON parse error (method 2):', parseError)
           }
         }
       }
       
-      if (prescription) {
+      if (prediction) {
         
         // Calculate key indicators based on actual data
         const keyIndicators = [
@@ -1021,14 +1021,14 @@ Base prescriptions on the specific data provided. Reference actual field values 
           }
         ]
         
-        console.log('✅ Prescriptive analysis generated successfully')
+        console.log('✅ Predictive analysis generated successfully')
         
         return {
-          confidence: prescription.confidence,
-          riskLevel: prescription.riskLevel,
-          prescribedOutcome: prescription.prescribedOutcome,
-          estimatedTime: prescription.estimatedTime,
-          recommendations: prescription.recommendations,
+          confidence: prediction.confidence,
+          riskLevel: prediction.riskLevel,
+          predictedOutcome: prediction.predictedOutcome || prediction.prescribedOutcome,
+          estimatedTime: prediction.estimatedTime,
+          recommendations: prediction.recommendations,
           keyIndicators,
           dataSourcesUsed: dataSources
         }
@@ -1037,10 +1037,10 @@ Base prescriptions on the specific data provided. Reference actual field values 
       throw new Error('Could not parse AI response')
       
     } catch (error) {
-      console.error('❌ Error generating prescriptive analysis:', error)
+      console.error('❌ Error generating predictive analysis:', error)
       
       // Generate intelligent fallback based on available data
-      return this.generatePrescriptiveFallback(caseData)
+      return this.generatePredictiveFallback(caseData)
     }
   }
   
@@ -1062,8 +1062,8 @@ Base prescriptions on the specific data provided. Reference actual field values 
     return Math.round((filledFields / fields.length) * 100)
   }
   
-  // Generate fallback prescriptive analysis
-  private static generatePrescriptiveFallback(caseData: CaseDataForSummary): any {
+  // Generate fallback predictive analysis
+  private static generatePredictiveFallback(caseData: CaseDataForSummary): any {
     const category = this.detectCrimeCategory(caseData.crime_type)
     const completeness = this.calculateCaseCompleteness(caseData)
     
@@ -1091,13 +1091,13 @@ Base prescriptions on the specific data provided. Reference actual field values 
     if (caseData.evidence_count && caseData.evidence_count > 0) dataSources.push(`📎 Evidence: ${caseData.evidence_count} files`)
     
     // Generate outcome based on available data
-    let prescribedOutcome = 'Continue systematic investigation'
+    let predictedOutcome = 'Continue systematic investigation'
     if (caseData.suspect_name && caseData.evidence_count && caseData.evidence_count >= 3) {
-      prescribedOutcome = 'Proceed with prosecution preparation'
+      predictedOutcome = 'Likely to proceed with prosecution'
     } else if (caseData.evidence_count && caseData.evidence_count > 0) {
-      prescribedOutcome = 'Focus on evidence strengthening'
+      predictedOutcome = 'Evidence strengthening phase expected'
     } else {
-      prescribedOutcome = 'Prioritize evidence collection'
+      predictedOutcome = 'Evidence collection phase likely'
     }
     
     // Estimate time based on complexity
@@ -1143,7 +1143,7 @@ Base prescriptions on the specific data provided. Reference actual field values 
     return {
       confidence: completeness,
       riskLevel: `${caseData.priority} - ${completeness < 50 ? 'immediate action required' : 'monitor closely'}`,
-      prescribedOutcome,
+      predictedOutcome,
       estimatedTime,
       recommendations,
       keyIndicators: [
