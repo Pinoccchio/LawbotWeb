@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, AlertTriangle, Users, CheckCircle, MoreHorizontal, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight, RefreshCw } from "lucide-react"
+import { FileText, AlertTriangle, Users, CheckCircle, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
 import { getPriorityColor, getStatusColor } from "@/lib/utils"
 import AdminService, { DashboardStats, CaseDistributionData, TimelineData, OfficerPerformanceData } from "@/lib/admin-service"
@@ -324,36 +323,9 @@ export function AdminDashboardView() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge className={`${getStatusColor(caseData.status)} text-xs`}>
-                        {caseData.status}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity btn-icon"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem className="flex items-center">
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="flex items-center">
-                            <Users className="mr-2 h-4 w-4" />
-                            Reassign Officer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="flex items-center">
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Update Priority
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    <Badge className={`${getStatusColor(caseData.status)} text-xs`}>
+                      {caseData.status}
+                    </Badge>
                   </div>
                 ))
               )}
