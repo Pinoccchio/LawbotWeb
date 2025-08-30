@@ -148,7 +148,7 @@ export class AuthService {
             email,
             full_name: fullName,
             phone_number: metadata?.phoneNumber || '',
-            role: metadata?.role || 'SYSTEM_ADMIN',
+            role: metadata?.role || 'SUPER_ADMIN',
             status: 'active',
             created_at: now,
             updated_at: now

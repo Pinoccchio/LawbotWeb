@@ -236,6 +236,7 @@ export function AdminDashboardView() {
                         <Progress value={dashboardStats.resolutionRate} className="h-2" />
                       </div>
                     )}
+                    
                   </div>
                 </CardContent>
               </Card>
@@ -492,173 +493,128 @@ export function AdminDashboardView() {
         </Card>
       </div>
 
-      {/* Enhanced Priority Distribution */}
+      {/* Priority Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* High Priority */}
-        <Card className="priority-high-indicator border-lawbot-red-200 dark:border-lawbot-red-800 bg-gradient-to-br from-lawbot-red-50 to-lawbot-red-100 dark:from-lawbot-red-900/20 dark:to-lawbot-red-800/20 animate-scale-in">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-red-500 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-white" />
-                </div>
-                <CardTitle className="text-lawbot-red-800 dark:text-lawbot-red-200 font-bold">
+        <Card className="card-modern animate-scale-in">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              {/* Icon */}
+              <div className="p-3 bg-lawbot-red-500 rounded-xl">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-lawbot-slate-500 dark:text-lawbot-slate-400">
                   High Priority
-                </CardTitle>
-              </div>
-              <div className="w-3 h-3 bg-lawbot-red-500 rounded-full animate-pulse-glow"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-7 w-16 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
-                <div className="h-2 w-full bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
-                <div className="space-y-1">
-                  <div className="h-4 w-24 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
-                  <div className="h-3 w-20 bg-lawbot-red-200 dark:bg-lawbot-red-800 rounded"></div>
-                </div>
-              </div>
-            ) : dashboardStats ? (
-              <>
+                </p>
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-3xl font-bold text-lawbot-red-600 dark:text-lawbot-red-400">
-                    {dashboardStats.highPriorityCases}
-                  </span>
-                  <span className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
-                    Cases
+                  <p className="text-3xl font-bold text-lawbot-slate-900 dark:text-white">
+                    {isLoading ? (
+                      <span className="animate-pulse bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded text-transparent">00</span>
+                    ) : dashboardStats ? (
+                      dashboardStats.highPriorityCases
+                    ) : '0'}
+                  </p>
+                  <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                    cases
                   </span>
                 </div>
-                <Progress 
-                  value={dashboardStats.highPriorityCases} 
-                  max={dashboardStats.totalCases} 
-                  className="h-2 bg-lawbot-red-200 dark:bg-lawbot-red-800" 
-                />
-                <div className="space-y-1">
-                  <p className="text-sm text-lawbot-red-700 dark:text-lawbot-red-300 font-medium">
-                    🔴 Risk Score: 80-100
-                  </p>
-                  <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
-                    ⏰ Response: 2 hours
-                  </p>
-                  <p className="text-xs text-lawbot-red-600 dark:text-lawbot-red-400">
-                    {Math.round(dashboardStats.highPriorityCases / 3)} require immediate action
-                  </p>
-                </div>
-              </>
-            ) : null}
+              </div>
+            </div>
+            
+            {/* Footer: Change + Description */}
+            <div className="flex items-center justify-between pt-4 border-t border-lawbot-slate-100 dark:border-lawbot-slate-700">
+              <span className="text-sm font-semibold text-lawbot-red-600 dark:text-lawbot-red-400">
+                Risk 80-100
+              </span>
+              <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                2hr response
+              </span>
+            </div>
           </CardContent>
         </Card>
 
         {/* Medium Priority */}
-        <Card className="priority-medium-indicator border-lawbot-amber-200 dark:border-lawbot-amber-800 bg-gradient-to-br from-lawbot-amber-50 to-lawbot-amber-100 dark:from-lawbot-amber-900/20 dark:to-lawbot-amber-800/20 animate-scale-in" style={{ animationDelay: '100ms' }}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-amber-500 rounded-lg">
-                  <Clock className="h-5 w-5 text-white" />
-                </div>
-                <CardTitle className="text-lawbot-amber-800 dark:text-lawbot-amber-200 font-bold">
+        <Card className="card-modern animate-scale-in" style={{ animationDelay: '100ms' }}>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              {/* Icon */}
+              <div className="p-3 bg-lawbot-amber-500 rounded-xl">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-lawbot-slate-500 dark:text-lawbot-slate-400">
                   Medium Priority
-                </CardTitle>
-              </div>
-              <div className="w-3 h-3 bg-lawbot-amber-500 rounded-full"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-7 w-16 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
-                <div className="h-2 w-full bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
-                <div className="space-y-1">
-                  <div className="h-4 w-24 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
-                  <div className="h-3 w-20 bg-lawbot-amber-200 dark:bg-lawbot-amber-800 rounded"></div>
-                </div>
-              </div>
-            ) : dashboardStats ? (
-              <>
+                </p>
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-3xl font-bold text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                    {dashboardStats.mediumPriorityCases}
-                  </span>
-                  <span className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
-                    Cases
+                  <p className="text-3xl font-bold text-lawbot-slate-900 dark:text-white">
+                    {isLoading ? (
+                      <span className="animate-pulse bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded text-transparent">00</span>
+                    ) : dashboardStats ? (
+                      dashboardStats.mediumPriorityCases
+                    ) : '0'}
+                  </p>
+                  <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                    cases
                   </span>
                 </div>
-                <Progress 
-                  value={dashboardStats.mediumPriorityCases} 
-                  max={dashboardStats.totalCases} 
-                  className="h-2 bg-lawbot-amber-200 dark:bg-lawbot-amber-800" 
-                />
-                <div className="space-y-1">
-                  <p className="text-sm text-lawbot-amber-700 dark:text-lawbot-amber-300 font-medium">
-                    🟡 Risk Score: 50-79
-                  </p>
-                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                    ⏰ Response: 24 hours
-                  </p>
-                  <p className="text-xs text-lawbot-amber-600 dark:text-lawbot-amber-400">
-                    Standard investigation timeline
-                  </p>
-                </div>
-              </>
-            ) : null}
+              </div>
+            </div>
+            
+            {/* Footer: Change + Description */}
+            <div className="flex items-center justify-between pt-4 border-t border-lawbot-slate-100 dark:border-lawbot-slate-700">
+              <span className="text-sm font-semibold text-lawbot-amber-600 dark:text-lawbot-amber-400">
+                Risk 50-79
+              </span>
+              <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                24hr response
+              </span>
+            </div>
           </CardContent>
         </Card>
 
         {/* Low Priority */}
-        <Card className="priority-low-indicator border-lawbot-emerald-200 dark:border-lawbot-emerald-800 bg-gradient-to-br from-lawbot-emerald-50 to-lawbot-emerald-100 dark:from-lawbot-emerald-900/20 dark:to-lawbot-emerald-800/20 animate-scale-in" style={{ animationDelay: '200ms' }}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-lawbot-emerald-500 rounded-lg">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <CardTitle className="text-lawbot-emerald-800 dark:text-lawbot-emerald-200 font-bold">
+        <Card className="card-modern animate-scale-in" style={{ animationDelay: '200ms' }}>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              {/* Icon */}
+              <div className="p-3 bg-lawbot-emerald-500 rounded-xl">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-lawbot-slate-500 dark:text-lawbot-slate-400">
                   Low Priority
-                </CardTitle>
-              </div>
-              <div className="w-3 h-3 bg-lawbot-emerald-500 rounded-full"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-7 w-16 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
-                <div className="h-2 w-full bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
-                <div className="space-y-1">
-                  <div className="h-4 w-24 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
-                  <div className="h-3 w-20 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800 rounded"></div>
-                </div>
-              </div>
-            ) : dashboardStats ? (
-              <>
+                </p>
                 <div className="flex items-baseline space-x-2">
-                  <span className="text-3xl font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                    {dashboardStats.lowPriorityCases}
-                  </span>
-                  <span className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
-                    Cases
+                  <p className="text-3xl font-bold text-lawbot-slate-900 dark:text-white">
+                    {isLoading ? (
+                      <span className="animate-pulse bg-lawbot-slate-200 dark:bg-lawbot-slate-700 rounded text-transparent">00</span>
+                    ) : dashboardStats ? (
+                      dashboardStats.lowPriorityCases
+                    ) : '0'}
+                  </p>
+                  <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                    cases
                   </span>
                 </div>
-                <Progress 
-                  value={dashboardStats.lowPriorityCases} 
-                  max={dashboardStats.totalCases} 
-                  className="h-2 bg-lawbot-emerald-200 dark:bg-lawbot-emerald-800" 
-                />
-                <div className="space-y-1">
-                  <p className="text-sm text-lawbot-emerald-700 dark:text-lawbot-emerald-300 font-medium">
-                    🟢 Risk Score: 1-49
-                  </p>
-                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                    ⏰ Response: 72 hours
-                  </p>
-                  <p className="text-xs text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
-                    Routine processing timeline
-                  </p>
-                </div>
-              </>
-            ) : null}
+              </div>
+            </div>
+            
+            {/* Footer: Change + Description */}
+            <div className="flex items-center justify-between pt-4 border-t border-lawbot-slate-100 dark:border-lawbot-slate-700">
+              <span className="text-sm font-semibold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">
+                Risk 1-49
+              </span>
+              <span className="text-sm text-lawbot-slate-500 dark:text-lawbot-slate-400">
+                72hr response
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
