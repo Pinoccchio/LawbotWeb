@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeComponent } from '@/components/ui/qr-code'
 
-const APK_DOWNLOAD_URL = 'https://drive.google.com/file/d/1ijMHmlB6yAI5QbPW_Ubsifjh4woyH3vr/view?usp=sharing'
+const APK_DOWNLOAD_URL = 'https://drive.google.com/drive/folders/1Y00fx3vwra1NBkP5E0UMWico6TXkGfMd?usp=sharing'
 
 interface MobileAppSectionProps {
   isDark: boolean
