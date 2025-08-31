@@ -25,11 +25,12 @@ export function getStatusColor(status?: string) {
   if (!status) return "bg-gradient-to-r from-slate-50 to-gray-50 text-slate-800 border-slate-200 dark:from-slate-950/20 dark:to-gray-950/20 dark:text-slate-200 dark:border-slate-800"
   
   switch (status.toLowerCase()) {
-    case "pending":
+    case "to be assigned":
       return "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-800 border-yellow-200 dark:from-yellow-950/20 dark:to-amber-950/20 dark:text-yellow-200 dark:border-yellow-800"
     case "under investigation":
       return "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border-blue-200 dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-200 dark:border-blue-800"
     case "requires more info":
+    case "requires more information":
       return "bg-gradient-to-r from-orange-50 to-red-50 text-orange-800 border-orange-200 dark:from-orange-950/20 dark:to-red-950/20 dark:text-orange-200 dark:border-orange-800"
     case "resolved":
       return "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-800 border-emerald-200 dark:from-emerald-950/20 dark:to-green-950/20 dark:text-emerald-200 dark:border-emerald-800"

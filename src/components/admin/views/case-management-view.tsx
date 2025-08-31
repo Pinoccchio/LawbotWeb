@@ -41,6 +41,8 @@ function getStatusColorForName(name: string): string {
   switch (name?.toLowerCase()) {
     case 'pending':
       return 'bg-amber-500'
+    case 'assigned':
+      return 'bg-teal-500'
     case 'under investigation':
       return 'bg-blue-500'
     case 'requires more information':

@@ -42,6 +42,8 @@ export function AssignOfficerModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestedOfficer, setSuggestedOfficer] = useState<AvailableOfficer | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [showRetryButton, setShowRetryButton] = useState(false)
 
   useEffect(() => {
     if (isOpen && caseData) {
@@ -59,40 +61,89 @@ export function AssignOfficerModal({
     setFilteredOfficers(filtered)
   }, [searchTerm, availableOfficers])
 
-  const fetchAvailableOfficers = async () => {
+  const fetchAvailableOfficers = async (isRetry: boolean = false) => {
     setIsLoading(true)
     setError(null)
+    setShowRetryButton(false)
+    
+    if (isRetry) {
+      setRetryCount(prev => prev + 1)
+      console.log(`🔄 [DEBUG] Retry attempt #${retryCount + 1}`)
+    }
     
     try {
-      // Get available officers for the unit or crime type
+      console.log('🔍 [DEBUG] Fetching available officers for case:', caseData?.id)
+      console.log('🔍 [DEBUG] Case data:', {
+        unit_id: caseData?.unit_id,
+        crime_type: caseData?.crime_type,
+        assigned_unit: caseData?.assigned_unit,
+        title: caseData?.title
+      })
+      
+      // Get officers based on the case's assigned unit or crime type
       const officers = await OfficerAssignmentService.getAvailableOfficersForAssignment(
-        caseData.unit_id,
-        caseData.crime_type
+        caseData?.unit_id,
+        caseData?.crime_type
       )
+      
+      console.log('✅ [DEBUG] Found available officers:', officers.length)
+      console.log('✅ [DEBUG] Officer details:', officers)
       
       setAvailableOfficers(officers)
       setFilteredOfficers(officers)
       
-      // Get suggested officer if available
-      if (caseData.unit_id) {
-        const suggested = await OfficerAssignmentService.getSuggestedOfficer(
-          caseData.unit_id,
-          caseData.crime_type
-        )
-        setSuggestedOfficer(suggested)
-        
-        // Auto-select suggested officer if it's the only good option
-        if (suggested && officers.filter(o => o.workload_level === 'low').length === 1) {
-          setSelectedOfficer(suggested.officer_id)
+      // Reset retry state on success
+      setRetryCount(0)
+      setShowRetryButton(false)
+      
+      // Get AI-suggested officer if there are available officers
+      if (officers.length > 0 && caseData?.unit_id && caseData?.crime_type) {
+        try {
+          const suggested = await OfficerAssignmentService.getSuggestedOfficer(
+            caseData.unit_id,
+            caseData.crime_type
+          )
+          setSuggestedOfficer(suggested)
+          
+          // Pre-select the suggested officer
+          if (suggested) {
+            setSelectedOfficer(suggested.officer_id)
+            console.log('🤖 AI suggested officer:', suggested.officer_name)
+          }
+        } catch (suggestedError: any) {
+          console.warn('⚠️ Could not get AI suggestion:', suggestedError)
         }
       }
       
-      console.log(`✅ Loaded ${officers.length} available officers`)
-    } catch (err: any) {
-      console.error('❌ Error loading officers:', err)
-      setError('Failed to load available officers')
+      // If we got officers but no suggestion, clear any previous suggestion
+      if (officers.length > 0 && !suggestedOfficer) {
+        setSuggestedOfficer(null)
+      }
+      
+    } catch (error: any) {
+      console.error('❌ [DEBUG] Error fetching available officers:', error)
+      
+      const errorMessage = error?.message || 'Failed to load available officers'
+      setError(errorMessage)
+      setShowRetryButton(true)
+      
+      // Show more detailed error for debugging
+      if (error?.message?.includes('RPC')) {
+        setError(`Database function error: ${errorMessage}. This might be a temporary issue.`)
+      } else if (error?.message?.includes('network') || error?.message?.includes('fetch')) {
+        setError(`Network error: ${errorMessage}. Please check your connection.`)
+      }
+      
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleRetry = () => {
+    if (retryCount < 3) { // Maximum 3 retries
+      fetchAvailableOfficers(true)
+    } else {
+      setError('Maximum retry attempts reached. Please try again later or contact support.')
     }
   }
 
@@ -102,33 +153,47 @@ export function AssignOfficerModal({
       return
     }
     
+    if (!user?.uid) {
+      setError('User authentication required')
+      return
+    }
+    
     setIsSubmitting(true)
     setError(null)
     
     try {
-      const adminId = user?.uid || 'admin_id' // Get actual admin ID from auth
+      console.log('👮 Assigning officer to case:', {
+        caseId: caseData.id,
+        officerId: selectedOfficer,
+        adminId: user.uid,
+        notes: assignmentNotes,
+        isReassignment
+      })
       
       let result
+      
       if (isReassignment) {
+        // Handle reassignment
         result = await OfficerAssignmentService.reassignCase(
           caseData.id,
           selectedOfficer,
-          adminId,
-          assignmentNotes || 'Reassigned by administrator'
+          user.uid,
+          assignmentNotes || 'Case reassigned by admin'
         )
       } else {
+        // Handle new assignment
         result = await OfficerAssignmentService.assignOfficerToCase(
           caseData.id,
           selectedOfficer,
-          adminId,
+          user.uid,
           assignmentNotes
         )
       }
       
       if (result.success) {
         toast({
-          title: isReassignment ? "Case Reassigned" : "Officer Assigned",
-          description: `Case has been assigned to ${result.officer_name}`,
+          title: isReassignment ? "Case Reassigned Successfully" : "Officer Assigned Successfully",
+          description: result.message || `Officer ${result.officer_name} has been assigned to this case`,
         })
         
         // Reset form
@@ -136,7 +201,7 @@ export function AssignOfficerModal({
         setAssignmentNotes("")
         setSearchTerm("")
         
-        // Notify parent component
+        // Notify parent component to refresh data
         if (onAssignmentComplete) {
           onAssignmentComplete()
         }
@@ -145,9 +210,10 @@ export function AssignOfficerModal({
       } else {
         setError(result.error || 'Assignment failed')
       }
-    } catch (err: any) {
-      console.error('❌ Assignment error:', err)
-      setError('Failed to assign officer')
+      
+    } catch (error: any) {
+      console.error('❌ Error during assignment:', error)
+      setError(error.message || 'Assignment failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -277,7 +343,28 @@ export function AssignOfficerModal({
           ) : error ? (
             <Alert className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
+              <AlertDescription>
+                <div className="text-red-800 mb-3">{error}</div>
+                {showRetryButton && (
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      onClick={handleRetry}
+                      variant="outline"
+                      size="sm"
+                      disabled={retryCount >= 3}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      {retryCount >= 3 ? 'Max Retries Reached' : `Retry (${retryCount}/3)`}
+                    </Button>
+                    <span className="text-xs text-red-600">
+                      {retryCount >= 3 
+                        ? 'Please try again later or contact support'
+                        : 'Click to try loading officers again'
+                      }
+                    </span>
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           ) : filteredOfficers.length === 0 ? (
             <div className="text-center py-12 text-lawbot-slate-600 dark:text-lawbot-slate-400">

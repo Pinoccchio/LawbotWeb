@@ -103,7 +103,7 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
       console.log('🔄 Resetting modal state for case:', caseData.complaint_number || caseData.id)
       console.log('🔄 Current case status:', caseData.status)
       
-      setSelectedStatus(caseData.status || "Pending")
+      setSelectedStatus(caseData.status || "Under Investigation")
       setUpdateNotes("")
         setUrgencyLevel("normal")
       setFollowUpDate("")
@@ -148,13 +148,6 @@ export function StatusUpdateModal({ isOpen, onClose, caseData, onStatusUpdate }:
   console.log('🔍 Modal render - selectedStatus:', selectedStatus, 'caseData.status:', caseData.status)
 
   const statusOptions = [
-    {
-      value: "Pending",
-      label: "Pending",
-      icon: Clock,
-      color: "bg-yellow-500",
-      description: "Case has been received and is being reviewed",
-    },
     {
       value: "Under Investigation",
       label: "Under Investigation",

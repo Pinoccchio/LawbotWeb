@@ -1030,7 +1030,8 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
     
     // Base progress from status
     switch (complaint.status) {
-      case 'Pending': progress += 10; break
+      case 'To Be Assigned': progress += 10; break
+      case 'Assigned': progress += 20; break
       case 'Under Investigation': progress += 40; break
       case 'Requires More Information': progress += 60; break
       case 'Resolved': progress += 100; break
@@ -1506,8 +1507,10 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                 {complaint.priority === 'high' ? '🔴' : complaint.priority === 'medium' ? '🟡' : '🟢'} {complaint.priority} Priority
               </Badge>
               <Badge className={`${getStatusColor(complaint.status)} text-sm font-semibold px-3 py-1 shadow-sm`}>
-                {complaint.status === 'Pending' ? '📋' : 
+                {complaint.status === 'To Be Assigned' ? '📋' : 
+                 complaint.status === 'Assigned' ? '👤' :
                  complaint.status === 'Under Investigation' ? '🔍' :
+                 complaint.status === 'Requires More Information' ? '❓' :
                  complaint.status === 'Resolved' ? '✅' :
                  complaint.status === 'Dismissed' ? '❌' : '❓'} 
                 {complaint.status}
@@ -1523,7 +1526,7 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
             </div>
           ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl">
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-5'} bg-lawbot-slate-100 dark:bg-lawbot-slate-800 m-4 p-1 rounded-xl`}>
               <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium">
                 📋 Overview
               </TabsTrigger>
@@ -2703,12 +2706,12 @@ export function CaseDetailModal({ isOpen, onClose, caseData, initialTab = "overv
                               🚨 {aiPredictiveAnalysis.riskLevel}
                             </Badge>
                           </div>
-                          <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
-                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Predicted Outcome:</span>
+                          <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2">Predicted Outcome:</span>
                             <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">✅ {aiPredictiveAnalysis.prescribedOutcome}</span>
                           </div>
-                          <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
-                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">Estimated Resolution:</span>
+                          <div className="p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg">
+                            <span className="font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 block mb-2">Estimated Resolution:</span>
                             <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">⏱️ {aiPredictiveAnalysis.estimatedTime}</span>
                           </div>
                         </div>

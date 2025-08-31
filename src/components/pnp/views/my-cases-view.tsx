@@ -269,19 +269,18 @@ export function MyCasesView() {
       caseData.description.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "pending" && caseData.status === "Pending") ||
       (statusFilter === "investigation" && caseData.status === "Under Investigation") ||
       (statusFilter === "info" && caseData.status === "Requires More Information") ||
-      (statusFilter === "resolved" && caseData.status === "Resolved")
+      (statusFilter === "resolved" && caseData.status === "Resolved") ||
+      (statusFilter === "dismissed" && caseData.status === "Dismissed")
     
     const matchesPriority = priorityFilter === "all" || caseData.priority === priorityFilter
 
     return matchesSearch && matchesStatus && matchesPriority
   })
 
-  // Count cases by status for tab labels
+  // Count cases by status for tab labels (Officer view - no "To Be Assigned" cases)
   const statusCounts = {
-    pending: filteredCases.filter(c => c.complaint.status === "Pending").length,
     underInvestigation: filteredCases.filter(c => c.complaint.status === "Under Investigation").length,
     requiresInfo: filteredCases.filter(c => c.complaint.status === "Requires More Information").length,
     resolved: filteredCases.filter(c => c.complaint.status === "Resolved").length,
@@ -415,11 +414,10 @@ export function MyCasesView() {
                   {priority === 'high' ? '🔴' : priority === 'medium' ? '🟡' : '🟢'} {priority}
                 </Badge>
                 <Badge className={`${getStatusColor(status)} text-xs font-medium flex-shrink-0`}>
-                  {status === 'Pending' ? '📋' : 
-                   status === 'Under Investigation' ? '🔍' :
+                  {status === 'Under Investigation' ? '🔍' :
                    status === 'Requires More Information' ? '❓' :
                    status === 'Resolved' ? '✅' :
-                   status === 'Dismissed' ? '❌' : '❓'} 
+                   status === 'Dismissed' ? '❌' : '🔍'} 
                   <span className="hidden sm:inline">{status}</span>
                 </Badge>
                 <Badge className="bg-lawbot-purple-100 text-lawbot-purple-800 dark:bg-lawbot-purple-900/30 dark:text-lawbot-purple-300 text-xs font-medium flex-shrink-0">
@@ -750,10 +748,10 @@ export function MyCasesView() {
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">📋 Pending</SelectItem>
                 <SelectItem value="investigation">🔍 Under Investigation</SelectItem>
                 <SelectItem value="info">❓ Requires More Information</SelectItem>
                 <SelectItem value="resolved">✅ Resolved</SelectItem>
+                <SelectItem value="dismissed">❌ Dismissed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -783,11 +781,10 @@ export function MyCasesView() {
               You don't have any cases assigned to you yet. Cases with the following statuses will appear here once assigned:
             </p>
             <div className="bg-lawbot-slate-50 dark:bg-lawbot-slate-700 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 mb-2">Case Statuses:</p>
+              <p className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300 mb-2">Your Case Statuses:</p>
               <ul className="text-sm text-lawbot-slate-600 dark:text-lawbot-slate-400 space-y-1">
-                <li>• Pending - New cases awaiting initial review</li>
                 <li>• Under Investigation - Active investigation in progress</li>
-                <li>• Requires More Information - Additional details needed</li>
+                <li>• Requires More Information - Additional details needed from citizen</li>
                 <li>• Resolved - Successfully completed cases</li>
                 <li>• Dismissed - Cases closed without resolution</li>
               </ul>
@@ -795,21 +792,10 @@ export function MyCasesView() {
           </div>
         </Card>
       ) : (
-        <Tabs defaultValue="pending" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <Tabs defaultValue="investigation" className="space-y-6 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
           {/* Improved Original Tab Design */}
           <div className="w-full overflow-x-auto scrollbar-hide pb-2">
             <TabsList className="inline-flex bg-lawbot-slate-100 dark:bg-lawbot-slate-800 p-1.5 sm:p-2 rounded-xl w-full justify-start">
-              <TabsTrigger 
-                value="pending" 
-                className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-amber-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
-              >
-                <span>📋</span>
-                <span className="font-semibold">Pending</span>
-                <span className="ml-1 px-2 py-0.5 bg-lawbot-amber-100 dark:bg-lawbot-amber-900/30 text-lawbot-amber-700 dark:text-lawbot-amber-300 rounded-full text-xs font-bold">
-                  {statusCounts.pending}
-                </span>
-              </TabsTrigger>
-              
               <TabsTrigger 
                 value="investigation" 
                 className="data-[state=active]:bg-white dark:data-[state=active]:bg-lawbot-slate-700 data-[state=active]:text-lawbot-blue-600 font-medium px-3 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap flex items-center gap-2 sm:gap-3 flex-1 min-w-fit transition-all duration-200 text-sm sm:text-base"
@@ -856,32 +842,6 @@ export function MyCasesView() {
             </TabsList>
           </div>
 
-        {/* Pending Cases Tab */}
-        <TabsContent value="pending">
-          <div className="space-y-4">
-            {(() => {
-              const pendingCases = filteredCases.filter((case_) => case_.complaint.status === "Pending")
-              
-              if (pendingCases.length === 0) {
-                return (
-                  <Card className="card-modern text-center p-8 bg-gradient-to-r from-lawbot-amber-50 to-white dark:from-lawbot-amber-900/10 dark:to-lawbot-slate-800 border-lawbot-amber-200 dark:border-lawbot-amber-800">
-                    <div className="flex flex-col items-center justify-center">
-                      <FileText className="h-16 w-16 text-lawbot-amber-300 dark:text-lawbot-amber-600 mb-4" />
-                      <h3 className="text-xl font-bold text-lawbot-slate-900 dark:text-white mb-2">
-                        No Pending Cases
-                      </h3>
-                      <p className="text-lawbot-slate-600 dark:text-lawbot-slate-400 max-w-md">
-                        No cases with status: <span className="font-medium">Pending</span>
-                      </p>
-                    </div>
-                  </Card>
-                )
-              }
-              
-              return pendingCases.map((case_, index) => renderRichCaseCard(case_, index))
-            })()}
-          </div>
-        </TabsContent>
 
         {/* Under Investigation Cases Tab */}
         <TabsContent value="investigation">

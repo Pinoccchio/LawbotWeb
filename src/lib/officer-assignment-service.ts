@@ -46,28 +46,138 @@ class OfficerAssignmentService {
     crimeType?: string
   ): Promise<AvailableOfficer[]> {
     try {
-      console.log('🔍 Fetching available officers for assignment...', { unitId, crimeType })
+      console.log('🔍 [DEBUG] Fetching available officers via API route...')
+      console.log('🔍 [DEBUG] Input parameters:', { unitId, crimeType })
       
-      const { data, error } = await supabase.rpc('get_available_officers_for_assignment', {
-        p_unit_id: unitId || null,
-        p_crime_type: crimeType || null
-      })
-      
-      if (error) {
-        console.error('❌ Error fetching available officers:', error)
-        throw error
+      // Build API URL with query parameters
+      const params = new URLSearchParams()
+      if (unitId && unitId.trim() !== '') {
+        params.append('unitId', unitId.trim())
+      }
+      if (crimeType && crimeType.trim() !== '') {
+        params.append('crimeType', crimeType.trim())
       }
       
-      console.log(`✅ Found ${data?.length || 0} available officers`)
-      return data || []
-    } catch (error) {
-      console.error('❌ Failed to get available officers:', error)
-      return []
+      const apiUrl = `/api/officers/available${params.toString() ? `?${params.toString()}` : ''}`
+      console.log('🔍 [DEBUG] API URL:', apiUrl)
+      
+      const response = await fetch(apiUrl)
+      const responseData = await response.json()
+      
+      console.log('🔍 [DEBUG] API response:', { 
+        status: response.status, 
+        ok: response.ok, 
+        data: responseData 
+      })
+      
+      if (!response.ok) {
+        console.error('❌ [DEBUG] API error response:', responseData)
+        
+        // Try fallback direct query
+        console.log('🔄 [DEBUG] Attempting fallback direct query...')
+        return await this.getAvailableOfficersFallback(unitId, crimeType)
+      }
+      
+      const officers = responseData.officers || []
+      console.log(`✅ [DEBUG] Successfully fetched ${officers.length} officers via API`)
+      
+      return officers.map((officer: any) => ({
+        officer_id: officer.officer_id,
+        officer_name: officer.officer_name,
+        badge_number: officer.badge_number,
+        rank: officer.rank,
+        unit_name: officer.unit_name,
+        active_cases: Number(officer.active_cases) || 0,
+        total_cases: Number(officer.total_cases) || 0,
+        availability_status: officer.availability_status || 'available',
+        last_assignment: officer.last_assignment,
+        workload_level: officer.workload_level || 'low'
+      }))
+      
+    } catch (error: any) {
+      console.error('❌ [DEBUG] Exception in getAvailableOfficersForAssignment:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack,
+        fullError: error
+      })
+      
+      // Try fallback query as last resort
+      try {
+        console.log('🔄 [DEBUG] Attempting fallback query after exception...')
+        return await this.getAvailableOfficersFallback(unitId, crimeType)
+      } catch (fallbackError: any) {
+        console.error('❌ [DEBUG] Fallback query also failed:', fallbackError)
+        throw new Error(`Failed to fetch officers: ${error?.message || 'Unknown error'}. Fallback also failed: ${fallbackError?.message || 'Unknown error'}`)
+      }
     }
   }
 
   /**
-   * Assign an officer to an unassigned case
+   * Fallback method to get available officers using direct SQL query
+   */
+  private async getAvailableOfficersFallback(
+    unitId?: string | null, 
+    crimeType?: string | null
+  ): Promise<AvailableOfficer[]> {
+    try {
+      console.log('🔄 [DEBUG] Executing fallback direct query...', { unitId, crimeType })
+      
+      let query = supabase
+        .from('pnp_officer_profiles')
+        .select(`
+          id,
+          full_name,
+          badge_number,
+          rank,
+          pnp_units!inner (
+            id,
+            unit_name,
+            category
+          )
+        `)
+        .eq('status', 'active')
+      
+      // Apply filters if provided
+      if (unitId) {
+        query = query.eq('unit_id', unitId)
+      }
+      
+      if (crimeType) {
+        query = query.ilike('pnp_units.category', `%${crimeType}%`)
+      }
+      
+      const { data, error } = await query.order('full_name')
+      
+      if (error) {
+        console.error('❌ [DEBUG] Fallback query error:', error)
+        throw error
+      }
+      
+      console.log('✅ [DEBUG] Fallback query successful, found:', data?.length || 0)
+      
+      return (data || []).map((officer: any) => ({
+        officer_id: officer.id,
+        officer_name: officer.full_name,
+        badge_number: officer.badge_number,
+        rank: officer.rank,
+        unit_name: officer.pnp_units?.unit_name || 'Unknown Unit',
+        active_cases: 0, // Will be calculated in a future enhancement
+        total_cases: 0,  // Will be calculated in a future enhancement
+        availability_status: 'available' as const,
+        last_assignment: null,
+        workload_level: 'low' as const
+      }))
+      
+    } catch (error: any) {
+      console.error('❌ [DEBUG] Fallback query failed:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Assign an officer to an unassigned case using API route
+   * Goes directly to 'Under Investigation' when officer is assigned
    */
   async assignOfficerToCase(
     complaintId: string,
@@ -76,41 +186,139 @@ class OfficerAssignmentService {
     notes?: string
   ): Promise<AssignmentResult> {
     try {
-      console.log('👮 Assigning officer to case...', {
+      console.log('👮 [DEBUG] Assigning officer to case via API route...', {
         complaintId,
         officerId,
-        adminId
+        adminId,
+        notes
       })
       
-      const { data, error } = await supabase.rpc('assign_officer_to_complaint', {
-        p_complaint_id: complaintId,
-        p_officer_id: officerId,
-        p_admin_id: adminId,
-        p_notes: notes || null
-      })
+      // Get officer information to resolve UUID if needed
+      let officerData
+      let officerError
       
-      if (error) {
-        console.error('❌ Error assigning officer:', error)
-        throw error
+      // First try to get by ID (UUID format)
+      if (officerId.includes('-')) {
+        const result = await supabase
+          .from('pnp_officer_profiles')
+          .select('id, full_name, badge_number, rank, firebase_uid')
+          .eq('id', officerId)
+          .single()
+        officerData = result.data
+        officerError = result.error
+        
+        // If not found by ID, try by firebase_uid
+        if (officerError || !officerData) {
+          const fallbackResult = await supabase
+            .from('pnp_officer_profiles')
+            .select('id, full_name, badge_number, rank, firebase_uid')
+            .eq('firebase_uid', officerId)
+            .single()
+          officerData = fallbackResult.data
+          officerError = fallbackResult.error
+        }
+      } else {
+        // Try by firebase_uid first for non-UUID format
+        const result = await supabase
+          .from('pnp_officer_profiles')
+          .select('id, full_name, badge_number, rank, firebase_uid')
+          .eq('firebase_uid', officerId)
+          .single()
+        officerData = result.data
+        officerError = result.error
       }
       
-      if (!data.success) {
-        console.error('❌ Assignment failed:', data.error)
+      if (officerError) {
+        console.error('❌ [DEBUG] Error fetching officer:', officerError)
         return {
           success: false,
-          error: data.error || 'Assignment failed'
+          error: 'Officer not found'
         }
       }
       
-      console.log('✅ Officer assigned successfully:', data)
+      console.log('✅ [DEBUG] Officer found:', {
+        id: officerData.id,
+        name: officerData.full_name,
+        rank: officerData.rank
+      })
+      
+      // Get admin UUID if needed
+      let adminUuid = adminId
+      
+      // If adminId looks like Firebase UID, convert to admin profile UUID
+      if (!adminId.includes('-')) {
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_profiles')
+          .select('id')
+          .eq('firebase_uid', adminId)
+          .single()
+        
+        if (adminError || !adminData) {
+          console.error('❌ [DEBUG] Admin not found:', adminError)
+          return {
+            success: false,
+            error: 'Admin not found'
+          }
+        }
+        
+        adminUuid = adminData.id
+        console.log('✅ [DEBUG] Admin UUID resolved:', adminUuid)
+      }
+      
+      // Call the API route for assignment
+      console.log('🔍 [DEBUG] Calling assignment API route...')
+      const response = await fetch('/api/officers/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          complaintId,
+          officerId: officerData.id, // Use the database UUID
+          adminId: adminUuid,
+          notes: notes || 'Case assigned by administrator via web interface'
+        })
+      })
+      
+      const responseData = await response.json()
+      
+      console.log('🔍 [DEBUG] API assignment response:', { 
+        status: response.status, 
+        ok: response.ok, 
+        data: responseData 
+      })
+      
+      if (!response.ok) {
+        console.error('❌ [DEBUG] API assignment error:', responseData)
+        return {
+          success: false,
+          error: responseData.error || `Assignment failed with status ${response.status}`
+        }
+      }
+      
+      if (!responseData.success) {
+        console.error('❌ [DEBUG] Assignment failed:', responseData.error)
+        return {
+          success: false,
+          error: responseData.error || 'Assignment failed'
+        }
+      }
+      
+      console.log('✅ [DEBUG] Officer assigned successfully via API:', responseData)
       return {
         success: true,
-        assignment_id: data.assignment_id,
-        officer_name: data.officer_name,
-        message: data.message
+        assignment_id: responseData.assignment_id,
+        officer_name: responseData.officer_name,
+        message: responseData.message || `Officer ${responseData.officer_name} assigned and investigation started`
       }
+      
     } catch (error: any) {
-      console.error('❌ Failed to assign officer:', error)
+      console.error('❌ [DEBUG] Exception in assignOfficerToCase:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack,
+        fullError: error
+      })
       return {
         success: false,
         error: error.message || 'Failed to assign officer'
@@ -266,7 +474,7 @@ class OfficerAssignmentService {
         .from('complaints')
         .select('*', { count: 'exact', head: true })
         .is('assigned_officer_id', null)
-        .eq('status', 'Pending')
+        .eq('status', 'To Be Assigned')
       
       if (error) {
         console.error('❌ Error counting unassigned cases:', error)
@@ -303,7 +511,7 @@ class OfficerAssignmentService {
           unit_id
         `)
         .is('assigned_officer_id', null)
-        .eq('status', 'Pending')
+        .eq('status', 'To Be Assigned')
         .order('created_at', { ascending: false })
         .limit(limit)
       
