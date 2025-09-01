@@ -16,6 +16,7 @@ import OfficerAssignmentService, { AvailableOfficer } from "@/lib/officer-assign
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "@/components/ui/use-toast"
 import { PhilippineTime } from "@/lib/philippine-time"
+import CrimeTypeMapper from "@/lib/crime-type-mapping"
 
 interface AssignOfficerModalProps {
   isOpen: boolean
@@ -80,10 +81,49 @@ export function AssignOfficerModal({
         title: caseData?.title
       })
       
-      // Get officers based on the case's assigned unit or crime type
+      // Analyze and potentially translate the crime type
+      const crimeType = caseData?.crime_type
+      let translatedCrimeType = crimeType
+      
+      if (crimeType) {
+        // Check if crime type needs translation
+        const mappingInfo = CrimeTypeMapper.getMappingByEnum(crimeType) || CrimeTypeMapper.getMappingByDisplayName(crimeType)
+        
+        if (mappingInfo) {
+          // Use the display name for database queries
+          translatedCrimeType = mappingInfo.displayName
+          console.log('🔄 [DEBUG] Crime type mapping found:', {
+            original: crimeType,
+            translated: translatedCrimeType,
+            category: mappingInfo.category,
+            unit: mappingInfo.unit
+          })
+        } else {
+          console.warn('⚠️ [DEBUG] No mapping found for crime type:', crimeType)
+          // Try to find potential matches
+          const potentialMatches = CrimeTypeMapper.findPotentialMatches(crimeType)
+          if (potentialMatches.length > 0) {
+            console.log('🔍 [DEBUG] Potential matches found:', potentialMatches.slice(0, 3).map(m => ({
+              enum: m.enumName,
+              display: m.displayName,
+              category: m.category
+            })))
+            // Use the first potential match if available
+            translatedCrimeType = potentialMatches[0].displayName
+            console.log('🔄 [DEBUG] Using first potential match:', translatedCrimeType)
+          }
+        }
+      }
+      
+      // Get officers based on the case's assigned unit or translated crime type
+      console.log('🔍 [DEBUG] Calling officer assignment service with:', {
+        unitId: caseData?.unit_id,
+        crimeType: translatedCrimeType
+      })
+      
       const officers = await OfficerAssignmentService.getAvailableOfficersForAssignment(
         caseData?.unit_id,
-        caseData?.crime_type
+        translatedCrimeType
       )
       
       console.log('✅ [DEBUG] Found available officers:', officers.length)
@@ -97,22 +137,33 @@ export function AssignOfficerModal({
       setShowRetryButton(false)
       
       // Get AI-suggested officer if there are available officers
-      if (officers.length > 0 && caseData?.unit_id && caseData?.crime_type) {
+      if (officers.length > 0 && caseData?.unit_id && translatedCrimeType) {
         try {
+          console.log('🤖 [DEBUG] Getting AI suggested officer with:', {
+            unitId: caseData.unit_id,
+            crimeType: translatedCrimeType
+          })
+          
           const suggested = await OfficerAssignmentService.getSuggestedOfficer(
             caseData.unit_id,
-            caseData.crime_type
+            translatedCrimeType
           )
           setSuggestedOfficer(suggested)
           
           // Pre-select the suggested officer
           if (suggested) {
             setSelectedOfficer(suggested.officer_id)
-            console.log('🤖 AI suggested officer:', suggested.officer_name)
+            console.log('🤖 AI suggested officer:', suggested.officer_name, 'with workload:', suggested.workload_level)
           }
         } catch (suggestedError: any) {
           console.warn('⚠️ Could not get AI suggestion:', suggestedError)
         }
+      } else {
+        console.log('🤖 [DEBUG] Skipping AI suggestion - insufficient data:', {
+          officersCount: officers.length,
+          hasUnitId: !!caseData?.unit_id,
+          hasCrimeType: !!translatedCrimeType
+        })
       }
       
       // If we got officers but no suggestion, clear any previous suggestion
@@ -285,6 +336,11 @@ export function AssignOfficerModal({
                 <div>
                   <span className="font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Crime Type:</span>
                   <span className="ml-2">{caseData.crime_type}</span>
+                  {CrimeTypeMapper.getMappingByEnum(caseData.crime_type) && (
+                    <div className="text-xs text-lawbot-slate-500 dark:text-lawbot-slate-400 mt-1">
+                      Category: {CrimeTypeMapper.getCategory(caseData.crime_type)}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <span className="font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400">Priority:</span>

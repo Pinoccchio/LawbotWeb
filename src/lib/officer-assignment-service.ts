@@ -2,6 +2,7 @@
 // This service provides operations for admins to manage case assignments
 
 import { supabase } from './supabase'
+import CrimeTypeMapper from './crime-type-mapping'
 
 export interface AvailableOfficer {
   officer_id: string
@@ -49,13 +50,36 @@ class OfficerAssignmentService {
       console.log('🔍 [DEBUG] Fetching available officers via API route...')
       console.log('🔍 [DEBUG] Input parameters:', { unitId, crimeType })
       
+      // Translate crime type from Flutter enum to database display name
+      let translatedCrimeType = crimeType
+      if (crimeType && crimeType.trim() !== '') {
+        const normalizedCrimeType = CrimeTypeMapper.normalizeForDatabase(crimeType.trim())
+        if (normalizedCrimeType) {
+          translatedCrimeType = normalizedCrimeType
+          console.log('🔄 [DEBUG] Crime type translated:', {
+            original: crimeType,
+            translated: translatedCrimeType
+          })
+        } else {
+          console.warn('⚠️ [DEBUG] Crime type not found in mapping:', crimeType)
+          // Try potential matches for debugging
+          const potentialMatches = CrimeTypeMapper.findPotentialMatches(crimeType)
+          if (potentialMatches.length > 0) {
+            console.log('🔍 [DEBUG] Potential matches found:', potentialMatches.map(m => ({
+              enum: m.enumName,
+              display: m.displayName
+            })))
+          }
+        }
+      }
+      
       // Build API URL with query parameters
       const params = new URLSearchParams()
       if (unitId && unitId.trim() !== '') {
         params.append('unitId', unitId.trim())
       }
-      if (crimeType && crimeType.trim() !== '') {
-        params.append('crimeType', crimeType.trim())
+      if (translatedCrimeType && translatedCrimeType.trim() !== '') {
+        params.append('crimeType', translatedCrimeType.trim())
       }
       
       const apiUrl = `/api/officers/available${params.toString() ? `?${params.toString()}` : ''}`
@@ -73,9 +97,9 @@ class OfficerAssignmentService {
       if (!response.ok) {
         console.error('❌ [DEBUG] API error response:', responseData)
         
-        // Try fallback direct query
+        // Try fallback direct query with translated crime type
         console.log('🔄 [DEBUG] Attempting fallback direct query...')
-        return await this.getAvailableOfficersFallback(unitId, crimeType)
+        return await this.getAvailableOfficersFallback(unitId, translatedCrimeType)
       }
       
       const officers = responseData.officers || []
@@ -102,10 +126,10 @@ class OfficerAssignmentService {
         fullError: error
       })
       
-      // Try fallback query as last resort
+      // Try fallback query as last resort with translated crime type
       try {
         console.log('🔄 [DEBUG] Attempting fallback query after exception...')
-        return await this.getAvailableOfficersFallback(unitId, crimeType)
+        return await this.getAvailableOfficersFallback(unitId, translatedCrimeType)
       } catch (fallbackError: any) {
         console.error('❌ [DEBUG] Fallback query also failed:', fallbackError)
         throw new Error(`Failed to fetch officers: ${error?.message || 'Unknown error'}. Fallback also failed: ${fallbackError?.message || 'Unknown error'}`)
@@ -130,6 +154,10 @@ class OfficerAssignmentService {
           full_name,
           badge_number,
           rank,
+          active_cases,
+          total_cases,
+          availability_status,
+          last_case_assignment_at,
           pnp_units!inner (
             id,
             unit_name,
@@ -140,11 +168,43 @@ class OfficerAssignmentService {
       
       // Apply filters if provided
       if (unitId) {
+        console.log('🔍 [DEBUG] Filtering by unit ID:', unitId)
         query = query.eq('unit_id', unitId)
       }
       
       if (crimeType) {
-        query = query.ilike('pnp_units.category', `%${crimeType}%`)
+        console.log('🔍 [DEBUG] Filtering by crime type (should be translated):', crimeType)
+        
+        // First try to get the category for this crime type
+        const category = CrimeTypeMapper.getCategory(crimeType)
+        if (category) {
+          console.log('🔍 [DEBUG] Using category filter:', category)
+          query = query.eq('pnp_units.category', category)
+        } else {
+          // Fallback to direct crime type matching in the junction table
+          console.log('🔍 [DEBUG] Using direct crime type matching via junction table')
+          
+          // Get unit IDs that handle this crime type
+          const { data: crimeTypeUnits, error: crimeTypeError } = await supabase
+            .from('pnp_unit_crime_types')
+            .select('unit_id')
+            .eq('crime_type', crimeType)
+          
+          if (!crimeTypeError && crimeTypeUnits && crimeTypeUnits.length > 0) {
+            const unitIds = crimeTypeUnits.map(unit => unit.unit_id)
+            console.log('🔍 [DEBUG] Found unit IDs for crime type:', unitIds)
+            query = query.in('unit_id', unitIds)
+          } else {
+            console.warn('⚠️ [DEBUG] No units found for crime type:', crimeType)
+            // Try category-based matching as final fallback
+            const potentialMatches = CrimeTypeMapper.findPotentialMatches(crimeType)
+            if (potentialMatches.length > 0) {
+              const categories = [...new Set(potentialMatches.map(m => m.category))]
+              console.log('🔍 [DEBUG] Trying categories from potential matches:', categories)
+              query = query.in('pnp_units.category', categories)
+            }
+          }
+        }
       }
       
       const { data, error } = await query.order('full_name')
@@ -156,18 +216,30 @@ class OfficerAssignmentService {
       
       console.log('✅ [DEBUG] Fallback query successful, found:', data?.length || 0)
       
-      return (data || []).map((officer: any) => ({
-        officer_id: officer.id,
-        officer_name: officer.full_name,
-        badge_number: officer.badge_number,
-        rank: officer.rank,
-        unit_name: officer.pnp_units?.unit_name || 'Unknown Unit',
-        active_cases: 0, // Will be calculated in a future enhancement
-        total_cases: 0,  // Will be calculated in a future enhancement
-        availability_status: 'available' as const,
-        last_assignment: null,
-        workload_level: 'low' as const
-      }))
+      return (data || []).map((officer: any) => {
+        const activeCases = Number(officer.active_cases) || 0
+        const totalCases = Number(officer.total_cases) || 0
+        const availabilityStatus = officer.availability_status || 'available'
+        
+        // Calculate workload level based on active cases
+        const workloadLevel = 
+          activeCases >= 15 ? 'overloaded' :
+          activeCases >= 10 ? 'high' :
+          activeCases >= 5 ? 'medium' : 'low'
+        
+        return {
+          officer_id: officer.id,
+          officer_name: officer.full_name,
+          badge_number: officer.badge_number,
+          rank: officer.rank,
+          unit_name: officer.pnp_units?.unit_name || 'Unknown Unit',
+          active_cases: activeCases,
+          total_cases: totalCases,
+          availability_status: availabilityStatus as 'available' | 'busy' | 'overloaded' | 'unavailable',
+          last_assignment: officer.last_case_assignment_at,
+          workload_level: workloadLevel as 'low' | 'medium' | 'high' | 'overloaded'
+        }
+      })
       
     } catch (error: any) {
       console.error('❌ [DEBUG] Fallback query failed:', error)
