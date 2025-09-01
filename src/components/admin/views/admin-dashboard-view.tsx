@@ -21,6 +21,10 @@ export function AdminDashboardView() {
   const [officerPerformance, setOfficerPerformance] = useState<OfficerPerformanceData[] | null>(null)
   const [recentCases, setRecentCases] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
+  
+  // State for historical data and trends
+  const [historicalResolutionRate, setHistoricalResolutionRate] = useState<number>(0)
+  const [previousPeriodCases, setPreviousPeriodCases] = useState<number>(0)
 
   // Load dashboard data on component mount
   useEffect(() => {
@@ -55,6 +59,14 @@ export function AdminDashboardView() {
         offset: 0
       })
       setRecentCases(cases || [])
+
+      // Load historical data for trend calculations
+      const [historicalResolution, previousCases] = await Promise.all([
+        AdminService.getHistoricalResolutionRate(30),
+        AdminService.getPreviousPeriodCaseCount(30)
+      ])
+      setHistoricalResolutionRate(historicalResolution)
+      setPreviousPeriodCases(previousCases)
 
     } catch (error) {
       console.error('Error loading dashboard data:', error)
@@ -97,20 +109,32 @@ export function AdminDashboardView() {
   const generateStatsCards = () => {
     if (!dashboardStats) return []
 
+    // Calculate total cases change from previous period
+    const totalCasesChange = previousPeriodCases > 0 ? 
+      Math.round(((dashboardStats.totalCases - previousPeriodCases) / previousPeriodCases) * 100) : 0
+    const totalCasesChangeStr = totalCasesChange > 0 ? `+${totalCasesChange}%` : `${totalCasesChange}%`
+
+    // Calculate resolution rate change from historical data
+    const resolutionRateChange = dashboardStats.resolutionRate - historicalResolutionRate
+    const resolutionRateChangeStr = resolutionRateChange > 0 ? 
+      `+${resolutionRateChange.toFixed(1)}%` : `${resolutionRateChange.toFixed(1)}%`
+    
+    const resolutionTrend = resolutionRateChange > 0 ? "up" : resolutionRateChange < 0 ? "urgent" : "stable"
+
     return [
       {
         title: "Total Cases",
         value: dashboardStats.totalCases.toLocaleString(),
-        change: `+${Math.round((dashboardStats.totalCases / (dashboardStats.totalCases - dashboardStats.pendingCases) - 1) * 100)}%`,
-        trend: "up",
+        change: totalCasesChangeStr,
+        trend: totalCasesChange >= 0 ? "up" : "urgent",
         icon: FileText,
         color: "blue",
-        description: "active cases"
+        description: "total cases"
       },
       {
         title: "High Priority",
         value: dashboardStats.highPriorityCases.toLocaleString(),
-        change: `${Math.round((dashboardStats.highPriorityCases / dashboardStats.totalCases) * 100)}%`,
+        change: `${Math.round((dashboardStats.highPriorityCases / Math.max(dashboardStats.totalCases, 1)) * 100)}%`,
         trend: "urgent",
         icon: AlertTriangle,
         color: "red",
@@ -128,8 +152,8 @@ export function AdminDashboardView() {
       {
         title: "Resolution Rate",
         value: `${dashboardStats.resolutionRate}%`,
-        change: "+5%",
-        trend: "up",
+        change: resolutionRateChangeStr,
+        trend: resolutionTrend,
         icon: CheckCircle,
         color: "green",
         description: "resolved successfully"

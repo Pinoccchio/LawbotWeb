@@ -471,9 +471,13 @@ export function UserManagementView() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-lawbot-slate-600 dark:text-lawbot-slate-400 mb-1">Average Success Rate</p>
                   <p className="text-3xl font-bold text-lawbot-teal-600 dark:text-lawbot-teal-400 mb-1">
-                    {displayOfficers.length > 0 
-                      ? Math.round(displayOfficers.reduce((total, officer) => total + (officer.successRate || 0), 0) / displayOfficers.length)
-                      : 0}%
+                    {(() => {
+                      // Only include officers who have at least one case for meaningful average
+                      const officersWithCases = displayOfficers.filter(officer => officer.cases > 0)
+                      return officersWithCases.length > 0 
+                        ? Math.round(officersWithCases.reduce((total, officer) => total + (officer.successRate || 0), 0) / officersWithCases.length)
+                        : 0
+                    })()}%
                   </p>
                   <p className="text-sm text-lawbot-teal-500 dark:text-lawbot-teal-400">Case resolution</p>
                 </div>
