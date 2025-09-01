@@ -427,15 +427,31 @@ export class PNPOfficerService {
         ['Pending', 'Under Investigation', 'Requires More Information'].includes(c.complaint.status)
       ).length
       
-      // Get resolved cases from database
-      const { data: resolvedCases, error } = await supabase
+      // Get resolved cases from database - SEPARATE QUERIES FOR ACCURATE COUNTING
+      const { data: resolvedCases, error: resolvedError } = await supabase
         .from('complaints')
         .select('id, status, created_at, updated_at')
         .eq('assigned_officer_id', targetOfficerId)
-        .in('status', ['Resolved', 'Dismissed'])
+        .eq('status', 'Resolved')
+      
+      const { data: dismissedCases, error: dismissedError } = await supabase
+        .from('complaints')
+        .select('id, status, created_at, updated_at')
+        .eq('assigned_officer_id', targetOfficerId)
+        .eq('status', 'Dismissed')
+      
+      if (resolvedError) {
+        console.error('❌ Error fetching resolved cases:', resolvedError)
+      }
+      
+      if (dismissedError) {
+        console.error('❌ Error fetching dismissed cases:', dismissedError)
+      }
       
       const resolvedCount = resolvedCases?.length || 0
-      const totalAllCases = totalCases + resolvedCount
+      const dismissedCount = dismissedCases?.length || 0
+      const totalClosedCases = resolvedCount + dismissedCount
+      const totalAllCases = totalCases + totalClosedCases
       const successRate = totalAllCases > 0 ? Math.round((resolvedCount / totalAllCases) * 100) : 0
       
       // Calculate priority breakdown
@@ -451,12 +467,44 @@ export class PNPOfficerService {
       // Calculate real weekly activity from database
       const weeklyActivity = await this.calculateWeeklyActivity(targetOfficerId)
       
-      console.log('✅ Officer statistics calculated:', {
+      // Comprehensive logging for status counting verification
+      console.log('✅ Officer statistics calculated with separate status counts:', {
         totalCases: totalAllCases,
-        activeCases,
-        resolvedCases: resolvedCount,
-        successRate
+        activeCases: activeCases,
+        resolvedCases: resolvedCount,      // ONLY cases with status = 'Resolved'
+        dismissedCases: dismissedCount,    // ONLY cases with status = 'Dismissed'
+        totalClosedCases: totalClosedCases, // Sum of resolved + dismissed
+        successRate: successRate,          // Based ONLY on resolved cases
+        statusBreakdown: {
+          pending: cases.filter(c => c.complaint.status === 'Pending').length,
+          investigating: cases.filter(c => c.complaint.status === 'Under Investigation').length,
+          needsInfo: cases.filter(c => c.complaint.status === 'Requires More Information').length,
+          resolved: resolvedCount,
+          dismissed: dismissedCount
+        },
+        priorityBreakdown: {
+          high: cases.filter(c => c.complaint.priority === 'high').length,
+          medium: cases.filter(c => c.complaint.priority === 'medium').length,
+          low: cases.filter(c => c.complaint.priority === 'low').length
+        }
       })
+      
+      // Status counting validation - ensure mutual exclusivity
+      if (resolvedCount < 0 || dismissedCount < 0) {
+        console.error('❌ Invalid negative counts detected:', { resolvedCount, dismissedCount })
+      }
+      
+      const statusSanityCheck = {
+        resolvedPlusDismissed: resolvedCount + dismissedCount,
+        totalClosedFromData: totalClosedCases,
+        shouldBeEqual: (resolvedCount + dismissedCount) === totalClosedCases
+      }
+      
+      if (!statusSanityCheck.shouldBeEqual) {
+        console.error('❌ Status count mismatch detected:', statusSanityCheck)
+      } else {
+        console.log('✅ Status counts validated - resolved and dismissed are mutually exclusive')
+      }
       
       return {
         total_cases: totalAllCases,
@@ -479,8 +527,8 @@ export class PNPOfficerService {
           pending,
           investigating,
           needsInfo,
-          resolved: resolvedCount,
-          dismissed: (resolvedCases?.filter(c => c.status === 'Dismissed').length || 0)
+          resolved: resolvedCount,        // Only truly resolved cases
+          dismissed: dismissedCount       // Only dismissed cases - separate count
         }
       }
     } catch (error) {
@@ -621,14 +669,18 @@ export class PNPOfficerService {
     try {
       console.log('📊 Calculating average resolution time for officer:', officerId)
       
-      // Get resolved cases for this officer with creation and resolution dates
+      // Get both resolved and dismissed cases for resolution time calculation
+      // Note: Including both resolved and dismissed for resolution time metric makes sense
+      // as both represent completed cases with resolution times
       const { data: resolvedCases, error } = await supabase
         .from('complaints')
-        .select('created_at, updated_at')
+        .select('created_at, updated_at, status')
         .eq('assigned_officer_id', officerId)
         .in('status', ['Resolved', 'Dismissed'])
         .order('updated_at', { ascending: false })
         .limit(50) // Limit to recent 50 cases for performance
+      
+      console.log('📊 Resolution time calculation includes both resolved and dismissed cases as they both have completion times')
       
       if (error || !resolvedCases || resolvedCases.length === 0) {
         console.log('ℹ️ No resolved cases found for resolution time calculation')

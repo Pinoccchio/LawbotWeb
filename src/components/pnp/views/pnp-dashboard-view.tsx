@@ -548,70 +548,23 @@ export function PNPDashboardView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {false ? (
-                [].map((metric, index) => {
-                  const getTrendIcon = (direction: string) => {
-                    if (direction === 'up') return '📈'
-                    if (direction === 'down') return '📉'
-                    return '➡️'
-                  }
-                  
-                  const getTrendColor = (direction: string, metricName: string) => {
-                    // For resolution time, down is good
-                    if (metricName.includes('Resolution Time')) {
-                      if (direction === 'down') return 'text-lawbot-emerald-600'
-                      if (direction === 'up') return 'text-lawbot-red-600'
-                    }
-                    // For other metrics, up is good
-                    if (direction === 'up') return 'text-lawbot-emerald-600'
-                    if (direction === 'down') return 'text-lawbot-red-600'
-                    return 'text-lawbot-slate-600'
-                  }
-                  
-                  return (
-                    <div key={index} className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">
-                          {metric.metric_name === 'Cases Resolved' ? '✅' : 
-                           metric.metric_name === 'New Cases' ? '📋' : 
-                           metric.metric_name === 'Avg Resolution Time' ? '⏱️' : '📊'} 
-                          {metric.metric_name}
-                        </span>
-                        <span className={`text-xs ${getTrendColor(metric.trend_direction, metric.metric_name)}`}>
-                          {getTrendIcon(metric.trend_direction)}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">
-                          {metric.current_value}
-                          {metric.metric_name === 'Avg Resolution Time' ? ' days' : ''}
-                        </span>
-                        {metric.percentage_change !== 0 && (
-                          <p className={`text-xs ${getTrendColor(metric.trend_direction, metric.metric_name)}`}>
-                            {metric.percentage_change > 0 ? '+' : ''}{metric.percentage_change}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                // Fallback to basic stats if no performance metrics
-                <>
-                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📊 My Cases</span>
-                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">✅ Resolved</span>
-                    <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerStats?.resolved_cases || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
-                    <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🎯 Success Rate</span>
-                    <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.success_rate || 0}%</span>
-                  </div>
-                </>
-              )}
+              {/* Unit Performance Metrics - Using real officer stats */}
+              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">📊 My Cases</span>
+                <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerCases.length}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">✅ Resolved</span>
+                <span className="font-bold text-lawbot-emerald-600 dark:text-lawbot-emerald-400">{officerStats?.resolved_cases || 0}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">❌ Dismissed</span>
+                <span className="font-bold text-lawbot-red-600 dark:text-lawbot-red-400">{officerStats?.cases_by_status?.dismissed || 0}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-white dark:bg-lawbot-slate-800 rounded-lg border border-lawbot-purple-200 dark:border-lawbot-purple-800">
+                <span className="text-sm font-medium text-lawbot-slate-700 dark:text-lawbot-slate-300">🎯 Success Rate</span>
+                <span className="font-bold text-lawbot-blue-600 dark:text-lawbot-blue-400">{officerStats?.success_rate || 0}%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
