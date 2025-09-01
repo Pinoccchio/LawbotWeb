@@ -889,7 +889,7 @@ export function UserManagementView() {
                               </div>
                               <div className="flex items-center space-x-2">
                                 {(() => {
-                                  const successRate = officer.successRate || (officer.cases > 0 ? Math.round((officer.resolved / officer.cases) * 100) : 0)
+                                  const successRate = officer.successRate || 0
                                   return (
                                     <>
                                       <span className={`text-sm font-bold ${

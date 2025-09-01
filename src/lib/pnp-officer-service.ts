@@ -418,6 +418,17 @@ export class PNPOfficerService {
       
       console.log('🔄 Calculating officer statistics from database...', targetOfficerId)
       
+      // Get officer profile to access database success_rate
+      const { data: officerProfile, error: profileError } = await supabase
+        .from('pnp_officer_profiles')
+        .select('success_rate, total_cases, resolved_cases, active_cases')
+        .eq('id', targetOfficerId)
+        .single()
+      
+      if (profileError) {
+        console.error('❌ Error fetching officer profile:', profileError)
+      }
+      
       // Get all cases for this officer
       const cases = await this.getOfficerCases(targetOfficerId)
       
@@ -452,7 +463,9 @@ export class PNPOfficerService {
       const dismissedCount = dismissedCases?.length || 0
       const totalClosedCases = resolvedCount + dismissedCount
       const totalAllCases = totalCases + totalClosedCases
-      const successRate = totalAllCases > 0 ? Math.round((resolvedCount / totalAllCases) * 100) : 0
+      
+      // Use database success_rate field instead of manual calculation for consistency
+      const successRate = officerProfile?.success_rate ? parseFloat(officerProfile.success_rate.toString()) : 0
       
       // Calculate priority breakdown
       const highPriority = cases.filter(c => c.complaint.priority === 'high').length
@@ -474,7 +487,7 @@ export class PNPOfficerService {
         resolvedCases: resolvedCount,      // ONLY cases with status = 'Resolved'
         dismissedCases: dismissedCount,    // ONLY cases with status = 'Dismissed'
         totalClosedCases: totalClosedCases, // Sum of resolved + dismissed
-        successRate: successRate,          // Based ONLY on resolved cases
+        successRate: successRate,          // From database success_rate field for consistency
         statusBreakdown: {
           pending: cases.filter(c => c.complaint.status === 'Pending').length,
           investigating: cases.filter(c => c.complaint.status === 'Under Investigation').length,
@@ -516,7 +529,7 @@ export class PNPOfficerService {
         monthly_progress: {
           resolved: resolvedCount,
           target: Math.max(totalAllCases, 15),
-          percentage: totalAllCases > 0 ? Math.round((resolvedCount / totalAllCases) * 100) : 0
+          percentage: successRate // Use same database success_rate for consistency
         },
         cases_by_priority: {
           high: highPriority,

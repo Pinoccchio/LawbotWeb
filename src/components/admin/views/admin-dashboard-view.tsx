@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, AlertTriangle, Users, CheckCircle, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight, RefreshCw } from "lucide-react"
+import { FileText, AlertTriangle, Users, CheckCircle, TrendingUp, Clock, Shield, Activity, Eye, ArrowUpRight, RefreshCw, Trophy } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -354,7 +354,7 @@ export function AdminDashboardView() {
                   Officer Performance
                 </CardTitle>
                 <CardDescription className="text-lawbot-slate-600 dark:text-lawbot-slate-400">
-                  Top performing officers this month
+                  Top performing officers sorted by success rate
                 </CardDescription>
               </div>
               <Button 
@@ -385,24 +385,63 @@ export function AdminDashboardView() {
                 ))}
               </div>
             ) : officerPerformance && officerPerformance.length > 0 ? (
-              // Real officer performance data
+              // Real officer performance data - sorted by success rate
               <div className="space-y-3">
-                {officerPerformance.slice(0, 3).map((officer, index) => (
+                {officerPerformance
+                  .sort((a, b) => {
+                    // Primary sort: Success rate (descending)
+                    if (b.successRate !== a.successRate) {
+                      return b.successRate - a.successRate
+                    }
+                    // Tie-breaker: Resolved cases (descending)
+                    return b.resolvedCases - a.resolvedCases
+                  })
+                  .map((officer, index) => (
                   <div 
                     key={officer.officerId} 
-                    className="flex items-center justify-between p-3 border border-lawbot-slate-200 dark:border-lawbot-slate-700 rounded-xl hover:shadow-md transition-all duration-300 animate-fade-in-up"
+                    className={`flex items-center justify-between p-3 border rounded-xl hover:shadow-md transition-all duration-300 animate-fade-in-up ${
+                      index === 0 ? 'border-lawbot-gold-300 bg-gradient-to-r from-lawbot-gold-50 to-lawbot-amber-50 dark:from-lawbot-gold-900/20 dark:to-lawbot-amber-900/20 dark:border-lawbot-gold-600' :
+                      'border-lawbot-slate-200 dark:border-lawbot-slate-700'
+                    }`}
                     style={{ animationDelay: `${(index + 4) * 100}ms` }}
                   >
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10 border-2 border-lawbot-blue-200">
-                        <AvatarFallback className="bg-lawbot-blue-100 text-lawbot-blue-700 font-semibold">
-                          {officer.officerName.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className={`h-10 w-10 border-2 ${
+                          index === 0 ? 'border-lawbot-gold-300' : 'border-lawbot-blue-200'
+                        }`}>
+                          <AvatarFallback className={`font-semibold ${
+                            index === 0 ? 'bg-lawbot-gold-100 text-lawbot-gold-700' : 'bg-lawbot-blue-100 text-lawbot-blue-700'
+                          }`}>
+                            {officer.officerName.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* Ranking indicator */}
+                        {index < 3 && (
+                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                            index === 0 ? 'bg-lawbot-gold-500 text-white' :
+                            index === 1 ? 'bg-lawbot-slate-400 text-white' :
+                            'bg-lawbot-amber-600 text-white'
+                          }`}>
+                            {index + 1}
+                          </div>
+                        )}
+                        {/* Trophy for #1 */}
+                        {index === 0 && (
+                          <Trophy className="absolute -top-2 -left-2 h-4 w-4 text-lawbot-gold-500" />
+                        )}
+                      </div>
                       <div>
-                        <p className="font-medium text-lawbot-slate-900 dark:text-white">
-                          {officer.officerName}
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <p className="font-medium text-lawbot-slate-900 dark:text-white">
+                            {officer.officerName}
+                          </p>
+                          {index === 0 && (
+                            <Badge className="bg-lawbot-gold-100 text-lawbot-gold-700 dark:bg-lawbot-gold-900/50 dark:text-lawbot-gold-300 text-xs">
+                              Top Performer
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex items-center text-xs">
                           <span className="text-lawbot-slate-500">Success Rate:</span>
                           <span className={`ml-1 font-semibold ${
