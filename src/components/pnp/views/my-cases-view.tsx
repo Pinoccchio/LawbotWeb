@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal"
 import PNPOfficerService, { OfficerCase } from "@/lib/pnp-officer-service"
-import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import { getPriorityColor, getStatusColor, extractComplaintId, validateComplaintId } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
 import { PhilippineTime } from "@/lib/philippine-time"
@@ -520,7 +520,10 @@ export function MyCasesView() {
 
       // Get current status to check if we need to clear citizen update indicators
       const currentStatus = caseData.status
-      const complaintId = caseData.complaint_id || caseData.id
+      
+      // Use robust complaint ID extraction
+      const complaintId = extractComplaintId(caseData)
+      const validComplaintId = validateComplaintId(complaintId, 'quick status update')
 
       // Check if we should clear citizen update indicators
       const isOfficerAcknowledgingUpdates = currentStatus === "Requires More Information" && newStatus !== "Requires More Information"
@@ -544,7 +547,7 @@ export function MyCasesView() {
             total_updates: 0,
             updated_at: new Date().toISOString()
           })
-          .eq('id', complaintId)
+          .eq('id', validComplaintId)
 
         if (clearError) {
           console.error('❌ Error clearing citizen update fields:', clearError)
@@ -555,7 +558,7 @@ export function MyCasesView() {
         const { error: historyError } = await supabase
           .from('status_history')
           .insert({
-            complaint_id: complaintId,
+            complaint_id: validComplaintId,
             status: newStatus,
             updated_by: user?.displayName || user?.email || 'Officer',
             updated_by_user_id: user?.uid,
@@ -571,7 +574,7 @@ export function MyCasesView() {
       } else {
         // Normal status update without clearing citizen update fields
         await handleStatusUpdate(newStatus, {
-          complaintId: complaintId,
+          complaintId: validComplaintId,
           remarks: remarks,
           updatedBy: user?.uid || 'system'
         })
@@ -592,55 +595,42 @@ export function MyCasesView() {
 
   const handleStatusUpdate = async (newStatus: string, updateData: any) => {
     try {
-      console.log('🔄 Updating case status:', { newStatus, updateData })
-      console.log('🔍 Full selectedCase object:', selectedCase)
-      console.log('🔍 selectedCase keys:', selectedCase ? Object.keys(selectedCase) : 'selectedCase is null')
+      console.log('🔄 My Cases: Updating case status:', { newStatus, updateData })
+      console.log('🔍 My Cases: Full selectedCase object:', selectedCase)
+      console.log('🔍 My Cases: selectedCase keys:', selectedCase ? Object.keys(selectedCase) : 'selectedCase is null')
       
       if (!selectedCase) {
-        console.error('❌ selectedCase is null or undefined')
+        console.error('❌ My Cases: selectedCase is null or undefined')
         throw new Error('No case selected for status update. Please select a case first.')
       }
       
-      if (selectedCase) {
-        // Try multiple ways to extract complaint ID
-        console.log('🔍 Checking selectedCase.complaint?.id:', selectedCase.complaint?.id)
-        console.log('🔍 Checking selectedCase.complaint_id:', selectedCase.complaint_id)
-        console.log('🔍 Checking selectedCase.id:', selectedCase.id)
-        console.log('🔍 Checking selectedCase.complaint_number:', selectedCase.complaint_number)
-        
-        // More comprehensive ID extraction - check all possible locations
-        const complaintId = selectedCase.complaint?.id || 
-                           selectedCase.complaint_id || 
-                           selectedCase.id ||
-                           selectedCase.complaint?.complaint_id ||
-                           (typeof selectedCase.complaint_number === 'string' ? selectedCase.complaint_number : null)
-        
-        if (!complaintId) {
-          console.error('❌ No complaint ID found in selectedCase')
-          console.error('❌ selectedCase structure:', JSON.stringify(selectedCase, null, 2))
-          throw new Error('Unable to identify complaint ID for status update')
-        }
-        
-        console.log('✅ Successfully extracted complaint ID:', complaintId)
-        
-        // Update case status in database with full updateData object
-        await PNPOfficerService.updateCaseStatus(
-          complaintId, 
-          newStatus, 
-          updateData
-        )
-        
-        console.log('✅ Case status updated successfully')
-        
-        // Refresh officer cases to show updated information
-        await fetchOfficerCases()
-      }
+      // Use the robust complaint ID extraction utility
+      const complaintId = extractComplaintId(selectedCase)
+      
+      // Validate the extracted complaint ID
+      const validComplaintId = validateComplaintId(complaintId, 'status update')
+      
+      console.log('✅ My Cases: Using complaint ID:', validComplaintId)
+      
+      // Update case status in database with full updateData object
+      await PNPOfficerService.updateCaseStatus(
+        validComplaintId, 
+        newStatus, 
+        updateData
+      )
+      
+      console.log('✅ My Cases: Case status updated successfully')
+      
+      // Refresh officer cases to show updated information
+      await fetchOfficerCases()
       
       setDetailModalOpen(false)
     } catch (error) {
-      console.error('❌ Error updating case status:', error)
-      console.error('❌ Error details:', JSON.stringify(error, null, 2))
-      // TODO: Show error toast to user
+      console.error('❌ My Cases: Error updating case status:', error)
+      console.error('❌ My Cases: Error details:', JSON.stringify(error, null, 2))
+      
+      // Re-throw the error so modals can handle it properly
+      throw error
     }
   }
 

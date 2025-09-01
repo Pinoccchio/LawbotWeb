@@ -164,3 +164,62 @@ export function generateHash(input: string): string {
   }
   return `sha256:${Math.abs(hash).toString(16).padStart(16, "0")}...`
 }
+
+/**
+ * Extracts complaint ID from case data object with comprehensive fallback logic
+ * Handles various data structures from different views (dashboard, cases, modals)
+ * @param caseData The case data object (can be selectedCase, complaint data, etc.)
+ * @returns The extracted complaint ID or null if not found
+ */
+export function extractComplaintId(caseData: any): string | null {
+  if (!caseData) {
+    console.error('❌ extractComplaintId: caseData is null or undefined')
+    return null
+  }
+
+  console.log('🔍 extractComplaintId: Analyzing caseData structure:', {
+    hasComplaint: !!caseData.complaint,
+    complaintId: caseData.complaint?.id,
+    directComplaintId: caseData.complaint_id,
+    directId: caseData.id,
+    complaintNumber: caseData.complaint_number,
+    nestedComplaintId: caseData.complaint?.complaint_id
+  })
+
+  // Try multiple extraction strategies in order of preference:
+  // 1. Direct complaint object ID (most common for dashboard views)
+  const complaintId = caseData.complaint?.id || 
+                     // 2. Direct complaint_id field (alternative structure)
+                     caseData.complaint_id || 
+                     // 3. Direct id field (simple case data)
+                     caseData.id ||
+                     // 4. Nested complaint_id within complaint object
+                     caseData.complaint?.complaint_id ||
+                     // 5. String complaint_number as fallback (ensure it's a string)
+                     (typeof caseData.complaint_number === 'string' ? caseData.complaint_number : null)
+
+  if (!complaintId) {
+    console.error('❌ extractComplaintId: No valid complaint ID found in caseData')
+    console.error('❌ Full caseData structure:', JSON.stringify(caseData, null, 2))
+    return null
+  }
+
+  console.log('✅ extractComplaintId: Successfully extracted complaint ID:', complaintId)
+  return complaintId
+}
+
+/**
+ * Validates that a complaint ID exists and throws descriptive error if not
+ * @param complaintId The complaint ID to validate
+ * @param context Context description for error messages
+ */
+export function validateComplaintId(complaintId: string | null, context: string = 'operation'): string {
+  if (!complaintId) {
+    const errorMessage = `Complaint ID is required for ${context}. Please select a case first.`
+    console.error('❌', errorMessage)
+    throw new Error(errorMessage)
+  }
+  
+  console.log('✅ validateComplaintId: Valid complaint ID for', context, ':', complaintId)
+  return complaintId
+}

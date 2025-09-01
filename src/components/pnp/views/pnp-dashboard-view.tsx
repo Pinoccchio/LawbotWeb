@@ -10,7 +10,7 @@ import { CaseDetailModal } from "@/components/modals/case-detail-modal"
 import { StatusUpdateModal } from "@/components/modals/status-update-modal" 
 import { EvidenceViewerModal } from "@/components/modals/evidence-viewer-modal"
 import PNPOfficerService, { PNPOfficerProfile, PNPOfficerStats, OfficerCase } from "@/lib/pnp-officer-service"
-import { getPriorityColor, getStatusColor } from "@/lib/utils"
+import { getPriorityColor, getStatusColor, extractComplaintId, validateComplaintId } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { PhilippineTime } from "@/lib/philippine-time"
 
@@ -153,26 +153,42 @@ export function PNPDashboardView() {
 
   const handleStatusUpdate = async (newStatus: string, updateData: any) => {
     try {
-      console.log('🔄 Updating case status:', { newStatus, updateData })
+      console.log('🔄 PNP Dashboard: Updating case status:', { newStatus, updateData })
+      console.log('🔍 PNP Dashboard: Full selectedCase object:', selectedCase)
+      console.log('🔍 PNP Dashboard: selectedCase keys:', selectedCase ? Object.keys(selectedCase) : 'selectedCase is null')
       
-      if (selectedCase) {
-        // Update case status in database
-        await PNPOfficerService.updateCaseStatus(
-          selectedCase.complaint?.id || selectedCase.complaint_id, 
-          newStatus, 
-          updateData.notes
-        )
-        
-        console.log('✅ Case status updated successfully')
-        
-        // Refresh officer data to show updated information
-        await fetchOfficerData()
+      if (!selectedCase) {
+        console.error('❌ PNP Dashboard: selectedCase is null or undefined')
+        throw new Error('No case selected for status update. Please select a case first.')
       }
+      
+      // Use the robust complaint ID extraction utility
+      const complaintId = extractComplaintId(selectedCase)
+      
+      // Validate the extracted complaint ID
+      const validComplaintId = validateComplaintId(complaintId, 'status update')
+      
+      console.log('✅ PNP Dashboard: Using complaint ID:', validComplaintId)
+      
+      // Update case status in database
+      await PNPOfficerService.updateCaseStatus(
+        validComplaintId, 
+        newStatus, 
+        updateData.notes || updateData
+      )
+      
+      console.log('✅ PNP Dashboard: Case status updated successfully')
+      
+      // Refresh officer data to show updated information
+      await fetchOfficerData()
       
       setStatusModalOpen(false)
     } catch (error) {
-      console.error('❌ Error updating case status:', error)
-      // TODO: Show error toast to user
+      console.error('❌ PNP Dashboard: Error updating case status:', error)
+      console.error('❌ PNP Dashboard: Error details:', JSON.stringify(error, null, 2))
+      
+      // Re-throw the error so the StatusUpdateModal can handle it properly
+      throw error
     }
   }
 
